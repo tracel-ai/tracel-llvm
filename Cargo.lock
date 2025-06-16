@@ -773,7 +773,7 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 [[package]]
 name = "melior"
 version = "0.24.0"
-source = "git+https://github.com/marcantoinem/melior?rev=1c980d32008bee71a2e512441903d0000acc7f5c#1c980d32008bee71a2e512441903d0000acc7f5c"
+source = "git+https://github.com/marcantoinem/melior?rev=575ac28fb1a3ffc5c1c833105a2cfb4e9026a91d#575ac28fb1a3ffc5c1c833105a2cfb4e9026a91d"
 dependencies = [
  "melior-macro",
  "mlir-sys",
@@ -782,7 +782,7 @@ dependencies = [
 [[package]]
 name = "melior-macro"
 version = "0.17.0"
-source = "git+https://github.com/marcantoinem/melior?rev=1c980d32008bee71a2e512441903d0000acc7f5c#1c980d32008bee71a2e512441903d0000acc7f5c"
+source = "git+https://github.com/marcantoinem/melior?rev=575ac28fb1a3ffc5c1c833105a2cfb4e9026a91d#575ac28fb1a3ffc5c1c833105a2cfb4e9026a91d"
 dependencies = [
  "comrak",
  "convert_case",
