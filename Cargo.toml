@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-melior = { git = "https://github.com/marcantoinem/melior", rev = "2e262ca2e434594cb255d1b1a7e16b36b6e9291c", features = ["ods-dialects"] }
+melior = { git = "https://github.com/marcantoinem/melior", rev = "1e0e61830429fc59ebe8f4463b2c09eebad1d719", features = ["ods-dialects", "helpers"] }
