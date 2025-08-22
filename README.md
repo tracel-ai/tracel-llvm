@@ -3,7 +3,7 @@ The purpose of this repository is to provide an interface to MLIR from Rust for 
 
 ## Third-Party Acknowledgments
 
-This workspace incorporates code from the following external repositories. Each retains its original license and copyright notices, as detailed in the [NOTICE](NOTICE) file:
+This workspace incorporates code from the following external repositories. Each retains its original license and copyright notices, as detailed in the [COPYRIGHT](COPYRIGHT) file:
 
 - [mlir-rs/mlir-sys](https://github.com/mlir-rs/mlir-sys) - Licensed under MIT
 - [mlir-rs/tblgen-rs](https://github.com/mlir-rs/tblgen-rs) - Licensed under MIT or Apache-2.0
