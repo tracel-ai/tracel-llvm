@@ -31,6 +31,11 @@ fi
 
 PLATFORM="${OS}-${ARCH}"
 
+EXTRA_CMAKE_FLAGS=""
+if [ "$OS" == "windows" ]; then
+  EXTRA_CMAKE_FLAGS="-DCMAKE_CXX_FLAGS=-Wa,-mbig-obj -DCMAKE_C_FLAGS=-Wa,-mbig-obj"
+fi
+
 cmake -S llvm -B build -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=OFF \
@@ -48,7 +53,7 @@ cmake -S llvm -B build -G Ninja \
   -DLLVM_ENABLE_ZLIB=OFF \
   -DLLVM_ENABLE_LIBXML2=OFF \
   -DLLVM_ENABLE_LIBEDIT=OFF \
-  -DCMAKE_INSTALL_PREFIX=../llvm
+  -DCMAKE_INSTALL_PREFIX=../llvm $EXTRA_CMAKE_FLAGS
 
 ninja -C build install
 
