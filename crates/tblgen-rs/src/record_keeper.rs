@@ -42,19 +42,19 @@ impl<'s> RecordKeeper<'s> {
     /// Returns an iterator over all classes.
     ///
     /// The iterator yields tuples of type `(String, Record)`.
-    pub fn classes(&self) -> NamedRecordIter<IsClass> {
+    pub fn classes(&self) -> NamedRecordIter<'_, IsClass> {
         unsafe { NamedRecordIter::from_raw(tableGenRecordKeeperGetFirstClass(self.raw)) }
     }
 
     /// Returns an iterator over all definitions.
     ///
     /// The iterator yields tuples of type `(String, Record)`.
-    pub fn defs(&self) -> NamedRecordIter<IsDef> {
+    pub fn defs(&self) -> NamedRecordIter<'_, IsDef> {
         unsafe { NamedRecordIter::from_raw(tableGenRecordKeeperGetFirstDef(self.raw)) }
     }
 
     /// Returns the class with the given name.
-    pub fn class(&self, name: &str) -> Result<Record, Error> {
+    pub fn class(&self, name: &str) -> Result<Record<'_>, Error> {
         unsafe {
             let class = tableGenRecordKeeperGetClass(self.raw, StringRef::from(name).to_raw());
             if class.is_null() {
@@ -66,7 +66,7 @@ impl<'s> RecordKeeper<'s> {
     }
 
     /// Returns the definition with the given name.
-    pub fn def(&self, name: &str) -> Result<Record, Error> {
+    pub fn def(&self, name: &str) -> Result<Record<'_>, Error> {
         unsafe {
             let def = tableGenRecordKeeperGetDef(self.raw, StringRef::from(name).to_raw());
             if def.is_null() {
@@ -79,7 +79,7 @@ impl<'s> RecordKeeper<'s> {
 
     /// Returns an iterator over all definitions that derive from the class with
     /// the given name.
-    pub fn all_derived_definitions(&self, name: &str) -> RecordIter {
+    pub fn all_derived_definitions(&self, name: &str) -> RecordIter<'_> {
         unsafe {
             RecordIter::from_raw_vector(tableGenRecordKeeperGetAllDerivedDefinitions(
                 self.raw,
@@ -88,7 +88,7 @@ impl<'s> RecordKeeper<'s> {
         }
     }
 
-    pub fn source_info(&self) -> SourceInfo {
+    pub fn source_info(&self) -> SourceInfo<'_> {
         SourceInfo(&self.parser)
     }
 }
