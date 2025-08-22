@@ -1,0 +1,22 @@
+[package]
+name = "llvm-bundler-rs"
+version = "0.2.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "A bundler to download automatically LLVM and MLIR"
+repository = "https://github.com/marcantoinem/llvm-bundler-rs"
+readme = "README.md"
+
+[features]
+
+[dependencies]
+reqwest = { version = "0.12.15", features = [
+    "blocking",
+    "default-tls",
+    "http2",
+], default-features = false }
+liblzma = { version = "0.4.1", features = ["static", "parallel"] }
+tar = { version = "0.4" }
+bytes = { version = "1.10" }
+dirs = { version = "6.0" }
+regex = "1.11.1"

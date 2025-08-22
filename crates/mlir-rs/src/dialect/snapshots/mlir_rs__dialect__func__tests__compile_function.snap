@@ -1,0 +1,9 @@
+---
+source: crates/mlir-rs/src/dialect/func.rs
+expression: module.as_operation()
+---
+module {
+  func.func @foo(%arg0: index) -> index {
+    return %arg0 : index
+  }
+}

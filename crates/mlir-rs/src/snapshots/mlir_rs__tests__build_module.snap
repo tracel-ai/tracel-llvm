@@ -1,0 +1,6 @@
+---
+source: crates/mlir-rs/src/lib.rs
+expression: module.as_operation()
+---
+module {
+}
