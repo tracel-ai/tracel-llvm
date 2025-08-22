@@ -1,0 +1,9 @@
+.cache
+/Cargo.lock
+/target
+compile_commands.json
+doc
+.clangd
+.vscode/
+.llvm-cache
+.direnv

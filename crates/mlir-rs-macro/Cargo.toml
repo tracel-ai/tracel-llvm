@@ -1,0 +1,28 @@
+[package]
+name = "mlir-rs-macro"
+description = "Internal macros for mlir-rs"
+version = "0.17.0"
+edition = "2021"
+license = "Apache-2.0"
+readme = "../README.md"
+keywords = ["mlir", "llvm"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+comrak = { version = "0.39.0", default-features = false }
+convert_case = "0.8.0"
+proc-macro2 = "1"
+quote = "1"
+regex = "1.11.1"
+syn = { version = "2", features = ["full"] }
+tblgen = { path = "../tblgen-rs" }
+unindent = "0.2.4"
+
+[features]
+
+[dev-dependencies]
+mlir-rs = { path = "../mlir-rs", features = ["ods-dialects"] }
+mlir-sys = { path = "../mlir-sys" }
+pretty_assertions = "1.4.1"

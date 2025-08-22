@@ -1,0 +1,19 @@
+---
+source: crates/mlir-rs/src/dialect/scf.rs
+expression: module.as_operation()
+---
+module {
+  func.func @foo() {
+    %c0 = arith.constant 0 : index
+    scf.index_switch %c0 
+    case 0 {
+      scf.yield
+    }
+    case 1 {
+      scf.yield
+    }
+    default {
+    }
+    return
+  }
+}

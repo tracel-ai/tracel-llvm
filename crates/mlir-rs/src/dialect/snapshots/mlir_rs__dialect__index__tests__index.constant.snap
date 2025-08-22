@@ -1,0 +1,10 @@
+---
+source: crates/mlir-rs/src/dialect/index.rs
+expression: module.as_operation()
+---
+module {
+  func.func @foo(%arg0: index) -> index {
+    %idx42 = index.constant 42
+    return %idx42 : index
+  }
+}

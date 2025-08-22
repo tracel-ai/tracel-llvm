@@ -1,0 +1,12 @@
+---
+source: crates/mlir-rs/src/dialect/scf.rs
+expression: module.as_operation()
+---
+module {
+  func.func @foo() {
+    %false = arith.constant false
+    scf.if %false {
+    }
+    return
+  }
+}

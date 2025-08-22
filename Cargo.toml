@@ -1,7 +1,14 @@
-[package]
-name = "tracel-llvm"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+# Try
+# require version 2 to avoid "feature" additiveness for dev-dependencies
+# https://doc.rust-lang.org/cargo/reference/resolver.html#feature-resolver-version-2
+resolver = "2"
 
-[dependencies]
-melior = { git = "https://github.com/marcantoinem/melior", rev = "5677f2729cd18d3ebcc7cce5b32e4e8a8ca71dcd", features = ["ods-dialects", "helpers"] }
+members = ["crates/*"]
+
+[workspace.package]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+rust-version = "1.88"
+version = "0.1.0"
