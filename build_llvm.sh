@@ -63,6 +63,13 @@ mv bin/$CONFIG .
 rm bin/*
 mv $CONFIG bin/
 cd ..
-tar -cJf $PLATFORM.tar.xz llvm
+
+if [ "$OS" == "windows" ]; then
+  tar -cf $PLATFORM.tar llvm
+  7z a -txz $PLATFORM.tar.xz $PLATFORM.tar
+  rm $PLATFORM.tar
+else
+  tar -cJf $PLATFORM.tar.xz llvm
+fi
 
 echo "LLVM build and packaging completed successfully!"

@@ -60,7 +60,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          choco install cmake ninja xz --yes
+          choco install cmake ninja 7zip --yes
 
       - name: Build and package LLVM
         run: bash build_llvm.sh
