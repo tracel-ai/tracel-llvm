@@ -14,11 +14,28 @@ git checkout llvmorg-21.1.0-rc3
 rm -rf build
 mkdir -p build
 
+OS_NAME=$(uname -s)
+if [[ "$OS_NAME" == "Linux" ]]; then
+  OS="linux"
+  ARCH="x64"
+elif [[ "$OS_NAME" == "Darwin" ]]; then
+  OS="macos"
+  ARCH="AArch64"
+elif [[ "$OS_NAME" == MINGW* ]]; then
+  OS="windows"
+  ARCH="x64"
+else
+  echo "Unsupported OS: $OS_NAME"
+  exit 1
+fi
+
+PLATFORM="${OS}-${ARCH}"
+
 cmake -S llvm -B build -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=OFF \
-  -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;mlir;compiler-rt" \
-  -DLLVM_TARGETS_TO_BUILD="X86" \
+  -DLLVM_ENABLE_PROJECTS="clang;mlir" \
+  -DLLVM_TARGETS_TO_BUILD="host" \
   -DLLVM_BUILD_TESTS=OFF \
   -DLLVM_INCLUDE_TESTS=OFF \
   -DLLVM_BUILD_EXAMPLES=OFF \
@@ -36,10 +53,16 @@ cmake -S llvm -B build -G Ninja \
 ninja -C build install
 
 cd ../llvm
-mv bin/llvm-config .
+
+CONFIG="llvm-config"
+if [[ "$OS_NAME" == MINGW* ]]; then
+  CONFIG="llvm-config.exe"
+fi
+
+mv bin/$CONFIG .
 rm bin/*
-mv llvm-config bin/
+mv $CONFIG bin/
 cd ..
-tar -cJf linux-x64.tar.xz llvm
+tar -cJf $PLATFORM.tar.xz llvm
 
 echo "LLVM build and packaging completed successfully!"
