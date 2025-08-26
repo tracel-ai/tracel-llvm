@@ -57,13 +57,20 @@ jobs:
       #   run: |
       #     brew install cmake ninja xz
 
-      - name: Install dependencies (Windows)
+      # - name: Install dependencies (Windows)
+      #   if: runner.os == 'Windows'
+      #   shell: pwsh
+      #   run: |
+      #     choco install cmake ninja 7zip --yes
+
+      - name: Build and package LLVM
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          choco install cmake ninja 7zip --yes
+          ./build_llvm.ps1
 
       - name: Build and package LLVM
+        if: runner.os != 'Windows'
         run: bash build_llvm.sh
 
       - name: Upload Release Artifact
