@@ -82,7 +82,8 @@ jobs:
     needs: create-release
     runs-on: [
       '@id:llvm-win-release-job-${{ github.run_id }}-${{ github.run_attempt }}',
-      '@image-family:tracel-ci-windows-2022',
+      '@image-family:windows-2022',
+      '@image-project:windows-cloud',
       '@keep-alive:true',
       '@machine-type:c2-standard-16',
       '@os:windows',
