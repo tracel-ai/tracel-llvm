@@ -84,6 +84,7 @@ jobs:
       '@id:llvm-win-release-job-${{ github.run_id }}-${{ github.run_attempt }}',
       '@image-family:windows-2022',
       '@image-project:windows-cloud',
+      '@disk-size:100',
       '@keep-alive:true',
       '@machine-type:n2-standard-48',
       '@os:windows',
