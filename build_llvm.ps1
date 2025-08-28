@@ -24,7 +24,7 @@ param(
   [bool]$AutoInstallVS = $true,
   [bool]$InstallVsWhere = $true,
   [bool]$InstallGit = $true,
-  [bool]$InstallPython = $false
+  [bool]$InstallPython = $true
 )
 
 function Write-Section($text) {
