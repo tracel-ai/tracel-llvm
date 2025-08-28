@@ -57,13 +57,12 @@ cmake -S llvm -B build -G Ninja \
 
 ninja -C build install
 
+# Remove all the binaries to keep only llvm-config
 cd ../llvm
-
 CONFIG="llvm-config"
 if [[ "$OS_NAME" == MINGW* ]]; then
   CONFIG="llvm-config.exe"
 fi
-
 mv bin/$CONFIG .
 rm bin/*
 mv $CONFIG bin/

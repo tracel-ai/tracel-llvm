@@ -28,60 +28,57 @@ jobs:
           draft: false
           prerelease: false
 
-  # linux-release:
+  # llvm-linux:
   #   needs: create-release
   #   # Building on a older Ubuntu to build with a more ancient libc to support more platforms
   #   runs-on: ubuntu-22.04
   #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #     # -------------------------------------------------------------------------------
+  #     - uses: actions/checkout@v4
+  #     # ----------------------------------------------------------------------
   #     - name: Install dependencies
   #       run: |
   #         sudo apt-get update
   #         sudo apt-get install -y cmake ninja-build xz-utils git
-  #     # -------------------------------------------------------------------------------
-  #     - name: Build and package LLVM
+  #     # ----------------------------------------------------------------------
+  #     - name: Build LLVM
   #       run: bash build_llvm.sh
-  #     # -------------------------------------------------------------------------------
-  #     - name: Upload Release Artifact
+  #     # ----------------------------------------------------------------------
+  #     - name: Upload Release
   #       uses: actions/upload-release-asset@v1
   #       env:
   #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   #       with:
   #         upload_url: ${{ needs.create-release.outputs.upload_url }}
-  #         asset_path: .llvm/linux-x64.tar.xz
+  #         asset_path: linux-x64.tar.xz
   #         asset_name: llvm-linux-x64.tar.xz
   #         asset_content_type: application/x-xz
 
-  # macos-release:
+  # llvm-macos:
   #   needs: create-release
   #   runs-on: macos-latest
   #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #     # -------------------------------------------------------------------------------
+  #     - uses: actions/checkout@v4
+  #     # ----------------------------------------------------------------------
   #     - name: Install dependencies
-  #       run: |
-  #         brew install cmake ninja xz
-  #     # -------------------------------------------------------------------------------
-  #     - name: Build and package LLVM
+  #       run: brew install cmake ninja xz
+  #     # ----------------------------------------------------------------------
+  #     - name: Build LLVM
   #       run: bash build_llvm.sh
-  #     # -------------------------------------------------------------------------------
-  #     - name: Upload Release Artifact
+  #     # ----------------------------------------------------------------------
+  #     - name: Upload Release
   #       uses: actions/upload-release-asset@v1
   #       env:
   #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   #       with:
   #         upload_url: ${{ needs.create-release.outputs.upload_url }}
-  #         asset_path: .llvm/macos-x64.tar.xz
-  #         asset_name: llvm-macos-x64.tar.xz
+  #         asset_path: macos-AArch64.tar.xz
+  #         asset_name: llvm-macos-AArch64.tar.xz
   #         asset_content_type: application/x-xz
 
-  windows-release:
+  llvm-windows:
     needs: create-release
     runs-on: [
-      '@id:llvm-win-release-job-${{ github.run_id }}-${{ github.run_attempt }}',
+      '@id:llvm-windows-job-${{ github.run_id }}-${{ github.run_attempt }}',
       '@image-family:windows-2022',
       '@image-project:windows-cloud',
       '@disk-size:100',
@@ -91,20 +88,18 @@ jobs:
       '@zone:northamerica-northeast1-b'
       ]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      # -------------------------------------------------------------------------------
-      - name: Build and package LLVM
+      - uses: actions/checkout@v4
+      # ----------------------------------------------------------------------
+      - name: Build LLVM
         shell: pwsh
-        run: |
-          ./build_llvm.ps1
-      # -------------------------------------------------------------------------------
-      - name: Upload Release Artifact
+        run: ./build_llvm.ps1
+      # ----------------------------------------------------------------------
+      - name: Upload Release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: .llvm/windows-x64.tar.xz
+          asset_path: windows-x64.tar.xz
           asset_name: llvm-windows-x64.tar.xz
           asset_content_type: application/x-xz
