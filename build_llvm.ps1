@@ -224,6 +224,9 @@ if (-not (Test-Path $SourceDir)) {
   } finally { Pop-Location }
 }
 
+New-Item -ItemType Directory -Path 'C:\Temp' -Force | Out-Null
+$env:TEMP = 'C:\Temp'
+$env:TMP  = 'C:\Temp'
 $jobs = $env:NUMBER_OF_PROCESSORS
 
 Write-Section "Configure (CMake + Ninja)"
