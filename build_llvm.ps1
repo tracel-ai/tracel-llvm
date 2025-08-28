@@ -23,7 +23,7 @@ param(
 
   [bool]$AutoInstallVS = $true,
   [bool]$InstallVsWhere = $true,
-  [bool]$InstallGit = $false,
+  [bool]$InstallGit = $true,
   [bool]$InstallPython = $false
 )
 
