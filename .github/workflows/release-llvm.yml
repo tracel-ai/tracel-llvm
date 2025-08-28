@@ -85,7 +85,7 @@ jobs:
       '@image-family:windows-2022',
       '@image-project:windows-cloud',
       '@keep-alive:true',
-      '@machine-type:c2-standard-16',
+      '@machine-type:n2-standard-48',
       '@os:windows',
       '@zone:northamerica-northeast1-b'
       ]
