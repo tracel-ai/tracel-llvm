@@ -255,7 +255,6 @@ $cmakeConfigure = @(
     "-DLLVM_ENABLE_LIBEDIT=OFF",
     "-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON",
     "-DLLVM_PARALLEL_LINK_JOBS=$jobs",
-    "-DLLVM_INSTALL_TOOLCHAIN_ONLY=ON",
     "-DCMAKE_INSTALL_PREFIX=`"$InstallDir`"",
     "-DCMAKE_CXX_FLAGS=/bigobj -DCMAKE_C_FLAGS=/bigobj"
 ) -join " "
@@ -273,27 +272,19 @@ Write-Host "Done. LLVM/Clang installed to: $InstallDir" -ForegroundColor Green
 Write-Host "Add to PATH: $InstallDir\bin" -ForegroundColor Yellow
 
 # Post-install: keep only llvm-config in bin
-$osName = (Get-CimInstance Win32_OperatingSystem).Caption
-$configName = "llvm-config.exe"  # we’re on Windows
-$binDir = Join-Path $InstallDir "bin"
-$cfgPath = Join-Path $binDir $configName
+$installBin = Join-Path $InstallDir 'bin'
+$cfgName    = 'llvm-config.exe'  # Windows
+$cfgPath    = Join-Path $installBin $cfgName
 
-# only package if install produced llvm-config
-if (Test-Path $llvmConfig) {
-    $parent = Split-Path $InstallDir -Parent
-    $leaf   = Split-Path $InstallDir -Leaf
-    $tar    = "windows-x64.tar"
-    $xz     = "$tar.xz"
-
-    if (Test-Path $tar) { Remove-Item -Force $tar }
-    if (Test-Path $xz)  { Remove-Item -Force $xz }
-
-    Exec "tar -C `"$parent`" -cf `"$tar`" `"$leaf`"" "tar create failed"
-    Exec "7z a -txz `"$xz`" `"$tar`"" "xz compress failed"
-    Remove-Item -Force $tar
-
-    Write-Host "Created package: $xz" -ForegroundColor Green
+if (-not (Test-Path $cfgPath)) {
+    throw "Install finished but $cfgName not found in $installBin. (Did you remove LLVM_INSTALL_TOOLCHAIN_ONLY?)"
 }
+
+# Move llvm-config out, clear bin, move it back
+$stash = Join-Path $InstallDir $cfgName
+Move-Item $cfgPath $stash -Force
+Get-ChildItem $installBin -Force | Remove-Item -Recurse -Force
+Move-Item $stash $installBin -Force
 
 # Package as tar.xz
 $platform = "windows-x64"
@@ -302,10 +293,6 @@ $cwd = Get-Location
 Push-Location (Split-Path $InstallDir -Parent)
 try {
   # Create tar from 'llvm' directory, then compress to .xz using 7z
-  if ((Split-Path $InstallDir -Leaf) -ne "llvm") {
-    Write-Host "Note: InstallDir is '$InstallDir'. Bash script uses '../llvm' as name. Packaging current InstallDir."
-  }
-
   $tarName = "$platform.tar"
   $xzName  = "$platform.tar.xz"
 
