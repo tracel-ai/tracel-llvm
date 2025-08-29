@@ -7,6 +7,12 @@ on:
         description: "LLVM version (e.g. 21.1.0)"
         required: true
         type: string
+      # increment the release number if we publish multiple releases for the same llvm_version
+      release_number:
+        description: "Release number (will be suffixed to llvm_version)"
+        default: "1"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -23,8 +29,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ inputs.llvm_version }}
-          release_name: LLVM Release ${{ inputs.llvm_version }}
+          tag_name: v${{ inputs.llvm_version }}-${{ inputs.release_number }}
+          release_name: v${{ inputs.llvm_version }}-${{ inputs.release_number }}
           draft: false
           prerelease: false
 
