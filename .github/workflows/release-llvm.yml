@@ -18,9 +18,14 @@ jobs:
   create-release:
     runs-on: ubuntu-22.04
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      tag: ${{ steps.compute_tag.outputs.tag }}
+      upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v5
+      # ----------------------------------------------------------------------
+      - name: Compute tag
+        id: compute_tag
+        run: echo "tag=v${{ inputs.llvm_version }}-${{ inputs.release_number }}" >> "$GITHUB_OUTPUT"
       # ----------------------------------------------------------------------
       - name: Create Release
         id: create_release
@@ -28,9 +33,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag: v${{ inputs.llvm_version }}-${{ inputs.release_number }}
-          title: v${{ inputs.llvm_version }}-${{ inputs.release_number }}
+          tag: ${{ steps.compute_tag.outputs.tag }}
+          title: ${{ steps.compute_tag.outputs.tag }}
           prerelease: false
+      # ----------------------------------------------------------------------
+      - name: Get upload_url
+        id: get_upload_url
+        run: |
+          URL=$(gh release view "${{ steps.compute_tag.outputs.tag }}" --json uploadUrl -q .uploadUrl)
+          echo "upload_url=$URL" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   llvm-linux:
     needs: create-release
@@ -61,24 +74,24 @@ jobs:
           asset_name: llvm-linux-x64.tar.xz
           asset_content_type: application/x-xz
 
-  # llvm-macos:
-  #   needs: create-release
-  #   runs-on: macos-latest
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     # ----------------------------------------------------------------------
-  #     - name: Build LLVM
-  #       run: bash build_llvm.sh
-  #     # ----------------------------------------------------------------------
-  #     - name: Upload Release
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ needs.create-release.outputs.upload_url }}
-  #         asset_path: .llvm/macos-AArch64.tar.xz
-  #         asset_name: llvm-macos-AArch64.tar.xz
-  #         asset_content_type: application/x-xz
+  llvm-macos:
+    needs: create-release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      # ----------------------------------------------------------------------
+      - name: Build LLVM
+        run: bash build_llvm.sh
+      # ----------------------------------------------------------------------
+      - name: Upload Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: .llvm/macos-AArch64.tar.xz
+          asset_name: llvm-macos-AArch64.tar.xz
+          asset_content_type: application/x-xz
 
   llvm-windows:
     needs: create-release
