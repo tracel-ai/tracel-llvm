@@ -11,8 +11,9 @@
 
 [CmdletBinding()]
 param(
+  [string]$Version = "21.1.0-rc3",
+
   [string]$RepoUrl = "https://github.com/llvm/llvm-project.git",
-  [string]$Branch  = "llvmorg-21.1.0-rc3",
   [string]$Targets = "host",
   [string]$Projects = "clang;mlir",
   [string]$SourceDir = "$PWD\llvm-project",
@@ -26,6 +27,7 @@ param(
   [bool]$InstallGit = $true,
   [bool]$InstallPython = $true
 )
+$Branch = "llvmorg-$Version"
 
 function Write-Section($text) {
   Write-Host "`n=== $text ===" -ForegroundColor Magenta

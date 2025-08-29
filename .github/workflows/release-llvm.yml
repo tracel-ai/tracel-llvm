@@ -3,8 +3,8 @@ name: Build and Release LLVM
 on:
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: "Release tag (e.g., v20.1.4)"
+      llvm_version:
+        description: "LLVM version (e.g. 21.1.0)"
         required: true
         type: string
 
@@ -23,35 +23,44 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ inputs.release_tag }}
-          release_name: LLVM Release ${{ inputs.release_tag }}
+          tag_name: ${{ inputs.llvm_version }}
+          release_name: LLVM Release ${{ inputs.llvm_version }}
           draft: false
           prerelease: false
 
-  # llvm-linux:
-  #   needs: create-release
-  #   # Building on a older Ubuntu to build with a more ancient libc to support more platforms
-  #   runs-on: ubuntu-22.04
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     # ----------------------------------------------------------------------
-  #     - name: Install dependencies
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get install -y cmake ninja-build xz-utils git
-  #     # ----------------------------------------------------------------------
-  #     - name: Build LLVM
-  #       run: bash build_llvm.sh
-  #     # ----------------------------------------------------------------------
-  #     - name: Upload Release
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ needs.create-release.outputs.upload_url }}
-  #         asset_path: linux-x64.tar.xz
-  #         asset_name: llvm-linux-x64.tar.xz
-  #         asset_content_type: application/x-xz
+  llvm-linux:
+    needs: create-release
+    # Building on a older Ubuntu to build with a more ancient libc to support more platforms
+    runs-on: [
+      '@id:llvm-linux-job-${{ github.run_id }}-${{ github.run_attempt }}',
+      '@image-family:ubuntu-2204-lts',
+      '@image-project:ubuntu-os-cloud',
+      '@disk-size:100',
+      '@keep-alive:true',
+      '@machine-type:n2-standard-48',
+      '@os:linux',
+      '@zone:northamerica-northeast1-b'
+      ]
+    steps:
+      - uses: actions/checkout@v4
+      # ----------------------------------------------------------------------
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build xz-utils git
+      # ----------------------------------------------------------------------
+      - name: Build LLVM
+        run: bash build_llvm.sh
+      # ----------------------------------------------------------------------
+      - name: Upload Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: linux-x64.tar.xz
+          asset_name: llvm-linux-x64.tar.xz
+          asset_content_type: application/x-xz
 
   # llvm-macos:
   #   needs: create-release
@@ -82,7 +91,7 @@ jobs:
       '@image-family:windows-2022',
       '@image-project:windows-cloud',
       '@disk-size:100',
-      '@keep-alive:true',
+      '@keep-alive:false',
       '@machine-type:n2-standard-48',
       '@os:windows',
       '@zone:northamerica-northeast1-b'
@@ -92,7 +101,7 @@ jobs:
       # ----------------------------------------------------------------------
       - name: Build LLVM
         shell: pwsh
-        run: ./build_llvm.ps1
+        run: ./build_llvm.ps1 -Version ${{ inputs.llvm_version }}
       # ----------------------------------------------------------------------
       - name: Upload Release
         uses: actions/upload-release-asset@v1
