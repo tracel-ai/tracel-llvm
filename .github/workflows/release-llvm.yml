@@ -59,7 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: linux-x64.tar.xz
+          asset_path: .llvm/linux-x64.tar.xz
           asset_name: llvm-linux-x64.tar.xz
           asset_content_type: application/x-xz
 
@@ -78,7 +78,7 @@ jobs:
   #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   #       with:
   #         upload_url: ${{ needs.create-release.outputs.upload_url }}
-  #         asset_path: macos-AArch64.tar.xz
+  #         asset_path: .llvm/macos-AArch64.tar.xz
   #         asset_name: llvm-macos-AArch64.tar.xz
   #         asset_content_type: application/x-xz
 
