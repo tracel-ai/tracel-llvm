@@ -1,7 +1,24 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
+# ----------------------
+# Parameters
+# ----------------------
+VERSION="${1:-21.1.0-rc3}"
+
+# Normalize to llvmorg-... tag
+if [[ "$VERSION" =~ ^llvmorg- ]]; then
+  BRANCH="$VERSION"
+else
+  BRANCH="llvmorg-$VERSION"
+fi
+
+echo "Using LLVM branch/tag: $BRANCH"
+
+# ----------------------
+# Workspace setup
+# ----------------------
 mkdir -p .llvm
 cd .llvm
 
@@ -9,11 +26,14 @@ rm -rf llvm llvm-project
 
 git clone https://github.com/llvm/llvm-project.git
 cd llvm-project
-git checkout llvmorg-21.1.0-rc3
+git checkout "$BRANCH"
 
 rm -rf build
 mkdir -p build
 
+# ----------------------
+# Platform detection
+# ----------------------
 OS_NAME=$(uname -s)
 if [[ "$OS_NAME" == "Linux" ]]; then
   OS="linux"
@@ -21,20 +41,17 @@ if [[ "$OS_NAME" == "Linux" ]]; then
 elif [[ "$OS_NAME" == "Darwin" ]]; then
   OS="macos"
   ARCH="AArch64"
-elif [[ "$OS_NAME" == MINGW* ]]; then
-  OS="windows"
-  ARCH="x64"
 else
-  echo "Unsupported OS: $OS_NAME"
+  echo "Unsupported OS: $OS_NAME. On Windows use the dedicated 'build_llvm.ps1' script."
   exit 1
 fi
 
 PLATFORM="${OS}-${ARCH}"
 
-EXTRA_CMAKE_FLAGS=""
-if [ "$OS" == "windows" ]; then
-  EXTRA_CMAKE_FLAGS="-DCMAKE_CXX_FLAGS=-Wa,-mbig-obj -DCMAKE_C_FLAGS=-Wa,-mbig-obj"
-fi
+# ----------------------
+# CMake configure
+# ----------------------
+EXTRA_CMAKE_FLAGS="-DCMAKE_CXX_FLAGS=-Wa,-mbig-obj -DCMAKE_C_FLAGS=-Wa,-mbig-obj"
 
 cmake -S llvm -B build -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
@@ -57,23 +74,19 @@ cmake -S llvm -B build -G Ninja \
 
 ninja -C build install
 
-# Remove all the binaries to keep only llvm-config
+# ----------------------
+# Post-install cleanup
+# ----------------------
 cd ../llvm
 CONFIG="llvm-config"
-if [[ "$OS_NAME" == MINGW* ]]; then
-  CONFIG="llvm-config.exe"
-fi
 mv bin/$CONFIG .
 rm bin/*
 mv $CONFIG bin/
 cd ..
 
-if [ "$OS" == "windows" ]; then
-  tar -cf $PLATFORM.tar llvm
-  7z a -txz $PLATFORM.tar.xz $PLATFORM.tar
-  rm $PLATFORM.tar
-else
-  tar -cJf $PLATFORM.tar.xz llvm
-fi
+# ----------------------
+# Package
+# ----------------------
+tar -cJf "$PLATFORM.tar.xz" llvm
 
 echo "LLVM build and packaging completed successfully!"
