@@ -20,6 +20,8 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
+      - uses: actions/checkout@v5
+      # ----------------------------------------------------------------------
       - name: Create Release
         id: create_release
         uses: elgohr/Github-Release-Action@v5
@@ -44,7 +46,7 @@ jobs:
       '@zone:northamerica-northeast1-b'
       ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # ----------------------------------------------------------------------
       - name: Build LLVM
         run: bash build_llvm.sh
@@ -63,7 +65,7 @@ jobs:
   #   needs: create-release
   #   runs-on: macos-latest
   #   steps:
-  #     - uses: actions/checkout@v4
+  #     - uses: actions/checkout@v5
   #     # ----------------------------------------------------------------------
   #     - name: Build LLVM
   #       run: bash build_llvm.sh
@@ -91,7 +93,7 @@ jobs:
       '@zone:northamerica-northeast1-b'
       ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # ----------------------------------------------------------------------
       - name: Build LLVM
         shell: pwsh
