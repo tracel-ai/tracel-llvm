@@ -14,9 +14,6 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: write
-
 jobs:
   create-release:
     runs-on: ubuntu-22.04
@@ -25,20 +22,19 @@ jobs:
     steps:
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: elgohr/Github-Release-Action@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ inputs.llvm_version }}-${{ inputs.release_number }}
-          release_name: v${{ inputs.llvm_version }}-${{ inputs.release_number }}
-          draft: false
+          tag: v${{ inputs.llvm_version }}-${{ inputs.release_number }}
+          title: v${{ inputs.llvm_version }}-${{ inputs.release_number }}
           prerelease: false
 
   llvm-linux:
     needs: create-release
-    # Building on a older Ubuntu to build with a more ancient libc to support more platforms
     runs-on: [
       '@id:llvm-linux-job-${{ github.run_id }}-${{ github.run_attempt }}',
+      # Older Ubuntu to build with a more ancient libc to support more platforms
       '@image-family:ubuntu-2204-lts',
       '@image-project:ubuntu-os-cloud',
       '@disk-size:100',
