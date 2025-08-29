@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       tag: ${{ steps.compute_tag.outputs.tag }}
-      upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v5
       # ----------------------------------------------------------------------
@@ -29,21 +29,16 @@ jobs:
       # ----------------------------------------------------------------------
       - name: Create Release
         id: create_release
-        uses: elgohr/Github-Release-Action@v5
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag: ${{ steps.compute_tag.outputs.tag }}
-          title: ${{ steps.compute_tag.outputs.tag }}
+          name: ${{ steps.compute_tag.outputs.tag }}
+          tag_name: ${{ steps.compute_tag.outputs.tag }}
+          draft: true
           prerelease: false
-      # ----------------------------------------------------------------------
-      - name: Get upload_url
-        id: get_upload_url
-        run: |
-          URL=$(gh release view "${{ steps.compute_tag.outputs.tag }}" --json uploadUrl -q .uploadUrl)
-          echo "upload_url=$URL" >> "$GITHUB_OUTPUT"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: false
+          make_latest: false
 
   llvm-linux:
     needs: create-release
@@ -53,7 +48,7 @@ jobs:
       '@image-family:ubuntu-2204-lts',
       '@image-project:ubuntu-os-cloud',
       '@disk-size:100',
-      '@keep-alive:true',
+      '@keep-alive:false',
       '@machine-type:n2-standard-48',
       '@os:linux',
       '@zone:northamerica-northeast1-b'
@@ -65,33 +60,33 @@ jobs:
         run: bash build_llvm.sh
       # ----------------------------------------------------------------------
       - name: Upload Release
-        uses: actions/upload-release-asset@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: .llvm/linux-x64.tar.xz
-          asset_name: llvm-linux-x64.tar.xz
-          asset_content_type: application/x-xz
+          name: ${{ needs.create-release.outputs.tag }}
+          tag_name: ${{ needs.create-release.outputs.tag }}
+          files: .llvm/linux-x64.tar.xz
+          overwrite_files: true
 
-  llvm-macos:
-    needs: create-release
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v5
-      # ----------------------------------------------------------------------
-      - name: Build LLVM
-        run: bash build_llvm.sh
-      # ----------------------------------------------------------------------
-      - name: Upload Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: .llvm/macos-AArch64.tar.xz
-          asset_name: llvm-macos-AArch64.tar.xz
-          asset_content_type: application/x-xz
+  # llvm-macos:
+  #   needs: create-release
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     # ----------------------------------------------------------------------
+  #     - name: Build LLVM
+  #       run: bash build_llvm.sh
+  #     # ----------------------------------------------------------------------
+  #     - name: Upload Release
+  #       uses: softprops/action-gh-release@v2
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         name: ${{ needs.create-release.outputs.tag }}
+  #         tag_name: ${{ needs.create-release.outputs.tag }}
+  #         files: .llvm/macos-AArch64.tar.xz
+  #         overwrite_files: true
 
   llvm-windows:
     needs: create-release
@@ -113,11 +108,32 @@ jobs:
         run: ./build_llvm.ps1 -Version ${{ inputs.llvm_version }}
       # ----------------------------------------------------------------------
       - name: Upload Release
-        uses: actions/upload-release-asset@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: windows-x64.tar.xz
-          asset_name: llvm-windows-x64.tar.xz
-          asset_content_type: application/x-xz
+          name: ${{ needs.create-release.outputs.tag }}
+          tag_name: ${{ needs.create-release.outputs.tag }}
+          files: windows-x64.tar.xz
+          overwrite_files: true
+
+  publish-release:
+    # needs: [create-release, llvm-linux, llvm-macos, llvm-windows]
+    needs: [create-release, llvm-linux, llvm-windows]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      # ----------------------------------------------------------------------
+      - name: Make Release the latest one
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: ${{ needs.create-release.outputs.tag }}
+          tag_name: ${{ needs.create-release.outputs.tag }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          make_latest: false
+          append_body: false
