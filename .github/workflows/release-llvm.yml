@@ -50,11 +50,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # ----------------------------------------------------------------------
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build xz-utils git
-      # ----------------------------------------------------------------------
       - name: Build LLVM
         run: bash build_llvm.sh
       # ----------------------------------------------------------------------
@@ -73,9 +68,6 @@ jobs:
   #   runs-on: macos-latest
   #   steps:
   #     - uses: actions/checkout@v4
-  #     # ----------------------------------------------------------------------
-  #     - name: Install dependencies
-  #       run: brew install cmake ninja xz
   #     # ----------------------------------------------------------------------
   #     - name: Build LLVM
   #       run: bash build_llvm.sh
