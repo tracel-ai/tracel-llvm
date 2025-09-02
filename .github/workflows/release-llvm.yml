@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v5
       # ----------------------------------------------------------------------
       - name: Build LLVM
-        run: bash build_llvm.sh
+        run: bash build_llvm.sh ${{ inputs.llvm_version }}
       # ----------------------------------------------------------------------
       - name: Upload Release
         uses: softprops/action-gh-release@v2
@@ -69,24 +69,24 @@ jobs:
           files: .llvm/linux-x64.tar.xz
           overwrite_files: true
 
-  # llvm-macos:
-  #   needs: create-release
-  #   runs-on: macos-latest
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     # ----------------------------------------------------------------------
-  #     - name: Build LLVM
-  #       run: bash build_llvm.sh
-  #     # ----------------------------------------------------------------------
-  #     - name: Upload Release
-  #       uses: softprops/action-gh-release@v2
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         name: ${{ needs.create-release.outputs.tag }}
-  #         tag_name: ${{ needs.create-release.outputs.tag }}
-  #         files: .llvm/macos-AArch64.tar.xz
-  #         overwrite_files: true
+  llvm-macos:
+    needs: create-release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      # ----------------------------------------------------------------------
+      - name: Build LLVM
+        run: bash build_llvm.sh ${{ inputs.llvm_version }}
+      # ----------------------------------------------------------------------
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: ${{ needs.create-release.outputs.tag }}
+          tag_name: ${{ needs.create-release.outputs.tag }}
+          files: .llvm/macos-AArch64.tar.xz
+          overwrite_files: true
 
   llvm-windows:
     needs: create-release
