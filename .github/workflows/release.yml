@@ -1,4 +1,4 @@
-name: Build and Release LLVM
+name: Release
 
 on:
   workflow_dispatch:
