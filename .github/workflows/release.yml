@@ -67,7 +67,6 @@ jobs:
           name: ${{ needs.create-release.outputs.tag }}
           tag_name: ${{ needs.create-release.outputs.tag }}
           files: .llvm/linux-x64.tar.xz
-          overwrite_files: true
 
   # Does not work for now on provided MacOS runners by GitHub
   # llvm-macos:
@@ -87,7 +86,6 @@ jobs:
   #         name: ${{ needs.create-release.outputs.tag }}
   #         tag_name: ${{ needs.create-release.outputs.tag }}
   #         files: .llvm/macos-AArch64.tar.xz
-  #         overwrite_files: true
 
   llvm-windows:
     needs: create-release
@@ -115,8 +113,7 @@ jobs:
         with:
           name: ${{ needs.create-release.outputs.tag }}
           tag_name: ${{ needs.create-release.outputs.tag }}
-          files: windows-x64.tar.xz
-          overwrite_files: true
+          files: .llvm/windows-x64.tar.xz
 
   publish-release:
     # needs: [create-release, llvm-linux, llvm-macos, llvm-windows]
