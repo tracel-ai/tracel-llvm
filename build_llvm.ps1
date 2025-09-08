@@ -3,19 +3,23 @@
   Installs prerequisites via Chocolatey (cmake, ninja, 7zip), initializes MSVC env,
   then configures, builds, installs llvm-project and packages it, using a .llvm workspace.
 
-.NOTES
-  - First run should be in an elevated PowerShell (Admin) to allow choco installs.
-  - If you already have an "x64 Native Tools for VS 2022" shell, the script will detect
-    MSVC and skip manual env init. Otherwise it will try to init MSVC via vswhere.
+.USAGE
+  pwsh -File build-llvm.ps1 20.1.4 1
 #>
 
 [CmdletBinding()]
 param(
-  [string]$Version = "21.1.0-rc3",
+  # Positional, mandatory: fail if not provided (no prompting when run non-interactively)
+  [Parameter(Mandatory=$true, Position=0)]
+  [string]$Version,
 
-  [string]$RepoUrl = "https://github.com/llvm/llvm-project.git",
-  [string]$Targets = "host",
-  [string]$Projects = "clang;mlir",
+  [Parameter(Mandatory=$true, Position=1)]
+  [string]$ReleaseNumber,
+
+  # Options (unchanged)
+  [string]$RepoUrl   = "https://github.com/llvm/llvm-project.git",
+  [string]$Targets   = "host",
+  [string]$Projects  = "clang;mlir",
   [string]$Workspace = "$PWD\.llvm",
   [ValidateSet("Release","Debug","RelWithDebInfo","MinSizeRel")]
   [string]$Config = "Release",
@@ -25,24 +29,29 @@ param(
   [bool]$InstallGit = $true,
   [bool]$InstallPython = $true
 )
+
+$ErrorActionPreference = "Stop"
+$PSNativeCommandUseErrorActionPreference = $true
+
 $Branch = "llvmorg-$Version"
+$PkgDir = "tracel-llvm-$Version-$ReleaseNumber"
 
 # workspace layout
 $SourceDir  = Join-Path $Workspace "llvm-project"
 $BuildDir   = Join-Path $Workspace "build"
-$InstallDir = Join-Path $Workspace "llvm"
+$InstallDir = Join-Path $Workspace $PkgDir
 
 function Write-Section($text) {
   Write-Host "`n=== $text ===" -ForegroundColor Magenta
 }
 
 function Exec($cmd, $errMsg) {
-    Write-Host ">> $cmd" -ForegroundColor Cyan
-    $global:LASTEXITCODE = 0
-    & cmd.exe /c $cmd
-    if ($LASTEXITCODE -ne 0) {
-        throw "$errMsg (exit $LASTEXITCODE)"
-    }
+  Write-Host ">> $cmd" -ForegroundColor Cyan
+  $global:LASTEXITCODE = 0
+  & cmd.exe /c $cmd
+  if ($LASTEXITCODE -ne 0) {
+    throw "$errMsg (exit $LASTEXITCODE)"
+  }
 }
 
 function Ensure-Choco {
@@ -77,12 +86,12 @@ function Ensure-Tools {
   $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
               [System.Environment]::GetEnvironmentVariable("Path","User")
 
-  foreach ($tool in @("cmake","ninja")) {
+  foreach ($tool in @("cmake","ninja","7z")) {
     if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
       throw "Missing tool after install: $tool (check PATH / restart shell)"
     }
   }
-  Write-Host "CMake and Ninja are available." -ForegroundColor Green
+  Write-Host "CMake, Ninja, and 7-Zip are available." -ForegroundColor Green
 }
 
 function Detect-InNativeTools {
@@ -90,26 +99,26 @@ function Detect-InNativeTools {
 }
 
 function Import-EnvFromCmd($cmdLine) {
-    $tmp = New-TemporaryFile
-    try {
-        $bat = "$($tmp.FullName).bat"
-        $content = @"
+  $tmp = New-TemporaryFile
+  try {
+    $bat = "$($tmp.FullName).bat"
+    $content = @"
 @echo off
 call $cmdLine
 set
 "@
-        Set-Content -Path $bat -Value $content -Encoding ASCII
-        $envDump = & cmd.exe /c `"$bat`"
-        $envDump -split "`r?`n" | ForEach-Object {
-            if ($_ -match "^(.*?)=(.*)$") {
-                $name = $Matches[1]; $value = $Matches[2]
-                if ($name -ieq "PATH") { $env:Path = $value }
-                else { [System.Environment]::SetEnvironmentVariable($name, $value, "Process") }
-            }
-        }
-    } finally {
-        Remove-Item -Force -ErrorAction SilentlyContinue $tmp, $bat
+    Set-Content -Path $bat -Value $content -Encoding ASCII
+    $envDump = & cmd.exe /c `"$bat`"
+    $envDump -split "`r?`n" | ForEach-Object {
+      if ($_ -match "^(.*?)=(.*)$") {
+        $name = $Matches[1]; $value = $Matches[2]
+        if ($name -ieq "PATH") { $env:Path = $value }
+        else { [System.Environment]::SetEnvironmentVariable($name, $value, "Process") }
+      }
     }
+  } finally {
+    Remove-Item -Force -ErrorAction SilentlyContinue $tmp, $bat
+  }
 }
 
 function Ensure-MsvcEnv {
@@ -189,7 +198,7 @@ New-Item -ItemType Directory -Path $Workspace -Force | Out-Null
 
 # Clean old workspace
 $oldDirs = @(
-  (Join-Path $Workspace "llvm"),
+  (Join-Path $Workspace $PkgDir),       # new package dir name
   (Join-Path $Workspace "llvm-project"),
   (Join-Path $Workspace "build")
 )
@@ -208,31 +217,31 @@ $jobs = $env:NUMBER_OF_PROCESSORS
 Write-Section "Configure (CMake + Ninja)"
 New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
 $cmakeConfigure = @(
-    "cmake",
-    "-S `"$SourceDir\llvm`"",
-    "-B `"$BuildDir`"",
-    "-G Ninja",
-    "-DCMAKE_BUILD_TYPE=$Config",
-    "-DBUILD_SHARED_LIBS=OFF",
-    "-DLLVM_ENABLE_PROJECTS=`"$Projects`"",
-    "-DLLVM_TARGETS_TO_BUILD=`"$Targets`"",
-    "-DLLVM_BUILD_TESTS=OFF",
-    "-DLLVM_INCLUDE_TESTS=OFF",
-    "-DLLVM_BUILD_EXAMPLES=OFF",
-    "-DLLVM_INCLUDE_EXAMPLES=OFF",
-    "-DLLVM_BUILD_DOCS=OFF",
-    "-DLLVM_ENABLE_DIA_SDK=OFF",
-    "-DLLVM_ENABLE_DOXYGEN=OFF",
-    "-DLLVM_ENABLE_LTO=OFF",
-    "-DLLVM_ENABLE_SPHINX=OFF",
-    "-DLLVM_STATIC_LINK_CXX_STDLIB=ON",
-    "-DLLVM_ENABLE_ZLIB=OFF",
-    "-DLLVM_ENABLE_LIBXML2=OFF",
-    "-DLLVM_ENABLE_LIBEDIT=OFF",
-    "-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON",
-    "-DLLVM_PARALLEL_LINK_JOBS=$jobs",
-    "-DCMAKE_INSTALL_PREFIX=`"$InstallDir`"",
-    "-DCMAKE_CXX_FLAGS=/bigobj -DCMAKE_C_FLAGS=/bigobj"
+  "cmake",
+  "-S `"$SourceDir\llvm`"",
+  "-B `"$BuildDir`"",
+  "-G Ninja",
+  "-DCMAKE_BUILD_TYPE=$Config",
+  "-DBUILD_SHARED_LIBS=OFF",
+  "-DLLVM_ENABLE_PROJECTS=`"$Projects`"",
+  "-DLLVM_TARGETS_TO_BUILD=`"$Targets`"",
+  "-DLLVM_BUILD_TESTS=OFF",
+  "-DLLVM_INCLUDE_TESTS=OFF",
+  "-DLLVM_BUILD_EXAMPLES=OFF",
+  "-DLLVM_INCLUDE_EXAMPLES=OFF",
+  "-DLLVM_BUILD_DOCS=OFF",
+  "-DLLVM_ENABLE_DIA_SDK=OFF",
+  "-DLLVM_ENABLE_DOXYGEN=OFF",
+  "-DLLVM_ENABLE_LTO=OFF",
+  "-DLLVM_ENABLE_SPHINX=OFF",
+  "-DLLVM_STATIC_LINK_CXX_STDLIB=ON",
+  "-DLLVM_ENABLE_ZLIB=OFF",
+  "-DLLVM_ENABLE_LIBXML2=OFF",
+  "-DLLVM_ENABLE_LIBEDIT=OFF",
+  "-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON",
+  "-DLLVM_PARALLEL_LINK_JOBS=$jobs",
+  "-DCMAKE_INSTALL_PREFIX=`"$InstallDir`"",
+  "-DCMAKE_CXX_FLAGS=/bigobj -DCMAKE_C_FLAGS=/bigobj"
 ) -join " "
 Exec $cmakeConfigure "CMake configure failed"
 $buildNinja = Join-Path $BuildDir "build.ninja"
@@ -256,18 +265,24 @@ Move-Item $cfgPath $stash -Force
 Get-ChildItem $installBin -Force | Remove-Item -Recurse -Force
 Move-Item $stash $installBin -Force
 
-Write-Section "Package from workspace (.tar.xz)"
-$platform = "windows-x64"
+# Platform string for artifact name
+$arch = switch -Regex ($env:PROCESSOR_ARCHITECTURE) {
+  "ARM64" { "AArch64"; break }
+  "AMD64" { "x64"; break }
+  default { $env:PROCESSOR_ARCHITECTURE }
+}
+$platform = "windows-$arch"
 
+Write-Section "Package from workspace (.tar.xz)"
 Push-Location $Workspace
 try {
   $tarName = "$platform.tar"
   $xzName  = "$platform.tar.xz"
   if (Test-Path $tarName) { Remove-Item -Force $tarName }
   if (Test-Path $xzName)  { Remove-Item -Force $xzName }
-  # Create tar of the 'llvm' directory (folder itself)
-  Exec "tar -cf `"$tarName`" `"$([IO.Path]::GetFileName($InstallDir))`"" "tar create failed"
-  # Compress to .xz using 7z
+
+  # Create tar with *folder named llvm-$Version-$ReleaseNumber* at top-level
+  Exec "tar -cf `"$tarName`" `"$PkgDir`"" "tar create failed"
   Exec "7z a -txz `"$xzName`" `"$tarName`"" "7z xz failed"
   Remove-Item -Force $tarName
 

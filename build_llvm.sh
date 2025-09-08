@@ -2,11 +2,21 @@
 set -euo pipefail
 
 # ----------------------------------------------------------------------------
-# Parameters
+# Args & usage
 # ----------------------------------------------------------------------------
-VERSION="${1:-21.1.0-rc3}"
+if [[ $# -ne 2 ]]; then
+  echo "Usage: $0 <version> <release_number>"
+  echo "Example: $0 20.1.4 1"
+  exit 2
+fi
+
+VERSION="$1"
+RELEASE_NUMBER="$2"
 BRANCH="llvmorg-$VERSION"
+PKG_DIR="tracel-llvm-${VERSION}-${RELEASE_NUMBER}"
+
 echo ">>> Using LLVM branch/tag: $BRANCH"
+echo ">>> Package install dir will be: $PKG_DIR"
 
 # ----------------------------------------------------------------------------
 # Platform detection
@@ -70,11 +80,9 @@ esac
 # Workspace setup
 # ----------------------------------------------------------------------------
 echo ">>> Preparing workspace..."
+rm -rf .llvm
 mkdir -p .llvm
 cd .llvm
-
-echo ">>> Cleaning old sources..."
-rm -rf llvm llvm-project
 
 echo ">>> Cloning llvm-project..."
 git clone https://github.com/llvm/llvm-project.git
@@ -106,7 +114,7 @@ cmake -S llvm -B build -G Ninja \
   -DLLVM_ENABLE_ZLIB=OFF \
   -DLLVM_ENABLE_LIBXML2=OFF \
   -DLLVM_ENABLE_LIBEDIT=OFF \
-  -DCMAKE_INSTALL_PREFIX=../llvm
+  -DCMAKE_INSTALL_PREFIX="../${PKG_DIR}"
 echo ">>> Configuration complete."
 
 # ----------------------------------------------------------------------------
@@ -120,7 +128,7 @@ echo ">>> Build and install complete."
 # Post-install cleanup
 # ----------------------------------------------------------------------------
 echo ">>> Cleaning install (keeping only llvm-config)..."
-cd ../llvm
+cd "../${PKG_DIR}"
 mv bin/llvm-config .
 rm -rf bin/*
 mv llvm-config bin/
@@ -130,8 +138,8 @@ echo ">>> Cleanup complete."
 # ----------------------------------------------------------------------------
 # Package
 # ----------------------------------------------------------------------------
-echo ">>> Creating package $PLATFORM.tar.xz..."
-tar -cJf "$PLATFORM.tar.xz" llvm
-echo ">>> Package created: $PLATFORM.tar.xz"
+echo ">>> Creating package ${PLATFORM}.tar.xz with top-level dir '${PKG_DIR}'..."
+tar -cJf "${PLATFORM}.tar.xz" "${PKG_DIR}"
+echo ">>> Package created: ${PLATFORM}.tar.xz"
 
 echo "=== LLVM build and packaging completed successfully! ==="
