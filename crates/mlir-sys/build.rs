@@ -10,7 +10,7 @@ const LLVM_MAJOR_VERSION: usize = 20;
 
 fn main() {
     if let Err(error) = run() {
-        eprintln!("{}", error);
+        eprintln!("{error}");
         exit(1);
     }
 }

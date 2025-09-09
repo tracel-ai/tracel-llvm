@@ -46,7 +46,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 parse_library_name(path.file_name().unwrap().to_str().unwrap())?
             );
         } else {
-            println!("cargo:rustc-link-lib={}", flag);
+            println!("cargo:rustc-link-lib={flag}");
         }
     }
 
@@ -102,16 +102,16 @@ fn get_system_libcpp() -> Option<&'static str> {
 }
 
 fn llvm_config(argument: &str) -> Result<String, Box<dyn Error>> {
-    let prefix = env::var(format!("TABLEGEN_{}0_PREFIX", LLVM_MAJOR_VERSION))
+    let prefix = env::var(format!("TABLEGEN_{LLVM_MAJOR_VERSION}0_PREFIX"))
         .map(|path| Path::new(&path).join("bin"))?;
 
-    let llvm_config_exe = if cfg!(target_os = "windows") {
+    let llvm_config_binary = if cfg!(target_os = "windows") {
         "llvm-config.exe"
     } else {
         "llvm-config"
     };
 
-    let path = prefix.join(llvm_config_exe);
+    let path = prefix.join(llvm_config_binary);
 
     let output = Command::new(path)
         .arg("--link-static")
