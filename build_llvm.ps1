@@ -121,6 +121,11 @@ set
   }
 }
 
+function Show-CompilerBanner {
+    Write-Host "Showing MSVC toolchain banner..." -ForegroundColor DarkCyan
+    cmd /v:on /c "set CL=& cl.exe /Bv & exit /b 0" | Out-Host
+}
+
 function Ensure-MsvcEnv {
   if (Detect-InNativeTools) {
     Write-Host "MSVC environment already initialized (Native Tools shell detected)." -ForegroundColor Green
@@ -174,7 +179,7 @@ function Ensure-MsvcEnv {
   $cl = Get-Command cl.exe -ErrorAction SilentlyContinue
   if (-not $cl) { throw "MSVC 'cl.exe' not on PATH after init, environment init failed." }
 
-  cmd /c "cl.exe /Bv" | Out-Host
+  Show-CompilerBanner
   Write-Host "MSVC environment initialized." -ForegroundColor Green
 }
 
