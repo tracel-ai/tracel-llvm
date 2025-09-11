@@ -435,7 +435,7 @@ mod tests {
             // Without source info
             drop(rk);
             assert_eq!(
-                format!("{}", e).trim(),
+                format!("{e}").trim(),
                 r#"
                   invalid conversion from Int to alloc::string::String
                 "#

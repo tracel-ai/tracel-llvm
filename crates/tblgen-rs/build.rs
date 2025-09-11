@@ -1,11 +1,10 @@
 use std::{
     env,
     error::Error,
-    ffi::OsStr,
+    ffi::{OsStr, OsString},
     fs::read_dir,
     path::Path,
-    process::{exit, Command},
-    str,
+    process::exit,
 };
 
 const LLVM_MAJOR_VERSION: usize = 20;
@@ -18,118 +17,93 @@ fn main() {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    llvm_bundler_rs::bundler::bundle_cache()?;
-
     println!("cargo:rerun-if-changed=wrapper.h");
     println!("cargo:rerun-if-changed=cc");
-    println!("cargo:rustc-link-search={}", llvm_config("--libdir")?);
-
-    build_c_library()?;
-
-    for name in llvm_config("--libnames")?.trim().split(' ') {
-        println!("cargo:rustc-link-lib=static={}", parse_library_name(name)?);
+    // Build cache
+    llvm_bundler_rs::bundler::bundle_cache()?;
+    // Install prefix
+    let prefix_os: Option<OsString> = env::var_os(format!("TABLEGEN_{LLVM_MAJOR_VERSION}0_PREFIX"));
+    // Version gate
+    let version = llvm_bundler_rs::config::get_version(prefix_os.as_ref())?;
+    if !version.starts_with(&format!("{LLVM_MAJOR_VERSION}.")) {
+        return Err(format!(
+            "failed to find correct version ({LLVM_MAJOR_VERSION}.x.x) of llvm-config (found {version})"
+        )
+                   .into());
     }
-
-    for flag in llvm_config("--system-libs")?.trim().split(' ') {
-        let flag = flag.trim_start_matches("-l");
-
-        if flag.starts_with('/') {
-            // llvm-config returns absolute paths for dynamically linked libraries.
-            let path = Path::new(flag);
-
-            println!(
-                "cargo:rustc-link-search={}",
-                path.parent().unwrap().display()
-            );
-            println!(
-                "cargo:rustc-link-lib={}",
-                parse_library_name(path.file_name().unwrap().to_str().unwrap())?
-            );
-        } else {
-            println!("cargo:rustc-link-lib={flag}");
-        }
+    // Libraries and headers
+    let includedir = llvm_bundler_rs::config::get_includedir(prefix_os.as_ref())?;
+    let libdir = llvm_bundler_rs::config::get_libdir(prefix_os.as_ref())?;
+    println!("cargo:rustc-link-search=native={libdir}");
+    for lib in llvm_bundler_rs::config::get_libs(prefix_os.as_ref())? {
+        println!("cargo:rustc-link-lib=static={lib}");
     }
-
-    if let Some(name) = get_system_libcpp() {
+    for syslib in llvm_bundler_rs::config::get_system_libs(prefix_os.as_ref())? {
+        println!("cargo:rustc-link-lib={syslib}");
+    }
+    if let Some(name) = llvm_bundler_rs::config::get_system_libcpp() {
         println!("cargo:rustc-link-lib={name}");
     }
+    build_c_library(prefix_os.as_ref())?;
 
     bindgen::builder()
         .header("wrapper.h")
-        .clang_arg("-Icc/include")
-        .clang_arg("-I/usr/include")
-        .clang_arg(format!("-I{}", llvm_config("--includedir")?))
+        .clang_args(["-I", &includedir])
+        .clang_args(["-I", "/usr/include"])
+        .clang_args(["-I", "cc/include"])
         .default_enum_style(bindgen::EnumVariation::ModuleConsts)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()?
         .write_to_file(Path::new(&env::var("OUT_DIR")?).join("bindings.rs"))?;
-
     Ok(())
 }
 
-fn build_c_library() -> Result<(), Box<dyn Error>> {
-    unsafe { env::set_var("CXXFLAGS", llvm_config("--cxxflags")?) };
-    unsafe { env::set_var("CFLAGS", llvm_config("--cflags")?) };
+fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
+    let cxxflags = llvm_bundler_rs::config::get_cxxflags(prefix_os)?;
+    let cflags   = llvm_bundler_rs::config::get_cflags(prefix_os)?;
+    let includedir = llvm_bundler_rs::config::get_includedir(prefix_os)?;
 
-    cc::Build::new()
-        .cpp(true)
+    let mut b = cc::Build::new();
+    b.cpp(true)
         .files(
             read_dir("cc/lib")?
                 .collect::<Result<Vec<_>, _>>()?
                 .into_iter()
-                .map(|entry| entry.path())
-                .filter(|path| path.is_file() && path.extension() == Some(OsStr::new("cpp"))),
+                .map(|e| e.path())
+                .filter(|p| p.is_file() && p.extension() == Some(OsStr::new("cpp")))
         )
         .include("cc/include")
         .include("/usr/include")
-        .include(llvm_config("--includedir")?)
-        .flag("-Werror")
+        // suppress warnings, if something is wrong in the resulted build, uncomment this line
+        .flag("-isystem")
+        .flag(&includedir)
         .std("c++17")
-        .opt_level(3)
-        .compile("CTableGen");
+        .opt_level(3);
+    apply_llvm_flags_to_cc(&mut b, &cxxflags);
+    apply_llvm_flags_to_cc(&mut b, &cflags);
 
+    b.compile("CTableGen");
     Ok(())
 }
 
-fn get_system_libcpp() -> Option<&'static str> {
-    if cfg!(target_env = "msvc") {
-        None
-    } else if cfg!(target_os = "macos") {
-        Some("c++")
-    } else {
-        Some("stdc++")
+fn apply_llvm_flags_to_cc(build: &mut cc::Build, flags: &str) {
+    for tok in flags.split_whitespace() {
+        if tok.starts_with("-I") {
+            // Drop all -I... from llvm-config. We’ll add includes with .include().
+            // The reason we do this is that paths may contain spaces and this will break
+            // if we pass them directly from the llvm-config output
+            continue;
+        }
+        if let Some(def) = tok.strip_prefix("-D") {
+            // -DNAME[=VALUE]
+            if let Some((name, val)) = def.split_once('=') {
+                build.define(name, Some(val));
+            } else {
+                build.define(def, None);
+            }
+            continue;
+        }
+        // Pass through other flags (e.g., -fno-exceptions, -fno-rtti, etc.)
+        build.flag_if_supported(tok);
     }
-}
-
-fn llvm_config(argument: &str) -> Result<String, Box<dyn Error>> {
-    let prefix = env::var(format!("TABLEGEN_{LLVM_MAJOR_VERSION}0_PREFIX"))
-        .map(|path| Path::new(&path).join("bin"))?;
-
-    let llvm_config_binary = if cfg!(target_os = "windows") {
-        "llvm-config.exe"
-    } else {
-        "llvm-config"
-    };
-
-    let path = prefix.join(llvm_config_binary);
-
-    let output = Command::new(path)
-        .arg("--link-static")
-        .arg(argument)
-        .output()?;
-
-    if !output.status.success() {
-        let stderr = output.stderr;
-        eprintln!("{}", str::from_utf8(&stderr)?.trim().to_owned());
-        exit(1);
-    }
-
-    let stdout = output.stdout;
-    Ok(str::from_utf8(&stdout)?.trim().to_string())
-}
-
-fn parse_library_name(name: &str) -> Result<&str, String> {
-    name.strip_prefix("lib")
-        .and_then(|name| name.split('.').next())
-        .ok_or_else(|| format!("failed to parse library name: {name}"))
 }

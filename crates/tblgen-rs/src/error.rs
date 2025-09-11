@@ -229,7 +229,7 @@ impl<E: std::error::Error> SourceError<E> {
             data.1 = Err(TableGenError::InvalidSourceLocation);
         }
         if let Err(e) = data.1 {
-            data.0 = format!("{}\nfailed to print source information: {}", message, e);
+            data.0 = format!("{message}\nfailed to print source information: {e}");
         }
         data.0
     }
@@ -238,7 +238,7 @@ impl<E: std::error::Error> SourceError<E> {
 impl<E: std::error::Error> Display for SourceError<E> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         if let Some(message) = self.message.as_ref() {
-            write!(f, "{}", message)
+            write!(f, "{message}")
         } else {
             write!(f, "{}", self.error)
         }

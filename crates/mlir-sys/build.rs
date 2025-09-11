@@ -1,9 +1,9 @@
 use std::{
     env,
     error::Error,
+    ffi::OsString,
     path::Path,
-    process::{Command, exit},
-    str,
+    process::exit,
 };
 
 const LLVM_MAJOR_VERSION: usize = 20;
@@ -33,59 +33,38 @@ fn link_mlir_statically() -> Result<(), Box<dyn Error>> {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
+    println!("cargo:rerun-if-changed=wrapper.h");
+    // Build cache
     llvm_bundler_rs::bundler::bundle_cache()?;
-
-    let version = llvm_config("--version")?;
-
-    if !version.starts_with(&format!("{LLVM_MAJOR_VERSION}.",)) {
+    // Install prefix
+    let prefix_os: Option<OsString> = env::var_os(format!("MLIR_SYS_{LLVM_MAJOR_VERSION}0_PREFIX"));
+    // Version gate
+    let version = llvm_bundler_rs::config::get_version(prefix_os.as_ref())?;
+    if !version.starts_with(&format!("{LLVM_MAJOR_VERSION}.")) {
         return Err(format!(
             "failed to find correct version ({LLVM_MAJOR_VERSION}.x.x) of llvm-config (found {version})"
         )
         .into());
     }
-
-    println!("cargo:rerun-if-changed=wrapper.h");
-    println!("cargo:rustc-link-search={}", llvm_config("--libdir")?);
-
-    link_mlir_statically()?;
-
-    for flag in llvm_config("--libs")?.trim().split(' ') {
-        let flag = flag.trim_start_matches("-l");
-        println!("cargo:rustc-link-lib=static={flag}");
+    // Libraries and headers
+    let includedir = llvm_bundler_rs::config::get_includedir(prefix_os.as_ref())?;
+    let libdir = llvm_bundler_rs::config::get_libdir(prefix_os.as_ref())?;
+    println!("cargo:rustc-link-search=native={libdir}");
+    for lib in llvm_bundler_rs::config::get_libs(prefix_os.as_ref())? {
+        println!("cargo:rustc-link-lib=static={lib}");
     }
-
-    for flag in llvm_config("--system-libs")?.trim().split(' ') {
-        let flag = flag.trim_start_matches("-l");
-
-        if flag.starts_with('/') {
-            // llvm-config returns absolute paths for dynamically linked libraries.
-            let path = Path::new(flag);
-
-            println!(
-                "cargo:rustc-link-search={}",
-                path.parent().unwrap().display()
-            );
-            println!(
-                "cargo:rustc-link-lib={}",
-                path.file_stem()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .trim_start_matches("lib")
-            );
-        } else {
-            println!("cargo:rustc-link-lib={flag}");
-        }
+    for syslib in llvm_bundler_rs::config::get_system_libs(prefix_os.as_ref())? {
+        println!("cargo:rustc-link-lib={syslib}");
     }
-
-    if let Some(name) = get_system_libcpp() {
+    if let Some(name) = llvm_bundler_rs::config::get_system_libcpp() {
         println!("cargo:rustc-link-lib={name}");
     }
+    link_mlir_statically()?;
 
     bindgen::builder()
         .header("wrapper.h")
-        .clang_arg(format!("-I{}", llvm_config("--includedir")?))
-        .clang_arg("-I/usr/include")
+        .clang_args(["-I", &includedir])
+        .clang_args(["-I", "/usr/include"])
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .unwrap()
@@ -94,40 +73,3 @@ fn run() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn get_system_libcpp() -> Option<&'static str> {
-    if cfg!(target_env = "msvc") {
-        None
-    } else if cfg!(target_os = "macos") {
-        Some("c++")
-    } else {
-        Some("stdc++")
-    }
-}
-
-fn llvm_config(argument: &str) -> Result<String, Box<dyn Error>> {
-    let prefix = env::var(format!("MLIR_SYS_{LLVM_MAJOR_VERSION}0_PREFIX"))
-        .map(|path| Path::new(&path).join("bin"))
-        .unwrap_or_default();
-
-    let llvm_config_exe = if cfg!(target_os = "windows") {
-        "llvm-config.exe"
-    } else {
-        "llvm-config"
-    };
-
-    let path = prefix.join(llvm_config_exe);
-
-    let output = Command::new(path)
-        .arg("--link-static")
-        .arg(argument)
-        .output()?;
-
-    if !output.status.success() {
-        let stderr = output.stderr;
-        eprintln!("{}", str::from_utf8(&stderr)?.trim().to_owned());
-        exit(1);
-    }
-
-    let stdout = output.stdout;
-    Ok(str::from_utf8(&stdout)?.trim().to_string())
-}
