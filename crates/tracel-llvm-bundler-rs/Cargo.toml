@@ -1,0 +1,26 @@
+[package]
+authors                = ["Tracel Technologies Inc."]
+categories             = ["development-tools::ffi"]
+description            = "Tools to bunlder a portable version of LLVM used in Rust bindings."
+edition.workspace      = true
+keywords               = ["cubecl", "llvm", "mlir", "bindings"]
+license.workspace      = true
+name                   = "tracel-llvm-bundler-rs"
+readme.workspace       = true
+repository             = "https://github.com/tracel-ai/tracel-llvm/tree/main/crates/tracel-llvm-bundler-rs"
+rust-version.workspace = true
+version.workspace      = true
+
+[features]
+
+[dependencies]
+reqwest = { version = "0.12.15", features = [
+    "blocking",
+    "default-tls",
+    "http2",
+], default-features = false }
+liblzma = { version = "0.4.1", features = ["static", "parallel"] }
+tar = { version = "0.4" }
+bytes = { version = "1.10" }
+dirs = { version = "6.0" }
+regex = "1.11.1"

@@ -1,0 +1,18 @@
+[package]
+authors                = ["Tracel Technologies Inc.", "McCoy R. Becker", "Yota Toyama", "Edgar Luque"]
+categories             = ["external-ffi-bindings"]
+description            = "Rust bindings for MLIR C API used by CubeCL."
+edition.workspace      = true
+keywords               = ["cubecl", "llvm", "mlir", "bindings"]
+license                = "MIT"
+name                   = "tracel-mlir-sys"
+readme.workspace       = true
+repository             = "https://github.com/tracel-ai/tracel-llvm/tree/main/crates/tracel-mlir-sys"
+rust-version.workspace = true
+version.workspace      = true
+
+[features]
+
+[build-dependencies]
+bindgen = "0.71.1"
+tracel-llvm-bundler-rs = { path = "../tracel-llvm-bundler-rs" }

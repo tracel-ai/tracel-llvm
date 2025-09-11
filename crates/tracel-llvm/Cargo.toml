@@ -1,0 +1,20 @@
+[package]
+authors                = ["Tracel Technologies Inc."]
+categories             = ["api-bindings", "external-ffi-bindings"]
+description            = "Rust bindings for LLVM libraries used by CubeCL."
+edition.workspace      = true
+keywords               = ["cubecl", "llvm", "mlir", "bindings"]
+license.workspace      = true
+name                   = "tracel-llvm"
+readme.workspace       = true
+repository             = "https://github.com/tracel-ai/tracel-llvm/tree/main/crates/tracel-llvm"
+rust-version.workspace = true
+version.workspace      = true
+
+[dependencies]
+tracel-mlir-rs  = { path = "../tracel-mlir-rs" }
+tracel-mlir-sys = { path = "../tracel-mlir-sys" }
+
+[features]
+mlir-helpers      = ["tracel-mlir-rs/helpers"]
+mlir-ods-dialects = ["tracel-mlir-rs/ods-dialects"]
