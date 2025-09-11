@@ -1,11 +1,21 @@
-use std::{ffi::OsString, path::{Path, PathBuf}, process::Command};
+use std::{
+    ffi::OsString,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 use crate::error::{BundlerResult, BundlingError};
 
 /// Returns a vector of all libraries required by LLVM.
 pub fn get_libs(prefix_os: Option<&OsString>) -> BundlerResult<Vec<String>> {
     let libs = llvm_config(prefix_os, "--libs")?;
-    Ok(libs.trim().strip_prefix("-l").unwrap().split(" -l").map(str::to_owned).collect())
+    Ok(libs
+        .trim()
+        .strip_prefix("-l")
+        .unwrap()
+        .split(" -l")
+        .map(str::to_owned)
+        .collect())
 }
 
 /// Returns a vector of all library names required by LLVM.
@@ -17,7 +27,13 @@ pub fn get_libnames(prefix_os: Option<&OsString>) -> BundlerResult<Vec<String>> 
 /// Returns a vector of all system libraries required by LLVM.
 pub fn get_system_libs(prefix_os: Option<&OsString>) -> BundlerResult<Vec<String>> {
     let libs = llvm_config(prefix_os, "--system-libs")?;
-    Ok(libs.trim().strip_prefix("-l").unwrap().split(" -l").map(str::to_owned).collect())
+    Ok(libs
+        .trim()
+        .strip_prefix("-l")
+        .unwrap()
+        .split(" -l")
+        .map(str::to_owned)
+        .collect())
 }
 
 /// Returns the lib directory path

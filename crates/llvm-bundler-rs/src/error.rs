@@ -24,7 +24,11 @@ impl std::fmt::Display for BundlingError {
             BundlingError::IoError(error) => write!(f, "{error}"),
             BundlingError::NetworkError(error) => write!(f, "{error}"),
             BundlingError::Utf8(error) => write!(f, "{error}"),
-            BundlingError::ToolExit { path, status, stderr } => {
+            BundlingError::ToolExit {
+                path,
+                status,
+                stderr,
+            } => {
                 if stderr.is_empty() {
                     write!(f, "`{path}` exited with status {status}")
                 } else {
@@ -36,12 +40,17 @@ impl std::fmt::Display for BundlingError {
 }
 
 impl From<std::io::Error> for BundlingError {
-    fn from(value: std::io::Error) -> Self { BundlingError::IoError(value) }
+    fn from(value: std::io::Error) -> Self {
+        BundlingError::IoError(value)
+    }
 }
 impl From<reqwest::Error> for BundlingError {
-    fn from(value: reqwest::Error) -> Self { BundlingError::NetworkError(value) }
+    fn from(value: reqwest::Error) -> Self {
+        BundlingError::NetworkError(value)
+    }
 }
 impl From<std::str::Utf8Error> for BundlingError {
-    fn from(value: std::str::Utf8Error) -> Self { BundlingError::Utf8(value) }
+    fn from(value: std::str::Utf8Error) -> Self {
+        BundlingError::Utf8(value)
+    }
 }
-

@@ -1,5 +1,8 @@
 use std::{
-    env::set_var, fs::{self, create_dir}, path::PathBuf, time::Duration
+    env::set_var,
+    fs::{self, create_dir},
+    path::PathBuf,
+    time::Duration,
 };
 
 use bytes::Bytes;
@@ -9,7 +12,8 @@ use tar::Archive;
 
 use crate::error::{BundlerResult, BundlingError};
 
-const TRACEL_LLVM_ARTIFACT_BASE_URL: &str = "https://github.com/tracel-ai/tracel-llvm/releases/download";
+const TRACEL_LLVM_ARTIFACT_BASE_URL: &str =
+    "https://github.com/tracel-ai/tracel-llvm/releases/download";
 const TRACEL_LLVM_CACHE_PREFIX: &str = "tracel-llvm";
 const TRACEL_LLVM_FINISH_FILE_MUTEX: &str = "complete";
 const TRACEL_LLVM_RELEASE_NUMBER: &str = "1";
@@ -42,12 +46,15 @@ impl OperatingSystem {
 
     pub fn artifact_url(self) -> String {
         let filename = self.filename();
-        format!("{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_VERSION}-{TRACEL_LLVM_RELEASE_NUMBER}/{filename}")
+        format!(
+            "{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_VERSION}-{TRACEL_LLVM_RELEASE_NUMBER}/{filename}"
+        )
     }
 }
 
 pub fn llvm_path() -> BundlerResult<PathBuf> {
-    let directory = format!("{TRACEL_LLVM_CACHE_PREFIX}-{TRACEL_LLVM_VERSION}-{TRACEL_LLVM_RELEASE_NUMBER}");
+    let directory =
+        format!("{TRACEL_LLVM_CACHE_PREFIX}-{TRACEL_LLVM_VERSION}-{TRACEL_LLVM_RELEASE_NUMBER}");
     data_local_dir()
         .map(|p| p.join(directory))
         .ok_or(BundlingError::UnsupportedSystem)
@@ -59,7 +66,10 @@ fn decompress_tar_xz_stream(data: Bytes) -> BundlerResult<()> {
     let mut archive = Archive::new(decoder);
     let local_dir = data_local_dir().ok_or(BundlingError::UnsupportedSystem)?;
     archive.unpack(&local_dir)?;
-    fs::write(super::utils::quote_path(&llvm_path()?.join(TRACEL_LLVM_FINISH_FILE_MUTEX)), b"")?;
+    fs::write(
+        super::utils::quote_path(&llvm_path()?.join(TRACEL_LLVM_FINISH_FILE_MUTEX)),
+        b"",
+    )?;
     Ok(())
 }
 
@@ -93,4 +103,3 @@ pub fn bundle_cache() -> BundlerResult<()> {
     }
     Ok(())
 }
-

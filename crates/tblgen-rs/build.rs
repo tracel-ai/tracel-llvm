@@ -62,7 +62,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 
 fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
     let cxxflags = llvm_bundler_rs::config::get_cxxflags(prefix_os)?;
-    let cflags   = llvm_bundler_rs::config::get_cflags(prefix_os)?;
+    let cflags = llvm_bundler_rs::config::get_cflags(prefix_os)?;
     let includedir = llvm_bundler_rs::config::get_includedir(prefix_os)?;
 
     let mut b = cc::Build::new();
@@ -72,7 +72,7 @@ fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
                 .collect::<Result<Vec<_>, _>>()?
                 .into_iter()
                 .map(|e| e.path())
-                .filter(|p| p.is_file() && p.extension() == Some(OsStr::new("cpp")))
+                .filter(|p| p.is_file() && p.extension() == Some(OsStr::new("cpp"))),
         )
         .include("cc/include")
         .include("/usr/include")

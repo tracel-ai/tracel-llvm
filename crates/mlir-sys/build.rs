@@ -1,10 +1,4 @@
-use std::{
-    env,
-    error::Error,
-    ffi::OsString,
-    path::Path,
-    process::exit,
-};
+use std::{env, error::Error, ffi::OsString, path::Path, process::exit};
 
 const LLVM_MAJOR_VERSION: usize = 20;
 
@@ -72,4 +66,3 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
