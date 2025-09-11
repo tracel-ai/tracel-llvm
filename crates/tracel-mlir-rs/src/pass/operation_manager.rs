@@ -1,13 +1,13 @@
 use super::PassManager;
 use crate::{pass::Pass, string_ref::StringRef};
-use tracel_mlir_sys::{
-    mlirOpPassManagerAddOwnedPass, mlirOpPassManagerGetNestedUnder, mlirPrintPassPipeline,
-    MlirOpPassManager, MlirStringRef,
-};
 use std::{
     ffi::c_void,
     fmt::{self, Display, Formatter},
     marker::PhantomData,
+};
+use tracel_mlir_sys::{
+    mlirOpPassManagerAddOwnedPass, mlirOpPassManagerGetNestedUnder, mlirPrintPassPipeline,
+    MlirOpPassManager, MlirStringRef,
 };
 
 /// An operation pass manager.

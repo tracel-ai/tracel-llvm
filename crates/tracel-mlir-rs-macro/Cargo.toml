@@ -21,15 +21,16 @@ proc-macro2 = "1"
 quote = "1"
 regex = "1.11.1"
 syn = { version = "2", features = ["full"] }
+tracel-llvm-bundler-rs = { path = "../tracel-llvm-bundler-rs" }
 tracel-tblgen = { path = "../tracel-tblgen-rs" }
 unindent = "0.2.4"
 
 [features]
 
 [dev-dependencies]
+pretty_assertions = "1.4.1"
 tracel-mlir-rs = { path = "../tracel-mlir-rs", features = ["ods-dialects"] }
 tracel-mlir-sys = { path = "../tracel-mlir-sys" }
-pretty_assertions = "1.4.1"
 
 [build-dependencies]
 tracel-llvm-bundler-rs = { path = "../tracel-llvm-bundler-rs" }

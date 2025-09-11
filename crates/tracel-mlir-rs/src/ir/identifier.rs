@@ -2,11 +2,11 @@ use crate::{
     context::{Context, ContextRef},
     string_ref::StringRef,
 };
+use std::marker::PhantomData;
 use tracel_mlir_sys::{
     mlirIdentifierEqual, mlirIdentifierGet, mlirIdentifierGetContext, mlirIdentifierStr,
     MlirIdentifier,
 };
-use std::marker::PhantomData;
 
 /// An identifier.
 #[derive(Clone, Copy, Debug)]

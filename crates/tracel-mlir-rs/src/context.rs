@@ -4,6 +4,7 @@ use crate::{
     logical_result::LogicalResult,
     string_ref::StringRef,
 };
+use std::{ffi::c_void, marker::PhantomData, mem::transmute};
 use tracel_mlir_sys::{
     mlirContextAppendDialectRegistry, mlirContextAttachDiagnosticHandler, mlirContextCreate,
     mlirContextDestroy, mlirContextDetachDiagnosticHandler, mlirContextEnableMultithreading,
@@ -12,7 +13,6 @@ use tracel_mlir_sys::{
     mlirContextIsRegisteredOperation, mlirContextLoadAllAvailableDialects,
     mlirContextSetAllowUnregisteredDialects, MlirContext, MlirDiagnostic, MlirLogicalResult,
 };
-use std::{ffi::c_void, marker::PhantomData, mem::transmute};
 
 /// A context of IR, dialects, and passes.
 ///
@@ -277,7 +277,7 @@ mod tests {
         let context = Context::new();
 
         let id = context.attach_diagnostic_handler(|diagnostic| {
-            println!("{}", diagnostic);
+            println!("{diagnostic}");
             true
         });
 

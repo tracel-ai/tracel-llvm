@@ -5,15 +5,15 @@ use crate::{
     string_ref::StringRef,
     Error,
 };
+use std::{
+    marker::PhantomData,
+    mem::{forget, transmute, ManuallyDrop},
+};
 use tracel_mlir_sys::{
     mlirNamedAttributeGet, mlirOperationCreate, mlirOperationStateAddAttributes,
     mlirOperationStateAddOperands, mlirOperationStateAddOwnedRegions, mlirOperationStateAddResults,
     mlirOperationStateAddSuccessors, mlirOperationStateEnableResultTypeInference,
     mlirOperationStateGet, MlirOperationState,
-};
-use std::{
-    marker::PhantomData,
-    mem::{forget, transmute, ManuallyDrop},
 };
 
 /// An operation builder.

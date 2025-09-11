@@ -5,14 +5,14 @@ mod severity;
 
 pub use self::{handler_id::DiagnosticHandlerId, severity::DiagnosticSeverity};
 use crate::{ir::Location, utility::print_callback, Error};
-use tracel_mlir_sys::{
-    mlirDiagnosticGetLocation, mlirDiagnosticGetNote, mlirDiagnosticGetNumNotes,
-    mlirDiagnosticGetSeverity, mlirDiagnosticPrint, MlirDiagnostic,
-};
 use std::{
     ffi::c_void,
     fmt::{self, Display, Formatter},
     marker::PhantomData,
+};
+use tracel_mlir_sys::{
+    mlirDiagnosticGetLocation, mlirDiagnosticGetNote, mlirDiagnosticGetNumNotes,
+    mlirDiagnosticGetSeverity, mlirDiagnosticPrint, MlirDiagnostic,
 };
 
 #[derive(Debug)]

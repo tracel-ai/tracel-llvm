@@ -46,6 +46,9 @@ fn run() -> Result<(), Box<dyn Error>> {
     if let Some(name) = tracel_llvm_bundler_rs::config::get_system_libcpp() {
         println!("cargo:rustc-link-lib={name}");
     }
+    // required on macos
+    tracel_llvm_bundler_rs::config::set_homebrew_library_path()?;
+
     build_c_library(prefix_os.as_ref())?;
 
     bindgen::builder()
@@ -61,10 +64,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 }
 
 fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
-    let cxxflags = tracel_llvm_bundler_rs::config::get_cxxflags(prefix_os)?;
-    let cflags = tracel_llvm_bundler_rs::config::get_cflags(prefix_os)?;
     let includedir = tracel_llvm_bundler_rs::config::get_includedir(prefix_os)?;
-
     let mut b = cc::Build::new();
     b.cpp(true)
         .files(
@@ -79,9 +79,11 @@ fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
         // suppress warnings, if something is wrong in the resulted build, uncomment this line
         .flag("-isystem")
         .flag(&includedir)
-        .std("c++17")
-        .opt_level(3);
+        // .flag("-Werror")
+        .std("c++17");
+    let cxxflags = tracel_llvm_bundler_rs::config::get_cxxflags(prefix_os)?;
     apply_llvm_flags_to_cc(&mut b, &cxxflags);
+    let cflags = tracel_llvm_bundler_rs::config::get_cflags(prefix_os)?;
     apply_llvm_flags_to_cc(&mut b, &cflags);
 
     b.compile("CTableGen");

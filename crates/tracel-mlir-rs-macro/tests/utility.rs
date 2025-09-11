@@ -1,7 +1,7 @@
-use mlir_rs::{
+use tracel_mlir_rs::{
+    Context,
     dialect::DialectRegistry,
     utility::{register_all_dialects, register_all_llvm_translations},
-    Context,
 };
 
 pub fn load_all_dialects(context: &Context) {
@@ -15,7 +15,7 @@ pub fn create_test_context() -> Context {
     let context = Context::new();
 
     context.attach_diagnostic_handler(|diagnostic| {
-        eprintln!("{}", diagnostic);
+        eprintln!("{diagnostic}");
         true
     });
 

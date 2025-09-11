@@ -8,8 +8,8 @@ use std::{
     string::FromUtf8Error,
 };
 use tracel_tblgen::{
-    error::{SourceError, TableGenError},
     SourceInfo,
+    error::{SourceError, TableGenError},
 };
 
 #[derive(Debug)]

@@ -1,11 +1,12 @@
 mod utility;
 
-use mlir_rs::ir::{Block, Location, Region, RegionLike};
+extern crate tracel_mlir_rs as mlir_rs;
+use tracel_mlir_rs::ir::{Block, Location, Region, RegionLike};
 use utility::*;
 
 tracel_mlir_rs_macro::dialect! {
     name: "region_test",
-    files: ["crates/mlir-rs-macro/tests/ods_include/region.td"],
+    files: ["crates/tracel-mlir-rs-macro/tests/ods_include/region.td"],
 }
 
 #[test]
@@ -51,22 +52,28 @@ fn variadic_after_single() {
         other_operation.as_operation().to_string()
     );
 
-    assert!(one_operation
-        .default_region()
-        .unwrap()
-        .first_block()
-        .is_none());
+    assert!(
+        one_operation
+            .default_region()
+            .unwrap()
+            .first_block()
+            .is_none()
+    );
     assert_eq!(one_operation.other_regions().count(), 2);
-    assert!(one_operation
-        .other_regions()
-        .next()
-        .unwrap()
-        .first_block()
-        .is_some());
-    assert!(one_operation
-        .other_regions()
-        .nth(1)
-        .unwrap()
-        .first_block()
-        .is_none());
+    assert!(
+        one_operation
+            .other_regions()
+            .next()
+            .unwrap()
+            .first_block()
+            .is_some()
+    );
+    assert!(
+        one_operation
+            .other_regions()
+            .nth(1)
+            .unwrap()
+            .first_block()
+            .is_none()
+    );
 }

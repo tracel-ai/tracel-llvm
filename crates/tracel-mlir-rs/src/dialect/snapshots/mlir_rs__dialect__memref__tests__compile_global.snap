@@ -1,7 +1,0 @@
----
-source: crates/mlir-rs/src/dialect/memref.rs
-expression: module.as_operation()
----
-module {
-  memref.global @foo : memref<index> = uninitialized
-}

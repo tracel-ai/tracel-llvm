@@ -76,6 +76,43 @@ pub fn get_system_libcpp() -> Option<&'static str> {
     }
 }
 
+/// On macOS, add Homebrew's lib directory to rustc's native link search paths.
+#[cfg(target_os = "macos")]
+pub fn set_homebrew_library_path() -> BundlerResult<()> {
+    // see https://github.com/mlir-rs/melior/issues/521
+    let output = Command::new("brew")
+        .arg("--prefix")
+        .output()
+        .map_err(BundlingError::from)?;
+
+    if !output.status.success() {
+        return Err(BundlingError::ToolExit {
+            path: "brew --prefix".into(),
+            status: output.status.code().unwrap_or(-1),
+            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+        });
+    }
+
+    let prefix = std::str::from_utf8(&output.stdout)?.trim();
+    let brew_lib = PathBuf::from(prefix).join("lib");
+
+    if !brew_lib.is_dir() {
+        return Err(BundlingError::IoError(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Homebrew lib directory not found: {}", brew_lib.display()),
+        )));
+    }
+
+    println!("cargo:rustc-link-search=native={}", brew_lib.display());
+    Ok(())
+}
+
+/// No-op on non-macOS platforms.
+#[cfg(not(target_os = "macos"))]
+pub fn set_homebrew_library_path() -> BundlerResult<()> {
+    Ok(())
+}
+
 /// Run `llvm-config` with a given argument, meant to be used in `build.rs` files.
 /// - `prefix_os`: Optional install prefix (usually from an env var).
 ///   If `None`, we fall back to searching `llvm-config` in PATH.

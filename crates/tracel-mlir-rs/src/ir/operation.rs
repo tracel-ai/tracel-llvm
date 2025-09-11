@@ -20,14 +20,14 @@ use core::{
     fmt,
     mem::{forget, transmute},
 };
-use tracel_mlir_sys::{
-    mlirOperationClone, mlirOperationDestroy, mlirOperationEqual, mlirOperationPrint, MlirOperation,
-};
 use std::{
     ffi::c_void,
     fmt::{Debug, Display, Formatter},
     marker::PhantomData,
     ops::{Deref, DerefMut},
+};
+use tracel_mlir_sys::{
+    mlirOperationClone, mlirOperationDestroy, mlirOperationEqual, mlirOperationPrint, MlirOperation,
 };
 
 /// An operation.

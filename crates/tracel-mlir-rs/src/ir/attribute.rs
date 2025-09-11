@@ -24,14 +24,14 @@ pub use self::{
 };
 use crate::{context::Context, string_ref::StringRef, utility::print_callback};
 use distinct::DisctinctAttribute;
-use tracel_mlir_sys::{
-    mlirAttributeEqual, mlirAttributeGetNull, mlirAttributeParseGet, mlirAttributePrint,
-    mlirUnitAttrGet, MlirAttribute,
-};
 use std::{
     ffi::c_void,
     fmt::{self, Debug, Display, Formatter},
     marker::PhantomData,
+};
+use tracel_mlir_sys::{
+    mlirAttributeEqual, mlirAttributeGetNull, mlirAttributeParseGet, mlirAttributePrint,
+    mlirUnitAttrGet, MlirAttribute,
 };
 
 /// An attribute.

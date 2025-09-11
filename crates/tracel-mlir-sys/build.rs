@@ -10,7 +10,9 @@ fn main() {
 }
 
 fn link_mlir_statically() -> Result<(), Box<dyn Error>> {
-    use tracel_llvm_bundler_rs::{dependency_graph::DependencyGraph, topological_sort::TopologicalSort};
+    use tracel_llvm_bundler_rs::{
+        dependency_graph::DependencyGraph, topological_sort::TopologicalSort,
+    };
 
     let prefix = Path::new(&env::var(format!("MLIR_SYS_{LLVM_MAJOR_VERSION}0_PREFIX"))?)
         .join("lib")
@@ -53,6 +55,9 @@ fn run() -> Result<(), Box<dyn Error>> {
     if let Some(name) = tracel_llvm_bundler_rs::config::get_system_libcpp() {
         println!("cargo:rustc-link-lib={name}");
     }
+    // required on macos
+    tracel_llvm_bundler_rs::config::set_homebrew_library_path()?;
+
     link_mlir_statically()?;
 
     bindgen::builder()

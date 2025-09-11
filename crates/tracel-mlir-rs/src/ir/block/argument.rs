@@ -3,10 +3,10 @@ use crate::{
     ir::{BlockRef, Type, TypeLike, ValueLike},
     Error,
 };
+use std::fmt::{self, Display, Formatter};
 use tracel_mlir_sys::{
     mlirBlockArgumentGetArgNumber, mlirBlockArgumentGetOwner, mlirBlockArgumentSetType, MlirValue,
 };
-use std::fmt::{self, Display, Formatter};
 
 /// A block argument.
 #[derive(Clone, Copy, Debug)]

@@ -17,17 +17,14 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
 use std::{
-    env,
     fmt::Display,
     path::{Component, Path},
     str,
 };
-use tracel_tblgen::{record::Record, record_keeper::RecordKeeper, TableGenParser};
-
-// TODO add correct include path
-const LLVM_INCLUDE_DIRECTORY: &str = concat!(env!("HOME"), "/.local/share/llvm/include/");
+use tracel_tblgen::{TableGenParser, record::Record, record_keeper::RecordKeeper};
 
 pub fn generate_dialect(input: DialectInput) -> Result<TokenStream, Box<dyn std::error::Error>> {
+    let llvm_include_directory = tracel_llvm_bundler_rs::bundler::llvm_path()?.join("include");
     let mut parser = TableGenParser::new();
 
     if let Some(source) = input.table_gen() {
@@ -38,7 +35,10 @@ pub fn generate_dialect(input: DialectInput) -> Result<TokenStream, Box<dyn std:
         parser = parser.add_source_file(file);
     }
 
-    for path in input.include_directories().chain([LLVM_INCLUDE_DIRECTORY]) {
+    for path in input
+        .include_directories()
+        .chain([llvm_include_directory.to_str().unwrap()])
+    {
         parser = parser.add_include_directory(path);
     }
 
@@ -49,7 +49,7 @@ pub fn generate_dialect(input: DialectInput) -> Result<TokenStream, Box<dyn std:
         ) {
             path.into()
         } else {
-            Path::new(LLVM_INCLUDE_DIRECTORY).join(path)
+            Path::new(&llvm_include_directory).join(path)
         };
 
         parser = parser.add_include_directory(&path.display().to_string());

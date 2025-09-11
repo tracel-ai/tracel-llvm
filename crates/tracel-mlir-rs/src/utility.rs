@@ -4,14 +4,14 @@ use crate::{
     context::Context, dialect::DialectRegistry, ir::Module, logical_result::LogicalResult, pass,
     string_ref::StringRef, Error,
 };
-use tracel_mlir_sys::{
-    mlirLoadIRDLDialects, mlirParsePassPipeline, mlirRegisterAllDialects,
-    mlirRegisterAllLLVMTranslations, mlirRegisterAllPasses, MlirStringRef,
-};
 use std::{
     ffi::c_void,
     fmt::{self, Formatter},
     sync::Once,
+};
+use tracel_mlir_sys::{
+    mlirLoadIRDLDialects, mlirParsePassPipeline, mlirRegisterAllDialects,
+    mlirRegisterAllLLVMTranslations, mlirRegisterAllPasses, MlirStringRef,
 };
 
 /// Registers all dialects to a dialect registry.

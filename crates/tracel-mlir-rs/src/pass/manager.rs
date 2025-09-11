@@ -7,13 +7,13 @@ use crate::{
     string_ref::StringRef,
     Error,
 };
+use std::{marker::PhantomData, mem::forget, path::PathBuf};
 use tracel_mlir_sys::{
     mlirPassManagerAddOwnedPass, mlirPassManagerCreate, mlirPassManagerDestroy,
     mlirPassManagerEnableIRPrinting, mlirPassManagerEnableVerifier,
     mlirPassManagerGetAsOpPassManager, mlirPassManagerGetNestedUnder, mlirPassManagerRunOnOp,
     MlirPassManager,
 };
-use std::{marker::PhantomData, mem::forget, path::PathBuf};
 
 /// A pass manager.
 pub struct PassManager<'c> {

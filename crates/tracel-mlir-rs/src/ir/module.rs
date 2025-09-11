@@ -3,11 +3,11 @@ use crate::{
     context::{Context, ContextRef},
     string_ref::StringRef,
 };
+use std::{ffi::CString, marker::PhantomData};
 use tracel_mlir_sys::{
     mlirModuleCreateEmpty, mlirModuleCreateParse, mlirModuleDestroy, mlirModuleFromOperation,
     mlirModuleGetBody, mlirModuleGetContext, mlirModuleGetOperation, MlirModule,
 };
-use std::{ffi::CString, marker::PhantomData};
 
 /// A module.
 #[derive(Debug)]

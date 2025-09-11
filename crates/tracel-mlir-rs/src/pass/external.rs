@@ -6,11 +6,11 @@ use crate::{
     ir::{r#type::TypeId, OperationRef},
     ContextRef, StringRef,
 };
+use std::{ffi::c_void, marker::PhantomData, mem::transmute, ptr::drop_in_place};
 use tracel_mlir_sys::{
     mlirCreateExternalPass, mlirExternalPassSignalFailure, MlirContext, MlirExternalPass,
     MlirExternalPassCallbacks, MlirLogicalResult, MlirOperation,
 };
-use std::{ffi::c_void, marker::PhantomData, mem::transmute, ptr::drop_in_place};
 
 #[derive(Clone, Copy, Debug)]
 pub struct ExternalPass<'a> {

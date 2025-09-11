@@ -4,15 +4,15 @@ use crate::{
     string_ref::StringRef,
     utility::print_callback,
 };
-use tracel_mlir_sys::{
-    mlirLocationCallSiteGet, mlirLocationEqual, mlirLocationFileLineColGet, mlirLocationFusedGet,
-    mlirLocationGetContext, mlirLocationNameGet, mlirLocationPrint, mlirLocationUnknownGet,
-    MlirLocation,
-};
 use std::{
     ffi::c_void,
     fmt::{self, Display, Formatter},
     marker::PhantomData,
+};
+use tracel_mlir_sys::{
+    mlirLocationCallSiteGet, mlirLocationEqual, mlirLocationFileLineColGet, mlirLocationFusedGet,
+    mlirLocationGetContext, mlirLocationNameGet, mlirLocationPrint, mlirLocationUnknownGet,
+    MlirLocation,
 };
 
 /// A location

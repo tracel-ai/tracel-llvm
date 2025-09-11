@@ -1,0 +1,17 @@
+---
+source: crates/tracel-mlir-rs/src/dialect/llvm/mod.rs
+expression: module.as_operation()
+---
+module {
+  llvm.func @printf(!llvm.ptr, ...) -> i32
+  llvm.mlir.global internal @printfArgument() {addr_space = 0 : i32} : !llvm.array<18 x i8> {
+    %0 = llvm.mlir.constant("The number is %i\0A\00") : !llvm.array<18 x i8>
+    llvm.return %0 : !llvm.array<18 x i8>
+  }
+  llvm.func @_mlir_ciface_kernel() attributes {llvm.emit_c_interface} {
+    %0 = llvm.mlir.constant(42 : i32) : i32
+    %1 = llvm.mlir.addressof @printfArgument : !llvm.ptr
+    %2 = llvm.call @printf(%1, %0) vararg(!llvm.func<i32 (ptr, ...)>) : (!llvm.ptr, i32) -> i32
+    llvm.return
+  }
+}

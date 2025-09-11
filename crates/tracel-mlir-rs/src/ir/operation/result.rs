@@ -2,8 +2,8 @@ use crate::{
     ir::{OperationRef, Value, ValueLike},
     Error,
 };
-use tracel_mlir_sys::{mlirOpResultGetOwner, mlirOpResultGetResultNumber, MlirValue};
 use std::fmt::{self, Display, Formatter};
+use tracel_mlir_sys::{mlirOpResultGetOwner, mlirOpResultGetResultNumber, MlirValue};
 
 /// An operation result.
 #[derive(Clone, Copy, Debug)]

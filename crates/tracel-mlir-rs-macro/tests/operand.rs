@@ -1,11 +1,12 @@
 mod utility;
 
-use mlir_rs::ir::{block::BlockLike, operation::OperationLike, Block, Location, Type};
+extern crate tracel_mlir_rs as mlir_rs;
+use tracel_mlir_rs::ir::{Block, Location, Type, block::BlockLike, operation::OperationLike};
 use utility::*;
 
 tracel_mlir_rs_macro::dialect! {
     name: "operand_test",
-    files: ["crates/mlir-rs-macro/tests/ods_include/operand.td"],
+    files: ["crates/tracel-mlir-rs-macro/tests/ods_include/operand.td"],
 }
 
 #[test]

@@ -258,7 +258,7 @@ mod tests {
                 region.append_block(block);
                 region
             },
-            &vec![],
+            &[],
             location,
         ));
 

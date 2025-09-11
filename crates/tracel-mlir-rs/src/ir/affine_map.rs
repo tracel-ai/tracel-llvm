@@ -2,14 +2,14 @@ use crate::{
     context::{Context, ContextRef},
     utility::print_callback,
 };
-use tracel_mlir_sys::{
-    mlirAffineMapDump, mlirAffineMapEqual, mlirAffineMapGetContext, mlirAffineMapPrint,
-    MlirAffineMap,
-};
 use std::{
     ffi::c_void,
     fmt::{self, Debug, Display, Formatter},
     marker::PhantomData,
+};
+use tracel_mlir_sys::{
+    mlirAffineMapDump, mlirAffineMapEqual, mlirAffineMapGetContext, mlirAffineMapPrint,
+    MlirAffineMap,
 };
 
 /// An affine map.

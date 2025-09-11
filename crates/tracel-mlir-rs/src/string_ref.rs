@@ -1,10 +1,10 @@
-use tracel_mlir_sys::{mlirStringRefEqual, MlirStringRef};
 use std::{
     ffi::CStr,
     marker::PhantomData,
     slice,
     str::{self, Utf8Error},
 };
+use tracel_mlir_sys::{mlirStringRefEqual, MlirStringRef};
 
 /// A string reference.
 #[derive(Clone, Copy, Debug)]

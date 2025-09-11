@@ -3,11 +3,11 @@
 mod allocator;
 
 pub use allocator::Allocator;
-use tracel_mlir_sys::{mlirTypeIDCreate, mlirTypeIDEqual, mlirTypeIDHashValue, MlirTypeID};
 use std::{
     hash::{Hash, Hasher},
     marker::PhantomData,
 };
+use tracel_mlir_sys::{mlirTypeIDCreate, mlirTypeIDEqual, mlirTypeIDHashValue, MlirTypeID};
 
 /// A type ID.
 #[derive(Clone, Copy, Debug)]
