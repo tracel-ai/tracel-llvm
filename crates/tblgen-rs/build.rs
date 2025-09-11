@@ -17,12 +17,14 @@ fn main() {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
+    let prefix_env_var = format!("TABLEGEN_{LLVM_MAJOR_VERSION}0_PREFIX");
+    println!("cargo:rerun-if-env-changed={prefix_env_var}");
     println!("cargo:rerun-if-changed=wrapper.h");
     println!("cargo:rerun-if-changed=cc");
     // Build cache
     llvm_bundler_rs::bundler::bundle_cache()?;
     // Install prefix
-    let prefix_os: Option<OsString> = env::var_os(format!("TABLEGEN_{LLVM_MAJOR_VERSION}0_PREFIX"));
+    let prefix_os: Option<OsString> = env::var_os(prefix_env_var);
     // Version gate
     let version = llvm_bundler_rs::config::get_version(prefix_os.as_ref())?;
     if !version.starts_with(&format!("{LLVM_MAJOR_VERSION}.")) {

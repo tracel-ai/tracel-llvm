@@ -26,3 +26,6 @@ unindent = "0.2.4"
 mlir-rs = { path = "../mlir-rs", features = ["ods-dialects"] }
 mlir-sys = { path = "../mlir-sys" }
 pretty_assertions = "1.4.1"
+
+[build-dependencies]
+llvm-bundler-rs = { path = "../llvm-bundler-rs" }
