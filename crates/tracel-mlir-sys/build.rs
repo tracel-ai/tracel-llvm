@@ -29,9 +29,8 @@ fn link_mlir_statically() -> Result<(), Box<dyn Error>> {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
+    tracel_llvm_bundler_rs::config::init()?;
     println!("cargo:rerun-if-changed=wrapper.h");
-    // Build cache
-    tracel_llvm_bundler_rs::bundler::bundle_cache()?;
     // Install prefix
     let prefix_os: Option<OsString> = env::var_os(format!("MLIR_SYS_{LLVM_MAJOR_VERSION}0_PREFIX"));
     // Version gate

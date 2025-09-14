@@ -1,13 +1,88 @@
+use dirs::data_local_dir;
 use std::{
     ffi::OsString,
     path::{Path, PathBuf},
     process::Command,
 };
 
-use crate::error::{BundlerResult, BundlingError};
+const TRACEL_LLVM_CACHE_DIRECTORY_NAME: &str = "tracel";
+const TRACEL_LLVM_CACHE_PREFIX: &str = "tracel-llvm";
+const TRACEL_LLVM_RELEASE_NUMBER: &str = "1";
+const TRACEL_LLVM_VERSION: &str = "20.1.4";
+
+pub type ConfigResult<T> = std::result::Result<T, ConfigError>;
+
+#[derive(Debug)]
+pub enum ConfigError {
+    UnsupportedSystem,
+    IoError(std::io::Error),
+    Utf8(std::str::Utf8Error),
+    /// External tool executed but failed with a non-zero status.
+    ToolExit {
+        path: String,
+        status: i32,
+        stderr: String,
+    },
+}
+
+impl std::error::Error for ConfigError {}
+
+impl std::fmt::Display for ConfigError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConfigError::UnsupportedSystem => write!(f, "Unsupported system"),
+            ConfigError::IoError(error) => write!(f, "{error}"),
+            ConfigError::Utf8(error) => write!(f, "{error}"),
+            ConfigError::ToolExit {
+                path,
+                status,
+                stderr,
+            } => {
+                if stderr.is_empty() {
+                    write!(f, "`{path}` exited with status {status}")
+                } else {
+                    write!(f, "`{path}` exited with status {status}: {stderr}")
+                }
+            }
+        }
+    }
+}
+
+impl From<std::io::Error> for ConfigError {
+    fn from(value: std::io::Error) -> Self {
+        ConfigError::IoError(value)
+    }
+}
+impl From<std::str::Utf8Error> for ConfigError {
+    fn from(value: std::str::Utf8Error) -> Self {
+        ConfigError::Utf8(value)
+    }
+}
+
+/// Should be called only in build.rs files
+pub fn init() -> ConfigResult<()> {
+    let llvm_path = llvm_path()?;
+    let libclang_path = llvm_path.join("lib");
+    let include_path = llvm_path.join("include");
+    unsafe {
+        std::env::set_var("TABLEGEN_200_PREFIX", &llvm_path);
+        std::env::set_var("MLIR_SYS_200_PREFIX", &llvm_path);
+        std::env::set_var("LIBCLANG_PATH", &libclang_path);
+        std::env::set_var("LLVM_INCLUDE_DIRECTORY", &include_path);
+    }
+    Ok(())
+}
+
+pub fn llvm_path() -> ConfigResult<PathBuf> {
+    let directory =
+        format!("{TRACEL_LLVM_CACHE_PREFIX}-{TRACEL_LLVM_VERSION}-{TRACEL_LLVM_RELEASE_NUMBER}");
+    data_local_dir()
+        .map(|p| p.join(TRACEL_LLVM_CACHE_DIRECTORY_NAME).join(directory))
+        .ok_or(ConfigError::UnsupportedSystem)
+}
 
 /// Returns a vector of all libraries required by LLVM.
-pub fn get_libs(prefix_os: Option<&OsString>) -> BundlerResult<Vec<String>> {
+pub fn get_libs(prefix_os: Option<&OsString>) -> ConfigResult<Vec<String>> {
     let libs = llvm_config(prefix_os, "--libs")?;
     Ok(libs
         .trim()
@@ -19,13 +94,13 @@ pub fn get_libs(prefix_os: Option<&OsString>) -> BundlerResult<Vec<String>> {
 }
 
 /// Returns a vector of all library names required by LLVM.
-pub fn get_libnames(prefix_os: Option<&OsString>) -> BundlerResult<Vec<String>> {
+pub fn get_libnames(prefix_os: Option<&OsString>) -> ConfigResult<Vec<String>> {
     let libs = llvm_config(prefix_os, "--libnames")?;
     Ok(libs.trim().split(" ").map(str::to_owned).collect())
 }
 
 /// Returns a vector of all system libraries required by LLVM.
-pub fn get_system_libs(prefix_os: Option<&OsString>) -> BundlerResult<Vec<String>> {
+pub fn get_system_libs(prefix_os: Option<&OsString>) -> ConfigResult<Vec<String>> {
     let libs = llvm_config(prefix_os, "--system-libs")?;
     Ok(libs
         .trim()
@@ -37,31 +112,31 @@ pub fn get_system_libs(prefix_os: Option<&OsString>) -> BundlerResult<Vec<String
 }
 
 /// Returns the lib directory path
-pub fn get_libdir(prefix_os: Option<&OsString>) -> BundlerResult<String> {
+pub fn get_libdir(prefix_os: Option<&OsString>) -> ConfigResult<String> {
     let libdir = llvm_config(prefix_os, "--libdir")?;
     Ok(libdir)
 }
 
 /// Returns the includes directory path.
-pub fn get_includedir(prefix_os: Option<&OsString>) -> BundlerResult<String> {
+pub fn get_includedir(prefix_os: Option<&OsString>) -> ConfigResult<String> {
     let includedir = llvm_config(prefix_os, "--includedir")?;
     Ok(includedir)
 }
 
 /// Returns the LLVM version.
-pub fn get_version(prefix_os: Option<&OsString>) -> BundlerResult<String> {
+pub fn get_version(prefix_os: Option<&OsString>) -> ConfigResult<String> {
     let version = llvm_config(prefix_os, "--version")?;
     Ok(version)
 }
 
 /// Returns the CXX flags
-pub fn get_cxxflags(prefix_os: Option<&OsString>) -> BundlerResult<String> {
+pub fn get_cxxflags(prefix_os: Option<&OsString>) -> ConfigResult<String> {
     let flags = llvm_config(prefix_os, "--cxxflags")?;
     Ok(flags)
 }
 
 /// Returns the C flags with some tweaks for portability
-pub fn get_cflags(prefix_os: Option<&OsString>) -> BundlerResult<String> {
+pub fn get_cflags(prefix_os: Option<&OsString>) -> ConfigResult<String> {
     let flags = llvm_config(prefix_os, "--cflags")?;
     Ok(flags)
 }
@@ -78,15 +153,15 @@ pub fn get_system_libcpp() -> Option<&'static str> {
 
 /// On macOS, add Homebrew's lib directory to rustc's native link search paths.
 #[cfg(target_os = "macos")]
-pub fn set_homebrew_library_path() -> BundlerResult<()> {
+pub fn set_homebrew_library_path() -> ConfigResult<()> {
     // see https://github.com/mlir-rs/melior/issues/521
     let output = Command::new("brew")
         .arg("--prefix")
         .output()
-        .map_err(BundlingError::from)?;
+        .map_err(ConfigError::from)?;
 
     if !output.status.success() {
-        return Err(BundlingError::ToolExit {
+        return Err(ConfigError::ToolExit {
             path: "brew --prefix".into(),
             status: output.status.code().unwrap_or(-1),
             stderr: String::from_utf8_lossy(&output.stderr).to_string(),
@@ -97,7 +172,7 @@ pub fn set_homebrew_library_path() -> BundlerResult<()> {
     let brew_lib = PathBuf::from(prefix).join("lib");
 
     if !brew_lib.is_dir() {
-        return Err(BundlingError::IoError(std::io::Error::new(
+        return Err(ConfigError::IoError(std::io::Error::new(
             std::io::ErrorKind::NotFound,
             format!("Homebrew lib directory not found: {}", brew_lib.display()),
         )));
@@ -109,7 +184,7 @@ pub fn set_homebrew_library_path() -> BundlerResult<()> {
 
 /// No-op on non-macOS platforms.
 #[cfg(not(target_os = "macos"))]
-pub fn set_homebrew_library_path() -> BundlerResult<()> {
+pub fn set_homebrew_library_path() -> ConfigResult<()> {
     Ok(())
 }
 
@@ -117,7 +192,7 @@ pub fn set_homebrew_library_path() -> BundlerResult<()> {
 /// - `prefix_os`: Optional install prefix (usually from an env var).
 ///   If `None`, we fall back to searching `llvm-config` in PATH.
 /// - `argument`: Argument to pass to `llvm-config` (e.g., `--libs`, `--cflags`).
-fn llvm_config(prefix_os: Option<&OsString>, argument: &str) -> BundlerResult<String> {
+fn llvm_config(prefix_os: Option<&OsString>, argument: &str) -> ConfigResult<String> {
     let prefix = prefix_os
         .as_ref()
         .map(|p| Path::new(p).join("bin"))
@@ -172,7 +247,7 @@ fn llvm_config(prefix_os: Option<&OsString>, argument: &str) -> BundlerResult<St
                 }
             }
 
-            BundlingError::IoError(e)
+            ConfigError::IoError(e)
         })?;
 
     if !output.status.success() {
@@ -181,7 +256,7 @@ fn llvm_config(prefix_os: Option<&OsString>, argument: &str) -> BundlerResult<St
             println!("cargo:warning=llvm-config stderr: {stderr}");
         }
         let code = output.status.code().unwrap_or(-1);
-        return Err(BundlingError::ToolExit {
+        return Err(ConfigError::ToolExit {
             path: path.display().to_string(),
             status: code,
             stderr,

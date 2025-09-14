@@ -24,7 +24,7 @@ use std::{
 use tracel_tblgen::{TableGenParser, record::Record, record_keeper::RecordKeeper};
 
 pub fn generate_dialect(input: DialectInput) -> Result<TokenStream, Box<dyn std::error::Error>> {
-    let llvm_include_directory = tracel_llvm_bundler_rs::bundler::llvm_path()?.join("include");
+    let llvm_include_directory = tracel_llvm_bundler_rs::config::llvm_path()?.join("include");
     let mut parser = TableGenParser::new();
 
     if let Some(source) = input.table_gen() {
