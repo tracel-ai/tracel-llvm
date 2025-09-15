@@ -5,7 +5,6 @@ use std::{
     time::Duration,
 };
 
-use bytes::Bytes;
 use liblzma::bufread::XzDecoder;
 use tar::Archive;
 
@@ -51,7 +50,7 @@ impl OperatingSystem {
         }
     }
 
-    pub fn artifact_url(self) -> String {
+    pub fn artifact_url(&self) -> String {
         let filename = self.filename();
         format!(
             "{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_VERSION}-{TRACEL_LLVM_RELEASE_NUMBER}/{filename}"

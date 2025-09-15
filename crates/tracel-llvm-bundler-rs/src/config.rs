@@ -81,34 +81,37 @@ pub fn llvm_path() -> ConfigResult<PathBuf> {
         .ok_or(ConfigError::UnsupportedSystem)
 }
 
-/// Returns a vector of all libraries required by LLVM.
+fn norm_lib(token: &str) -> Option<String> {
+    let mut s = token.trim().trim_matches('"');
+    if s.is_empty() { return None; }
+    // Unix style
+    if let Some(rest) = s.strip_prefix("-l") { s = rest; }
+    // Windows path or *.lib → take file stem
+    if s.contains('\\') || s.contains('/') || s.ends_with(".lib") {
+        return Path::new(s)
+            .file_stem()
+            .map(|x| x.to_string_lossy().into_owned());
+    }
+    Some(s.to_owned()) // already a bare name
+}
+
+
+/// Returns a vector of all libraries required by LLVM (bare names).
 pub fn get_libs(prefix_os: Option<&OsString>) -> ConfigResult<Vec<String>> {
     let libs = llvm_config(prefix_os, "--libs")?;
-    Ok(libs
-        .trim()
-        .strip_prefix("-l")
-        .unwrap()
-        .split(" -l")
-        .map(str::to_owned)
-        .collect())
+    Ok(libs.split_whitespace().filter_map(norm_lib).collect())
 }
 
-/// Returns a vector of all library names required by LLVM.
+/// Returns a vector of all library names required by LLVM (bare names).
 pub fn get_libnames(prefix_os: Option<&OsString>) -> ConfigResult<Vec<String>> {
     let libs = llvm_config(prefix_os, "--libnames")?;
-    Ok(libs.trim().split(" ").map(str::to_owned).collect())
+    Ok(libs.split_whitespace().filter_map(norm_lib).collect())
 }
 
-/// Returns a vector of all system libraries required by LLVM.
+/// Returns a vector of all system libraries required by LLVM (bare names).
 pub fn get_system_libs(prefix_os: Option<&OsString>) -> ConfigResult<Vec<String>> {
     let libs = llvm_config(prefix_os, "--system-libs")?;
-    Ok(libs
-        .trim()
-        .strip_prefix("-l")
-        .unwrap()
-        .split(" -l")
-        .map(str::to_owned)
-        .collect())
+    Ok(libs.split_whitespace().filter_map(norm_lib).collect())
 }
 
 /// Returns the lib directory path

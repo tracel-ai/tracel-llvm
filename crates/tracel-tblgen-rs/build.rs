@@ -50,11 +50,15 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     build_c_library(prefix_os.as_ref())?;
 
+    let mut clang_args = vec!["-I", &includedir, "-I", "cc/include"];
+    if cfg!(target_os = "windows") {
+        ()
+    } else {
+        clang_args.extend(vec!["-I", "/usr/include"]);
+    }
     bindgen::builder()
         .header("wrapper.h")
-        .clang_args(["-I", &includedir])
-        .clang_args(["-I", "/usr/include"])
-        .clang_args(["-I", "cc/include"])
+        .clang_args(&clang_args)
         .default_enum_style(bindgen::EnumVariation::ModuleConsts)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()?
@@ -65,6 +69,18 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
     let includedir = tracel_llvm_bundler_rs::config::get_includedir(prefix_os)?;
     let mut b = cc::Build::new();
+    let mut includes = vec!["cc/include"];
+    let mut flags = vec![];
+    let mut cppstd = "c++17";
+    if cfg!(target_os = "windows") {
+        includes.push(includedir.as_str());
+        cppstd = "c++20";
+    } else {
+        includes.extend(vec!["/usr/include"]);
+        // -isystem suppresses warnings, if something is wrong in the resulted build, uncomment this line
+        flags.push("-isystem");
+        flags.push(includedir.as_str());
+    }
     b.cpp(true)
         .files(
             read_dir("cc/lib")?
@@ -73,13 +89,10 @@ fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
                 .map(|e| e.path())
                 .filter(|p| p.is_file() && p.extension() == Some(OsStr::new("cpp"))),
         )
-        .include("cc/include")
-        .include("/usr/include")
-        // suppress warnings, if something is wrong in the resulted build, uncomment this line
-        .flag("-isystem")
-        .flag(&includedir)
-        // .flag("-Werror")
-        .std("c++17");
+        .warnings(false)
+        .includes(includes)
+        .flags(flags)
+        .std(cppstd);
     let cxxflags = tracel_llvm_bundler_rs::config::get_cxxflags(prefix_os)?;
     apply_llvm_flags_to_cc(&mut b, &cxxflags);
     let cflags = tracel_llvm_bundler_rs::config::get_cflags(prefix_os)?;
@@ -89,24 +102,34 @@ fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+
 fn apply_llvm_flags_to_cc(build: &mut cc::Build, flags: &str) {
-    for tok in flags.split_whitespace() {
-        if tok.starts_with("-I") {
-            // Drop all -I... from llvm-config. We’ll add includes with .include().
-            // The reason we do this is that paths may contain spaces and this will break
-            // if we pass them directly from the llvm-config output
+    use std::collections::HashSet;
+    let mut seen = HashSet::<String>::new();
+
+    for raw in flags.split_whitespace() {
+        let flag = raw.trim();
+        if !seen.insert(flag.to_string()) { continue; }
+        // Drop includes as we set them up ourselves
+        if flag.starts_with("-I") || flag.starts_with("/I") { continue; }
+        // Drop C++ standard as we set it up explicitly
+        if flag.starts_with("-std:") || flag.starts_with("/std:") { continue; }
+        // Drop warning-level flags so we can set them ourselves
+        if flag.eq_ignore_ascii_case("/W0") ||
+           flag.eq_ignore_ascii_case("/W1") ||
+           flag.eq_ignore_ascii_case("/W2") ||
+           flag.eq_ignore_ascii_case("/W3") ||
+           flag.eq_ignore_ascii_case("/W4") ||
+           flag.eq_ignore_ascii_case("/Wall") ||
+           flag.starts_with("-W") { // -Wall, -Wextra, etc.
             continue;
         }
-        if let Some(def) = tok.strip_prefix("-D") {
-            // -DNAME[=VALUE]
-            if let Some((name, val)) = def.split_once('=') {
-                build.define(name, Some(val));
-            } else {
-                build.define(def, None);
-            }
+        // Convert -DNAME[=VAL] into build.define to avoid special characters issues
+        if let Some(def) = flag.strip_prefix("-D") {
+            if let Some((k,v)) = def.split_once('=') { build.define(k, Some(v)); }
+            else { build.define(def, None); }
             continue;
         }
-        // Pass through other flags (e.g., -fno-exceptions, -fno-rtti, etc.)
-        build.flag_if_supported(tok);
+        build.flag_if_supported(flag);
     }
 }
