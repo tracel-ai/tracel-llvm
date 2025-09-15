@@ -15,11 +15,11 @@ version.workspace      = true
 proc-macro = true
 
 [dependencies]
-comrak = { version = "0.39.0", default-features = false }
+comrak = { version = "0.39.1", default-features = false }
 convert_case = "0.8.0"
 proc-macro2 = "1"
 quote = "1"
-regex = "1.11.1"
+regex = "1.11.2"
 syn = { version = "2", features = ["full"] }
 tracel-llvm-bundler-rs = { path = "../tracel-llvm-bundler-rs" }
 tracel-tblgen = { path = "../tracel-tblgen-rs" }
