@@ -9,18 +9,19 @@
 
 [CmdletBinding()]
 param(
-  # Positional, mandatory: fail if not provided (no prompting when run non-interactively)
+  # positional
   [Parameter(Mandatory=$true, Position=0)]
   [string]$Version,
-
   [Parameter(Mandatory=$true, Position=1)]
   [string]$ReleaseNumber,
 
-  # Options (unchanged)
+  # optional
   [string]$RepoUrl   = "https://github.com/llvm/llvm-project.git",
   [string]$Targets   = "host",
   [string]$Projects  = "clang;mlir",
-  [string]$Workspace = "$PWD\.llvm",
+
+  [string]$Workspace = (Join-Path $PSScriptRoot ".llvm"),
+
   [ValidateSet("Release","Debug","RelWithDebInfo","MinSizeRel")]
   [string]$Config = "Release",
 
@@ -127,13 +128,6 @@ function Show-CompilerBanner {
 }
 
 function Ensure-MsvcEnv {
-    # Find ml64 from the MSVC toolchain
-    $mlDir   = Join-Path $Env:VCToolsInstallDir "bin\Hostx64\x64"
-    $ml64    = Join-Path $mlDir "ml64.exe"
-    if (-not (Test-Path $ml64)) {
-        throw "ml64.exe not found at $ml64. Ensure the MSVC Build Tools (with MASM) are installed."
-    }
-    $env:Path = "$mlDir;$env:Path"
   if (Detect-InNativeTools) {
     Write-Host "MSVC environment already initialized (Native Tools shell detected)." -ForegroundColor Green
     return
@@ -142,50 +136,51 @@ function Ensure-MsvcEnv {
   Write-Section "Initializing MSVC build environment via vswhere"
 
   $vswhereCmd = Get-Command vswhere -ErrorAction SilentlyContinue
-  $vswhere = if ($vswhereCmd) { $vswhereCmd.Path } else { $null }
+  $vswhere    = if ($vswhereCmd) { $vswhereCmd.Path } else { $null }
 
-  if (-not $vswhere) {
-    if ($AutoInstallVS) {
-      Write-Host "vswhere not found, installing via Chocolatey..." -ForegroundColor Yellow
-      Choco-Install @("vswhere")
-      $vswhereCmd = Get-Command vswhere -ErrorAction SilentlyContinue
-      $vswhere = if ($vswhereCmd) { $vswhereCmd.Path } else { $null }
-    }
-    if (-not $vswhere) {
-      throw "vswhere not found. Re-run with -AutoInstallVS:`$true or install Visual Studio 2022 (Build Tools or Community) and retry."
-    }
+  if (-not $vswhere -and $InstallVsWhere) {
+    Write-Host "vswhere not found, installing..." -ForegroundColor Yellow
+    Choco-Install @("vswhere")
+    $vswhereCmd = Get-Command vswhere -ErrorAction SilentlyContinue
+    $vswhere    = if ($vswhereCmd) { $vswhereCmd.Path } else { $null }
   }
 
+  if (-not $vswhere) {
+    throw "vswhere not found. Install Visual Studio 2022 Build Tools or run with -AutoInstallVS:`$true."
+  }
+
+  # Query VS install
   $vsInstall = & $vswhere -latest -products * `
     -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
     -property installationPath
 
-  if (-not $vsInstall) {
-    if ($AutoInstallVS) {
-      Write-Section "Installing Visual Studio 2022 Build Tools (C++ workload)"
-      Choco-Install @("visualstudio2022buildtools","visualstudio2022-workload-vctools")
-      $vsInstall = & $vswhere -latest -products * `
-        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-        -property installationPath
-    }
+  # Install VS Build Tools if missing
+  if (-not $vsInstall -and $AutoInstallVS) {
+    Write-Section "Installing Visual Studio 2022 Build Tools (C++ workload)"
+    Choco-Install @("visualstudio2022buildtools","visualstudio2022-workload-vctools")
+    # Re-query
+    $vsInstall = & $vswhere -latest -products * `
+      -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+      -property installationPath
   }
 
   if (-not $vsInstall) {
-    throw "No Visual Studio with C++ tools found. Install VS 2022 (Desktop C++ or Build Tools) and retry."
+    throw "No Visual Studio with C++ tools found. The script cannot continue."
   }
 
   Write-Host "Found Visual Studio at: $vsInstall" -ForegroundColor Green
 
-  $vsDevCmd = Join-Path $vsInstall "Common7\Tools\VsDevCmd.bat"
+  $vsDevCmd  = Join-Path $vsInstall "Common7\Tools\VsDevCmd.bat"
   $vcVarsAll = Join-Path $vsInstall "VC\Auxiliary\Build\vcvarsall.bat"
 
   if (Test-Path $vsDevCmd)      { Import-EnvFromCmd "`"$vsDevCmd`" -arch=x64" }
   elseif (Test-Path $vcVarsAll) { Import-EnvFromCmd "`"$vcVarsAll`" x64" }
   else                          { throw "Could not find VsDevCmd.bat or vcvarsall.bat under $vsInstall" }
 
-  $cl = Get-Command cl.exe -ErrorAction SilentlyContinue
-  if (-not $cl) { throw "MSVC 'cl.exe' not on PATH after init, environment init failed." }
-
+  # sanity check
+  if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
+    throw "MSVC 'cl.exe' not on PATH after init."
+  }
   Show-CompilerBanner
   Write-Host "MSVC environment initialized." -ForegroundColor Green
 }
