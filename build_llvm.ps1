@@ -127,6 +127,13 @@ function Show-CompilerBanner {
 }
 
 function Ensure-MsvcEnv {
+    # Find ml64 from the MSVC toolchain
+    $mlDir   = Join-Path $Env:VCToolsInstallDir "bin\Hostx64\x64"
+    $ml64    = Join-Path $mlDir "ml64.exe"
+    if (-not (Test-Path $ml64)) {
+        throw "ml64.exe not found at $ml64. Ensure the MSVC Build Tools (with MASM) are installed."
+    }
+    $env:Path = "$mlDir;$env:Path"
   if (Detect-InNativeTools) {
     Write-Host "MSVC environment already initialized (Native Tools shell detected)." -ForegroundColor Green
     return
@@ -203,13 +210,17 @@ New-Item -ItemType Directory -Path $Workspace -Force | Out-Null
 
 # Clean old workspace
 $oldDirs = @(
-  (Join-Path $Workspace $PkgDir),       # new package dir name
+  (Join-Path $Workspace $PkgDir),
   (Join-Path $Workspace "llvm-project"),
   (Join-Path $Workspace "build")
 )
 foreach ($d in $oldDirs) {
   if (Test-Path $d) { Remove-Item -Recurse -Force $d }
 }
+# delete some env vars of any previous run that could interfere
+Remove-Item Env:CC, Env:CXX -ErrorAction SilentlyContinue
+Remove-Item Env:CFLAGS, Env:CXXFLAGS -ErrorAction SilentlyContinue
+Remove-Item Env:RC, Env:ASM -ErrorAction SilentlyContinue
 
 Write-Section "Clone llvm-project (fresh in workspace)"
 Exec "git clone --depth 1 --branch $Branch `"$RepoUrl`" `"$SourceDir`"" "git clone failed"
@@ -220,33 +231,42 @@ $env:TMP  = 'C:\Temp'
 $jobs = $env:NUMBER_OF_PROCESSORS
 
 Write-Section "Configure (CMake + Ninja)"
-New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
+$ClangCl = "C:\Program Files\LLVM\bin\clang-cl.exe"
 $cmakeConfigure = @(
   "cmake",
   "-S `"$SourceDir\llvm`"",
   "-B `"$BuildDir`"",
   "-G Ninja",
-  "-DCMAKE_BUILD_TYPE=$Config",
+
+  "-DCMAKE_C_COMPILER:FILEPATH=`"$ClangCl`"",
+  "-DCMAKE_CXX_COMPILER:FILEPATH=`"$ClangCl`"",
+  "-DCMAKE_ASM_COMPILER:FILEPATH=`"$ClangCl`"",
+  "-DCMAKE_ASM_MASM_COMPILER:FILEPATH=`"$ml64`""
+
+  "-DCMAKE_C_FLAGS=/bigobj",
+  "-DCMAKE_CXX_FLAGS=/bigobj",
+
   "-DBUILD_SHARED_LIBS=OFF",
-  "-DLLVM_ENABLE_PROJECTS=`"$Projects`"",
-  "-DLLVM_TARGETS_TO_BUILD=`"$Targets`"",
-  "-DLLVM_BUILD_TESTS=OFF",
-  "-DLLVM_INCLUDE_TESTS=OFF",
-  "-DLLVM_BUILD_EXAMPLES=OFF",
-  "-DLLVM_INCLUDE_EXAMPLES=OFF",
+  "-DCMAKE_BUILD_TYPE=$Config",
   "-DLLVM_BUILD_DOCS=OFF",
+  "-DLLVM_BUILD_EXAMPLES=OFF",
+  "-DLLVM_BUILD_TESTS=OFF",
   "-DLLVM_ENABLE_DIA_SDK=OFF",
   "-DLLVM_ENABLE_DOXYGEN=OFF",
-  "-DLLVM_ENABLE_LTO=OFF",
-  "-DLLVM_ENABLE_SPHINX=OFF",
-  "-DLLVM_STATIC_LINK_CXX_STDLIB=ON",
-  "-DLLVM_ENABLE_ZLIB=OFF",
-  "-DLLVM_ENABLE_LIBXML2=OFF",
+  "-DLLVM_ENABLE_DUMP=ON",
   "-DLLVM_ENABLE_LIBEDIT=OFF",
+  "-DLLVM_ENABLE_LIBXML2=OFF",
+  "-DLLVM_ENABLE_LTO=OFF",
   "-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON",
-  "-DLLVM_PARALLEL_LINK_JOBS=$jobs",
+  "-DLLVM_ENABLE_PROJECTS=`"$Projects`"",
+  "-DLLVM_ENABLE_SPHINX=OFF",
+  "-DLLVM_ENABLE_ZLIB=OFF",
+  "-DLLVM_INCLUDE_EXAMPLES=OFF",
+  "-DLLVM_INCLUDE_TESTS=OFF",
   "-DCMAKE_INSTALL_PREFIX=`"$InstallDir`"",
-  "-DCMAKE_CXX_FLAGS=/bigobj -DCMAKE_C_FLAGS=/bigobj"
+  "-DLLVM_PARALLEL_LINK_JOBS=$jobs",
+  "-DLLVM_STATIC_LINK_CXX_STDLIB=ON",
+  "-DLLVM_TARGETS_TO_BUILD=`"$Targets`""
 ) -join " "
 Exec $cmakeConfigure "CMake configure failed"
 $buildNinja = Join-Path $BuildDir "build.ninja"
@@ -260,15 +280,21 @@ if (-not (Test-Path $llvmConfig)) { throw "Install failed (llvm-config.exe not f
 
 Write-Host "Installed to: $InstallDir" -ForegroundColor Green
 
-Write-Section "Post-install cleanup (keep only llvm-config in bin)"
+Write-Section "Post-install trim (preserve llvm-config + DLLs + PDB...)"
 $installBin = Join-Path $InstallDir 'bin'
 $cfgName    = 'llvm-config.exe'
 $cfgPath    = Join-Path $installBin $cfgName
 if (-not (Test-Path $cfgPath)) { throw "Install finished but $cfgName not found in $installBin." }
-$stash = Join-Path $InstallDir $cfgName
-Move-Item $cfgPath $stash -Force
-Get-ChildItem $installBin -Force | Remove-Item -Recurse -Force
-Move-Item $stash $installBin -Force
+$keepNames = @('llvm-config.exe')
+$preserve  = @()
+$preserve += Get-ChildItem -Path (Join-Path $installBin '*') -File -Include *.dll,*.pdb | ForEach-Object FullName
+$preserve += $keepNames | ForEach-Object { Join-Path $installBin $_ }
+"Preserving:`n  " + ($preserve -join "`n  ") | Write-Host
+
+# Delete everything else in bin (top level only)
+Get-ChildItem -Path $installBin -File | Where-Object {
+    $preserve -notcontains $_.FullName
+} | Remove-Item -Force
 
 # Platform string for artifact name
 $arch = switch -Regex ($env:PROCESSOR_ARCHITECTURE) {
