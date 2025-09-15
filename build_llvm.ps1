@@ -221,6 +221,9 @@ $env:TEMP = 'C:\Temp'
 $env:TMP  = 'C:\Temp'
 $jobs = $env:NUMBER_OF_PROCESSORS
 
+# Pick the CRT matching your $Config (Release/Debug):
+$msvcCRT = if ($Config -eq "Debug") { "MultiThreadedDebugDLL" } else { "MultiThreadedDLL" }
+
 Write-Section "Configure (CMake + Ninja)"
 New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
 $cmakeConfigure = @(
@@ -249,7 +252,10 @@ $cmakeConfigure = @(
   "-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON",
   "-DLLVM_PARALLEL_LINK_JOBS=$jobs",
   "-DCMAKE_INSTALL_PREFIX=`"$InstallDir`"",
-  "-DCMAKE_CXX_FLAGS=/bigobj -DCMAKE_C_FLAGS=/bigobj"
+  "-DCMAKE_CXX_FLAGS=/bigobj -DCMAKE_C_FLAGS=/bigobj",
+  "-DLLVM_USE_CRT_DEBUG=MDd",
+  "-DLLVM_USE_CRT_RELEASE=MD",
+  "-DCMAKE_MSVC_RUNTIME_LIBRARY=$msvcCRT"
 ) -join " "
 Exec $cmakeConfigure "CMake configure failed"
 $buildNinja = Join-Path $BuildDir "build.ninja"
