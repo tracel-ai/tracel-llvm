@@ -212,10 +212,6 @@ $oldDirs = @(
 foreach ($d in $oldDirs) {
   if (Test-Path $d) { Remove-Item -Recurse -Force $d }
 }
-# delete some env vars of any previous run that could interfere
-Remove-Item Env:CC, Env:CXX -ErrorAction SilentlyContinue
-Remove-Item Env:CFLAGS, Env:CXXFLAGS -ErrorAction SilentlyContinue
-Remove-Item Env:RC, Env:ASM -ErrorAction SilentlyContinue
 
 Write-Section "Clone llvm-project (fresh in workspace)"
 Exec "git clone --depth 1 --branch $Branch `"$RepoUrl`" `"$SourceDir`"" "git clone failed"
@@ -226,42 +222,34 @@ $env:TMP  = 'C:\Temp'
 $jobs = $env:NUMBER_OF_PROCESSORS
 
 Write-Section "Configure (CMake + Ninja)"
-$ClangCl = "C:\Program Files\LLVM\bin\clang-cl.exe"
+New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
 $cmakeConfigure = @(
   "cmake",
   "-S `"$SourceDir\llvm`"",
   "-B `"$BuildDir`"",
   "-G Ninja",
-
-  "-DCMAKE_C_COMPILER:FILEPATH=`"$ClangCl`"",
-  "-DCMAKE_CXX_COMPILER:FILEPATH=`"$ClangCl`"",
-  "-DCMAKE_ASM_COMPILER:FILEPATH=`"$ClangCl`"",
-  "-DCMAKE_ASM_MASM_COMPILER:FILEPATH=`"$ml64`""
-
-  "-DCMAKE_C_FLAGS=/bigobj",
-  "-DCMAKE_CXX_FLAGS=/bigobj",
-
-  "-DBUILD_SHARED_LIBS=OFF",
   "-DCMAKE_BUILD_TYPE=$Config",
-  "-DLLVM_BUILD_DOCS=OFF",
-  "-DLLVM_BUILD_EXAMPLES=OFF",
+  "-DBUILD_SHARED_LIBS=OFF",
+  "-DLLVM_ENABLE_PROJECTS=`"$Projects`"",
+  "-DLLVM_TARGETS_TO_BUILD=`"$Targets`"",
   "-DLLVM_BUILD_TESTS=OFF",
+  "-DLLVM_INCLUDE_TESTS=OFF",
+  "-DLLVM_BUILD_EXAMPLES=OFF",
+  "-DLLVM_INCLUDE_EXAMPLES=OFF",
+  "-DLLVM_BUILD_DOCS=OFF",
   "-DLLVM_ENABLE_DIA_SDK=OFF",
   "-DLLVM_ENABLE_DOXYGEN=OFF",
   "-DLLVM_ENABLE_DUMP=ON",
-  "-DLLVM_ENABLE_LIBEDIT=OFF",
-  "-DLLVM_ENABLE_LIBXML2=OFF",
   "-DLLVM_ENABLE_LTO=OFF",
-  "-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON",
-  "-DLLVM_ENABLE_PROJECTS=`"$Projects`"",
   "-DLLVM_ENABLE_SPHINX=OFF",
-  "-DLLVM_ENABLE_ZLIB=OFF",
-  "-DLLVM_INCLUDE_EXAMPLES=OFF",
-  "-DLLVM_INCLUDE_TESTS=OFF",
-  "-DCMAKE_INSTALL_PREFIX=`"$InstallDir`"",
-  "-DLLVM_PARALLEL_LINK_JOBS=$jobs",
   "-DLLVM_STATIC_LINK_CXX_STDLIB=ON",
-  "-DLLVM_TARGETS_TO_BUILD=`"$Targets`""
+  "-DLLVM_ENABLE_ZLIB=OFF",
+  "-DLLVM_ENABLE_LIBXML2=OFF",
+  "-DLLVM_ENABLE_LIBEDIT=OFF",
+  "-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON",
+  "-DLLVM_PARALLEL_LINK_JOBS=$jobs",
+  "-DCMAKE_INSTALL_PREFIX=`"$InstallDir`"",
+  "-DCMAKE_CXX_FLAGS=/bigobj -DCMAKE_C_FLAGS=/bigobj"
 ) -join " "
 Exec $cmakeConfigure "CMake configure failed"
 $buildNinja = Join-Path $BuildDir "build.ninja"
@@ -285,7 +273,6 @@ $preserve  = @()
 $preserve += Get-ChildItem -Path (Join-Path $installBin '*') -File -Include *.dll,*.pdb | ForEach-Object FullName
 $preserve += $keepNames | ForEach-Object { Join-Path $installBin $_ }
 "Preserving:`n  " + ($preserve -join "`n  ") | Write-Host
-
 # Delete everything else in bin (top level only)
 Get-ChildItem -Path $installBin -File | Where-Object {
     $preserve -notcontains $_.FullName
