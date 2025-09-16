@@ -358,8 +358,6 @@ $contentSha256 = Get-DirectoryContentSha256 $InstallDir
 
 # Sidecar manifest
 $manifest = [PSCustomObject]@{
-  schema_version = 1
-  name           = $PkgDir
   version        = $Version
   release_number = $ReleaseNumber
   platform       = $platform

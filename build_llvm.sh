@@ -215,8 +215,6 @@ jq -n \
   --arg content_sha256 "$content_sha256" \
   '
   {
-    schema_version: 1,
-    name: $name,
     version: $version,
     release_number: $release_number,
     platform: $platform,

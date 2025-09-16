@@ -66,7 +66,9 @@ jobs:
         with:
           name: ${{ needs.create-release.outputs.tag }}
           tag_name: ${{ needs.create-release.outputs.tag }}
-          files: .llvm/linux-x64.tar.xz
+          files: |
+            .llvm/linux-x64.tar.xz
+            .llvm/linux-x64.checksums.json
 
   # Does not work for now on provided MacOS runners by GitHub
   # llvm-macos:
@@ -85,7 +87,9 @@ jobs:
   #       with:
   #         name: ${{ needs.create-release.outputs.tag }}
   #         tag_name: ${{ needs.create-release.outputs.tag }}
-  #         files: .llvm/macos-AArch64.tar.xz
+  #         files: |
+  #           .llvm/macos-AArch64.tar.xz
+  #           .llvm/macos-AArch64.checksums.json
 
   llvm-windows:
     needs: create-release
@@ -113,7 +117,9 @@ jobs:
         with:
           name: ${{ needs.create-release.outputs.tag }}
           tag_name: ${{ needs.create-release.outputs.tag }}
-          files: .llvm/windows-x64.tar.xz
+          files: |
+            .llvm/windows-x64.tar.xz
+            .llvm/windows-x64.checksums.json
 
   publish-release:
     # needs: [create-release, llvm-linux, llvm-macos, llvm-windows]
