@@ -52,7 +52,6 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     let mut clang_args = vec!["-I", &includedir, "-I", "cc/include"];
     if cfg!(target_os = "windows") {
-        ()
     } else {
         clang_args.extend(vec!["-I", "/usr/include"]);
     }
@@ -100,32 +99,26 @@ fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-
 fn apply_llvm_flags_to_cc(build: &mut cc::Build, flags: &str) {
     use std::collections::HashSet;
     let mut seen = HashSet::<String>::new();
 
     for raw in flags.split_whitespace() {
         let flag = raw.trim();
-        if !seen.insert(flag.to_string()) { continue; }
+        if !seen.insert(flag.to_string()) {
+            continue;
+        }
         // Drop includes as we set them up ourselves
-        if flag.starts_with("-I") || flag.starts_with("/I") { continue; }
-        // Drop C++ standard as we set it up explicitly
-        if flag.starts_with("-std:") || flag.starts_with("/std:") { continue; }
-        // Drop warning-level flags so we can set them ourselves
-        if flag.eq_ignore_ascii_case("/W0") ||
-           flag.eq_ignore_ascii_case("/W1") ||
-           flag.eq_ignore_ascii_case("/W2") ||
-           flag.eq_ignore_ascii_case("/W3") ||
-           flag.eq_ignore_ascii_case("/W4") ||
-           flag.eq_ignore_ascii_case("/Wall") ||
-           flag.starts_with("-W") { // -Wall, -Wextra, etc.
+        if flag.starts_with("-I") || flag.starts_with("/I") {
             continue;
         }
         // Convert -DNAME[=VAL] into build.define to avoid special characters issues
         if let Some(def) = flag.strip_prefix("-D") {
-            if let Some((k,v)) = def.split_once('=') { build.define(k, Some(v)); }
-            else { build.define(def, None); }
+            if let Some((k, v)) = def.split_once('=') {
+                build.define(k, Some(v));
+            } else {
+                build.define(def, None);
+            }
             continue;
         }
         build.flag_if_supported(flag);

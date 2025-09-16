@@ -59,8 +59,7 @@ impl OperatingSystem {
 
     /// Returns the same cache directory on all OSes for consistency sake
     fn artifact_cache_dir() -> AnyResult<PathBuf> {
-        let home = dirs::home_dir()
-            .ok_or("Could not determine home directory")?;
+        let home = dirs::home_dir().ok_or("Could not determine home directory")?;
         let base = home.join(".cache").join("tracel");
         create_dir_all(&base)?;
         Ok(base)
@@ -101,11 +100,9 @@ impl Drop for DirGuard {
 fn ensure_cached_artifact(os: &OperatingSystem) -> AnyResult<PathBuf> {
     let path = os.artifact_cache_path()?;
     if path.exists() {
-        println!("cargo:warning=Using cached LLVM artifact at {}", path.display());
         return Ok(path);
     }
 
-    println!("cargo:warning=Downloading LLVM artifact to cache…");
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(60 * 5))
         .build()?;
@@ -116,7 +113,6 @@ fn ensure_cached_artifact(os: &OperatingSystem) -> AnyResult<PathBuf> {
     }
     let mut file = std::fs::File::create(&path)?;
     std::io::copy(&mut resp, &mut file)?;
-    println!("cargo:warning=Saved {}", path.display());
     Ok(path)
 }
 
@@ -132,11 +128,6 @@ fn decompress_tar_xz_file_to(archive_path: &Path, dest_dir: &Path) -> AnyResult<
 
 pub fn bundle_cache() -> AnyResult<()> {
     let llvm_path = llvm_path()?; // from your config
-    println!(
-        "cargo:warning=LLVM CACHE PATH: {}",
-        llvm_path.to_string_lossy()
-    );
-
     if !llvm_path.exists() {
         let temp_dir = llvm_path.with_extension("partial");
         if temp_dir.exists() {

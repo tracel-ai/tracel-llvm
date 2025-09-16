@@ -83,9 +83,13 @@ pub fn llvm_path() -> ConfigResult<PathBuf> {
 
 fn norm_lib(token: &str) -> Option<String> {
     let mut s = token.trim().trim_matches('"');
-    if s.is_empty() { return None; }
+    if s.is_empty() {
+        return None;
+    }
     // Unix style
-    if let Some(rest) = s.strip_prefix("-l") { s = rest; }
+    if let Some(rest) = s.strip_prefix("-l") {
+        s = rest;
+    }
     // Windows path or *.lib → take file stem
     if s.contains('\\') || s.contains('/') || s.ends_with(".lib") {
         return Path::new(s)
@@ -94,7 +98,6 @@ fn norm_lib(token: &str) -> Option<String> {
     }
     Some(s.to_owned()) // already a bare name
 }
-
 
 /// Returns a vector of all libraries required by LLVM (bare names).
 pub fn get_libs(prefix_os: Option<&OsString>) -> ConfigResult<Vec<String>> {
