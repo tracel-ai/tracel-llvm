@@ -111,12 +111,12 @@ TableGenBool tableGenIntInitGetValue(TableGenTypedInitRef ti,
 
 TableGenStringRef tableGenStringInitGetValue(TableGenTypedInitRef ti) {
   if (!ti)
-    return TableGenStringRef{.data = nullptr, .len = 0};
+    return TableGenStringRef{nullptr, 0};
   auto str_init = dyn_cast<StringInit>(unwrap(ti));
   if (!str_init)
-    return TableGenStringRef{.data = nullptr, .len = 0};
+    return TableGenStringRef{nullptr, 0};
   auto val = str_init->getValue();
-  return TableGenStringRef{.data = val.data(), .len = val.size()};
+  return TableGenStringRef{val.data(), val.size()};
 }
 
 char *tableGenStringInitGetValueNewString(TableGenTypedInitRef ti) {

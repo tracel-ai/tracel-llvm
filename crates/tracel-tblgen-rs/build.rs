@@ -71,10 +71,8 @@ fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
     let mut b = cc::Build::new();
     let mut includes = vec!["cc/include"];
     let mut flags = vec![];
-    let mut cppstd = "c++17";
     if cfg!(target_os = "windows") {
         includes.push(includedir.as_str());
-        cppstd = "c++20";
     } else {
         includes.extend(vec!["/usr/include"]);
         // -isystem suppresses warnings, if something is wrong in the resulted build, uncomment this line
@@ -92,7 +90,7 @@ fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
         .warnings(false)
         .includes(includes)
         .flags(flags)
-        .std(cppstd);
+        .std("c++17");
     let cxxflags = tracel_llvm_bundler_rs::config::get_cxxflags(prefix_os)?;
     apply_llvm_flags_to_cc(&mut b, &cxxflags);
     let cflags = tracel_llvm_bundler_rs::config::get_cflags(prefix_os)?;

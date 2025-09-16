@@ -65,7 +65,7 @@ tableGenRecordKeeperIteratorClone(TableGenRecordKeeperIteratorRef item) {
 TableGenStringRef
 tableGenRecordKeeperItemGetName(TableGenRecordKeeperIteratorRef item) {
   auto &s = (*unwrap(item))->first;
-  return TableGenStringRef{.data = s.data(), .len = s.size()};
+  return TableGenStringRef{s.data(), s.size()};
 }
 
 TableGenRecordRef

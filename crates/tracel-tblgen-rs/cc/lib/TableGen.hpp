@@ -62,7 +62,7 @@ public:
         opaqueData(opaqueData), pos(0u) {}
 
   void write_impl(const char *ptr, size_t size) override {
-    TableGenStringRef string = TableGenStringRef{.data = ptr, .len = size};
+    TableGenStringRef string = TableGenStringRef{ptr, size};
     callback(string, opaqueData);
     pos += size;
   }

@@ -19,7 +19,7 @@ TableGenRecordKeeperRef tableGenRecordGetRecords(TableGenRecordRef record_ref) {
 
 TableGenStringRef tableGenRecordGetName(TableGenRecordRef record_ref) {
   auto name = unwrap(record_ref)->getName();
-  return TableGenStringRef{.data = name.data(), .len = name.size()};
+  return TableGenStringRef{name.data(), name.size()};
 }
 
 TableGenRecordValRef tableGenRecordGetValue(TableGenRecordRef record_ref,

@@ -14,7 +14,7 @@
 
 TableGenStringRef tableGenRecordValGetName(TableGenRecordValRef rv_ref) {
   auto s = unwrap(rv_ref)->getName();
-  return TableGenStringRef{.data = s.data(), .len = s.size()};
+  return TableGenStringRef{s.data(), s.size()};
 }
 
 TableGenTypedInitRef tableGenRecordValGetNameInit(TableGenRecordValRef rv_ref) {

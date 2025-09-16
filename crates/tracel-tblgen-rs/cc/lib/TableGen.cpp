@@ -145,11 +145,11 @@ TableGenStringRef tableGenDagRecordArgName(TableGenTypedInitRef rv_ref,
                                            size_t index) {
   auto dag = dyn_cast<DagInit>(unwrap(rv_ref));
   if (!dag)
-    return TableGenStringRef{.data = nullptr, .len = 0};
+    return TableGenStringRef{nullptr, 0};
   if (index >= dag->getNumArgs())
-    return TableGenStringRef{.data = nullptr, .len = 0};
+    return TableGenStringRef{nullptr, 0};
   auto s = dag->getArgNameStr(index);
-  return TableGenStringRef{.data = s.data(), .len = s.size()};
+  return TableGenStringRef{s.data(), s.size()};
 }
 
 // Memory
