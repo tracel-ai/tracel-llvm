@@ -292,9 +292,9 @@ $platform = "windows-$arch"
 
 Write-Section "Package from workspace (.tar.xz)"
 Push-Location $Workspace
+$tarName = "$platform.tar"
+$xzName  = "$platform.tar.xz"
 try {
-  $tarName = "$platform.tar"
-  $xzName  = "$platform.tar.xz"
   if (Test-Path $tarName) { Remove-Item -Force $tarName }
   if (Test-Path $xzName)  { Remove-Item -Force $xzName }
 
@@ -307,6 +307,71 @@ try {
 } finally {
   Pop-Location
 }
+
+# Checksum sidecar files
+Write-Section "Compute checksums and write sidecar JSON"
+# Archive SHA-256
+$archivePath   = Join-Path $Workspace $xzName
+if (-not (Test-Path $archivePath)) { throw "Archive not found: $archivePath" }
+
+# Content SHA-256 of the extracted top-level directory ($InstallDir)
+# Deterministic directory digest:
+# - Walk all regular files under $InstallDir
+# - Sort by normalized relative path (forward slashes)
+# - Feed into a single SHA256 stream:
+#     "PATH\n" (UTF-8, exact case) +
+#     "SIZE\n" (decimal ASCII of byte length) +
+#     raw file bytes
+function Get-DirectoryContentSha256([string]$root) {
+  $sha = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $files = Get-ChildItem -LiteralPath $root -Recurse -File -Force | Sort-Object FullName
+    foreach ($f in $files) {
+      $rel = $f.FullName.Substring($root.Length).TrimStart('\','/')
+      $rel = $rel -replace '\\','/'
+
+      $pathBytes = [System.Text.Encoding]::UTF8.GetBytes($rel + "`n")
+      $sha.TransformBlock($pathBytes, 0, $pathBytes.Length, $null, 0) | Out-Null
+
+      $sizeLine  = [string]$f.Length + "`n"
+      $sizeBytes = [System.Text.Encoding]::UTF8.GetBytes($sizeLine)
+      $sha.TransformBlock($sizeBytes, 0, $sizeBytes.Length, $null, 0) | Out-Null
+
+      $fs = [System.IO.File]::Open($f.FullName, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+      try {
+        $buffer = New-Object byte[] (1024*1024)
+        while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
+          $sha.TransformBlock($buffer, 0, $read, $null, 0) | Out-Null
+        }
+      } finally {
+        $fs.Dispose()
+      }
+    }
+    $sha.TransformFinalBlock([byte[]]::new(0), 0, 0) | Out-Null
+    ($sha.Hash | ForEach-Object { $_.ToString("x2") }) -join ""
+  } finally {
+    $sha.Dispose()
+  }
+}
+$archiveSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $archivePath).Hash.ToLower()
+$contentSha256 = Get-DirectoryContentSha256 $InstallDir
+
+# Sidecar manifest
+$manifest = [PSCustomObject]@{
+  schema_version = 1
+  name           = $PkgDir
+  version        = $Version
+  release_number = $ReleaseNumber
+  platform       = $platform
+  created_at_utc = (Get-Date).ToUniversalTime().ToString("o")
+  archive_sha256 = $archiveSha256
+  content_sha256 = $contentSha256
+}
+$sidecarPath = Join-Path $Workspace "$platform.checksums.json"
+$manifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $sidecarPath -Encoding utf8
+Write-Host "Archive sha256: $archiveSha256" -ForegroundColor DarkCyan
+Write-Host "Content sha256: $contentSha256" -ForegroundColor DarkCyan
+Write-Host "Sidecar manifest: $sidecarPath" -ForegroundColor Green
 
 Write-Host "=== LLVM build and packaging completed successfully! ===" -ForegroundColor Green
 Write-Host "Workspace: $Workspace" -ForegroundColor Yellow
