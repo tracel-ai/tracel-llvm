@@ -1,9 +1,14 @@
 include!("src/config.rs");
 
+use anyhow::{Context, Result, bail};
+use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use std::{
-    fs::{self, create_dir_all},
+    fs::{self, File, create_dir_all},
+    io::{BufReader, Read},
     time::Duration,
 };
+use walkdir::WalkDir;
 
 use liblzma::bufread::XzDecoder;
 use tar::Archive;
@@ -11,7 +16,7 @@ use tar::Archive;
 const TRACEL_LLVM_ARTIFACT_BASE_URL: &str =
     "https://github.com/tracel-ai/tracel-llvm/releases/download";
 
-type AnyResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
+type AnyResult<T> = Result<T>;
 
 fn main() {
     if let Err(error) = run() {
@@ -50,6 +55,10 @@ impl OperatingSystem {
         }
     }
 
+    fn checksum_filename(&self) -> String {
+        self.filename().replace(".tar.xz", ".checksums.json")
+    }
+
     pub fn artifact_url(&self) -> String {
         let filename = self.filename();
         format!(
@@ -57,9 +66,17 @@ impl OperatingSystem {
         )
     }
 
+    pub fn checksum_url(&self) -> String {
+        let filename = self.checksum_filename();
+        format!(
+            "{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_VERSION}-{TRACEL_LLVM_RELEASE_NUMBER}/{filename}"
+        )
+    }
+
     /// Returns the same cache directory on all OSes for consistency sake
     fn artifact_cache_dir() -> AnyResult<PathBuf> {
-        let home = dirs::home_dir().ok_or("Could not determine home directory")?;
+        let home = dirs::home_dir()
+            .ok_or_else(|| anyhow::anyhow!("Could not determine home directory"))?;
         let base = home.join(".cache").join("tracel");
         create_dir_all(&base)?;
         Ok(base)
@@ -74,52 +91,135 @@ impl OperatingSystem {
         )
     }
 
+    fn checksum_cache_filename(&self) -> String {
+        format!(
+            "tracel-llvm-{ver}-{rel}-{}",
+            self.checksum_filename(),
+            ver = TRACEL_LLVM_VERSION,
+            rel = TRACEL_LLVM_RELEASE_NUMBER
+        )
+    }
+
     fn artifact_cache_path(&self) -> AnyResult<PathBuf> {
         let base = Self::artifact_cache_dir()?;
         Ok(base.join(self.cache_filename()))
     }
+
+    fn checksum_cache_path(&self) -> AnyResult<PathBuf> {
+        let base = Self::artifact_cache_dir()?;
+        Ok(base.join(self.checksum_cache_filename()))
+    }
 }
 
-/// We try to cleanup temporary files whatever happens
-struct DirGuard {
+struct RollbackDir {
     path: PathBuf,
+    armed: bool,
 }
-impl DirGuard {
+impl RollbackDir {
     fn new(path: PathBuf) -> Self {
-        Self { path }
+        Self { path, armed: true }
+    }
+    fn commit(mut self) {
+        self.armed = false;
     }
 }
-impl Drop for DirGuard {
+impl Drop for RollbackDir {
     fn drop(&mut self) {
-        // Best-effort cleanup; ignore errors
-        let _ = fs::remove_dir_all(&self.path);
+        if self.armed && self.path.exists() {
+            let _ = fs::remove_dir_all(&self.path);
+        }
     }
 }
 
-/// Ensure the artifact exists in ~/.cache/tracel, download if required.
-fn ensure_cached_artifact(os: &OperatingSystem) -> AnyResult<PathBuf> {
-    let path = os.artifact_cache_path()?;
-    if path.exists() {
-        return Ok(path);
-    }
+#[derive(Deserialize)]
+struct Sidecar {
+    archive_sha256: String,
+    content_sha256: String,
+}
 
+/// Download (overwriting) to a path.
+fn download_to_path(url: &str, dest: &Path) -> AnyResult<()> {
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(60 * 5))
         .build()?;
-
-    let mut resp = client.get(os.artifact_url()).send()?.error_for_status()?;
-    if let Some(parent) = path.parent() {
+    let mut resp = client.get(url).send()?.error_for_status()?;
+    if let Some(parent) = dest.parent() {
         create_dir_all(parent)?;
     }
-    let mut file = std::fs::File::create(&path)?;
-    std::io::copy(&mut resp, &mut file)?;
-    Ok(path)
+    let mut f = File::create(dest)?;
+    std::io::copy(&mut resp, &mut f)?;
+    Ok(())
+}
+
+fn file_sha256_hex(path: &Path) -> AnyResult<String> {
+    let f = File::open(path)?;
+    let mut r = BufReader::new(f);
+    let mut hasher = Sha256::new();
+    let mut buf = [0u8; 1024 * 1024];
+    loop {
+        let n = r.read(&mut buf)?;
+        if n == 0 {
+            break;
+        }
+        hasher.update(&buf[..n]);
+    }
+    Ok(format!("{:x}", hasher.finalize()))
+}
+
+/// Deterministic directory digest:
+/// For each regular file under `root`, in lexicographic order by forward-slash
+/// relative path, feed: PATH\n + SIZE\n + BYTES into a single SHA-256.
+fn directory_content_sha256_hex(root: &Path) -> AnyResult<String> {
+    let mut files = Vec::<PathBuf>::new();
+    for e in WalkDir::new(root)
+        .follow_links(false)
+        .into_iter()
+        .filter_map(Result::ok)
+    {
+        if e.file_type().is_file() {
+            files.push(e.into_path());
+        }
+    }
+    files.sort_by(|a, b| {
+        let ra = a.strip_prefix(root).unwrap();
+        let rb = b.strip_prefix(root).unwrap();
+        ra.to_string_lossy()
+            .replace('\\', "/")
+            .cmp(&rb.to_string_lossy().replace('\\', "/"))
+    });
+
+    let mut hasher = Sha256::new();
+    let mut buf = vec![0u8; 1024 * 1024];
+
+    for file in files {
+        let rel = file
+            .strip_prefix(root)
+            .unwrap()
+            .to_string_lossy()
+            .replace('\\', "/");
+        hasher.update(rel.as_bytes());
+        hasher.update(b"\n");
+
+        let size = fs::metadata(&file)?.len().to_string();
+        hasher.update(size.as_bytes());
+        hasher.update(b"\n");
+
+        let mut r = BufReader::new(File::open(&file)?);
+        loop {
+            let n = r.read(&mut buf)?;
+            if n == 0 {
+                break;
+            }
+            hasher.update(&buf[..n]);
+        }
+    }
+    Ok(format!("{:x}", hasher.finalize()))
 }
 
 /// Unpack the tar.xz bytes into `dest_dir`
 fn decompress_tar_xz_file_to(archive_path: &Path, dest_dir: &Path) -> AnyResult<()> {
-    let f = std::fs::File::open(archive_path)?;
-    let reader = std::io::BufReader::new(f);
+    let f = File::open(archive_path)?;
+    let reader = BufReader::new(f);
     let decoder = XzDecoder::new_parallel(reader);
     let mut archive = Archive::new(decoder);
     archive.unpack(dest_dir)?;
@@ -127,39 +227,87 @@ fn decompress_tar_xz_file_to(archive_path: &Path, dest_dir: &Path) -> AnyResult<
 }
 
 pub fn bundle_cache() -> AnyResult<()> {
-    let llvm_path = llvm_path()?; // from your config
-    if !llvm_path.exists() {
-        let temp_dir = llvm_path.with_extension("partial");
-        if temp_dir.exists() {
-            fs::remove_dir_all(&temp_dir)?;
-        }
-        create_dir_all(&temp_dir)?;
-        let _guard = DirGuard::new(temp_dir.clone());
+    // 0) Already installed?
+    let llvm_path = llvm_path()?;
+    if llvm_path.exists() {
+        // This check is lightweight, but we go to great lengths to ensure that if the
+        // installation process completes fully, the install is reliable.
+        return Ok(());
+    }
 
-        // Get or download the artifact to ~/.cache/tracel/… then unpack from the cached file
-        let opsys = OperatingSystem::current();
-        let cached_archive = ensure_cached_artifact(&opsys)?;
+    // 1) Prepare installation
+    let parent = llvm_path
+        .parent()
+        .ok_or_else(|| anyhow::anyhow!("Invalid llvm_path"))?;
+    create_dir_all(parent)?;
+    // Rollback guard: if anything fails after extraction, remove llvm_path
+    let rollback = RollbackDir::new(llvm_path.clone());
+    let opsys = OperatingSystem::current();
 
-        // Unpack into temp_dir and move the extracted directory to final destination (mile 180)
-        decompress_tar_xz_file_to(&cached_archive, &temp_dir)?;
-        if let Some(parent) = llvm_path.parent() {
-            create_dir_all(parent)?;
-        }
-        // Important: the archive must have exactly one top-level directory in the tarball.
-        let mut dirs = Vec::new();
-        for entry in fs::read_dir(&temp_dir)? {
-            let entry = entry?;
-            if entry.file_type()?.is_dir() {
-                dirs.push(entry.path());
+    // 2) Download and load sidecar file with checksums
+    let checksum_path = opsys.checksum_cache_path()?;
+    download_to_path(&opsys.checksum_url(), &checksum_path)
+        .with_context(|| format!("downloading {}", opsys.checksum_url()))?;
+    let sidecar_text = fs::read_to_string(&checksum_path)
+        .with_context(|| format!("reading {}", checksum_path.display()))?;
+    let sidecar: Sidecar =
+        serde_json::from_str(&sidecar_text).with_context(|| "parsing checksum sidecar JSON")?;
+
+    // 3) Download bundle if required (i.e. it does not exist or its checksum does not match)
+    let archive_path = opsys.artifact_cache_path()?;
+    if archive_path.exists() {
+        let local = file_sha256_hex(&archive_path)?;
+        if local != sidecar.archive_sha256 {
+            // re-download and re-check
+            download_to_path(&opsys.artifact_url(), &archive_path)
+                .with_context(|| format!("re-downloading {}", opsys.artifact_url()))?;
+            let again = file_sha256_hex(&archive_path)?;
+            if again != sidecar.archive_sha256 {
+                bail!(
+                    "Archive checksum mismatch after re-download.\n  expected: {}\n  got:      {}\nURL: {}",
+                    sidecar.archive_sha256,
+                    again,
+                    opsys.artifact_url()
+                );
             }
         }
-        if dirs.len() != 1 {
-            // errors out if the archive has not the expected format (one top-level directory)
-            return Err(Box::<dyn std::error::Error + Send + Sync>::from(
-                "Archive should contain a single top-level directory",
-            ));
+    } else {
+        download_to_path(&opsys.artifact_url(), &archive_path)
+            .with_context(|| format!("downloading {}", opsys.artifact_url()))?;
+        let got = file_sha256_hex(&archive_path)?;
+        if got != sidecar.archive_sha256 {
+            bail!(
+                "Archive checksum mismatch after download.\n  expected: {}\n  got:      {}\nURL: {}",
+                sidecar.archive_sha256,
+                got,
+                opsys.artifact_url()
+            );
         }
-        fs::rename(&dirs[0], &llvm_path)?;
     }
+
+    // 4) Extract bundle
+    // The tarball contains exactly one top-level dir: tracel-llvm-<ver>-<rel>
+    decompress_tar_xz_file_to(&archive_path, parent)?;
+    // Sanity: the expected directory must now exist
+    if !llvm_path.exists() {
+        bail!(
+            "Extraction completed but expected directory not found: {}",
+            llvm_path.display()
+        );
+    }
+
+    // 5) Verify extracted content checksum on the final destination folder
+    let content = directory_content_sha256_hex(&llvm_path)?;
+    if content != sidecar.content_sha256 {
+        bail!(
+            "Extracted content checksum mismatch.\n  expected: {}\n  got:      {}\n\n\
+             Please re-run the build. If the issue persists, contact the repository admins.",
+            sidecar.content_sha256,
+            content
+        );
+    }
+    // Success, don't clean up
+    rollback.commit();
+
     Ok(())
 }

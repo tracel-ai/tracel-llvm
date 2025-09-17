@@ -103,32 +103,32 @@ sha256_stream() {
 }
 
 content_sha256_dir() {
-  # Deterministic directory digest: for each regular file under $1, in
-  # sorted (C-locale) order by relative path, feed:
+  # Deterministic directory digest:
+  # For each regular file under $1, in lexicographic order by relative path:
   #   PATH\n
   #   SIZE\n
   #   BYTES
-  # into a single SHA-256 stream.
+  # SHA-256 of the concatenation.
   local root="$1"
-  local root_trim="${root%/}"
 
-  LC_ALL=C find "$root_trim" -type f -print0 \
-    | LC_ALL=C sort -z \
-    | {
-        # Binary-safe loop
-        while IFS= read -r -d '' f; do
-          # Relative path (with forward slashes)
-          rel="${f#${root_trim}/}"
-          size=$(wc -c < "$f" | tr -d '[:space:]')
+  (
+      cd "$root" || { echo "cannot cd into: $root" >&2; exit 1; }
 
-          # Emit metadata
-          printf '%s\n' "$rel"
-          printf '%s\n' "$size"
+      # Print relative paths (starting with ./), sort them, then strip the leading "./"
+      LC_ALL=C find . -type f -print0 \
+          | LC_ALL=C sort -z \
+          | while IFS= read -r -d '' rel; do
+          rel="${rel#./}"                         # normalize: remove "./"
+          printf '%s\n' "$rel"                    # PATH\n
 
-          # Emit bytes
-          cat "$f"
-        done
-      } | sha256_stream
+          # byte size (no spaces/newlines)
+          size=$(wc -c < "$rel" | tr -d '[:space:]')
+          printf '%s\n' "$size"                   # SIZE\n
+
+          # raw bytes
+          cat "$rel"
+      done
+  ) | sha256_stream
 }
 
 # ----------------------------------------------------------------------------
@@ -194,7 +194,16 @@ echo ">>> Cleanup complete."
 # Package
 # ----------------------------------------------------------------------------
 echo ">>> Creating package ${PLATFORM}.tar.xz with top-level dir '${PKG_DIR}'..."
-tar -cJf "${PLATFORM}.tar.xz" "${PKG_DIR}"
+
+if [[ "$OS" == "macos" ]]; then
+    # Prevent AppleDouble sidecars and xattrs from being archived
+    export COPYFILE_DISABLE=1
+    tar --no-mac-metadata --no-xattrs -cJf "${PLATFORM}.tar.xz" "${PKG_DIR}" 2>/dev/null \
+        || COPYFILE_DISABLE=1 tar -cJf "${PLATFORM}.tar.xz" "${PKG_DIR}"
+else
+    tar -cJf "${PLATFORM}.tar.xz" "${PKG_DIR}"
+fi
+
 echo ">>> Package created: ${PLATFORM}.tar.xz"
 
 # ----------------------------------------------------------------------------
@@ -206,7 +215,6 @@ content_sha256="$(content_sha256_dir "${PKG_DIR}")"
 created_at_utc="$(TZ=UTC date +%Y-%m-%dT%H:%M:%SZ)"
 
 jq -n \
-  --arg name "$PKG_DIR" \
   --arg version "$VERSION" \
   --arg release_number "$RELEASE_NUMBER" \
   --arg platform "$PLATFORM" \
