@@ -140,9 +140,8 @@ mkdir -p .llvm
 cd .llvm
 
 echo ">>> Cloning llvm-project..."
-git clone https://github.com/llvm/llvm-project.git
+git clone --depth=1 --branch "$BRANCH" https://github.com/llvm/llvm-project.git
 cd llvm-project
-git checkout "$BRANCH"
 
 echo ">>> Creating build directory..."
 rm -rf build
@@ -151,44 +150,60 @@ mkdir -p build
 # ----------------------------------------------------------------------------
 # Configure
 # ----------------------------------------------------------------------------
-echo ">>> Configuring LLVM..."
+LLVM_TARGETS="host"
+
 cmake -S llvm -B build -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="../${PKG_DIR}" \
   -DBUILD_SHARED_LIBS=OFF \
   -DLLVM_ENABLE_PROJECTS="clang;mlir" \
   -DLLVM_TARGETS_TO_BUILD="host" \
-  -DLLVM_BUILD_TESTS=OFF \
-  -DLLVM_INCLUDE_TESTS=OFF \
-  -DLLVM_BUILD_EXAMPLES=OFF \
-  -DLLVM_INCLUDE_EXAMPLES=OFF \
-  -DLLVM_BUILD_DOCS=OFF \
-  -DLLVM_ENABLE_DOXYGEN=OFF \
-  -DLLVM_ENABLE_LTO=OFF \
-  -DLLVM_ENABLE_SPHINX=OFF \
-  -DLLVM_STATIC_LINK_CXX_STDLIB=ON \
-  -DLLVM_ENABLE_ZLIB=OFF \
-  -DLLVM_ENABLE_LIBXML2=OFF \
-  -DLLVM_ENABLE_LIBEDIT=OFF \
-  -DCMAKE_INSTALL_PREFIX="../${PKG_DIR}"
-echo ">>> Configuration complete."
+  -DLLVM_INCLUDE_TOOLS=ON \
+  -DLLVM_BUILD_TOOLS=OFF \
+  -DLLVM_BUILD_TESTS=OFF -DLLVM_INCLUDE_TESTS=OFF \
+  -DLLVM_BUILD_EXAMPLES=OFF -DLLVM_INCLUDE_EXAMPLES=OFF \
+  -DLLVM_INCLUDE_DOCS=OFF \
+  -DLLVM_ENABLE_ZLIB=OFF -DLLVM_ENABLE_LIBXML2=OFF -DLLVM_ENABLE_LIBEDIT=OFF \
+  -DLLVM_ENABLE_LTO=OFF -DLLVM_ENABLE_SPHINX=OFF \
+  -DLLVM_ENABLE_RTTI=ON
 
 # ----------------------------------------------------------------------------
 # Build + install
 # ----------------------------------------------------------------------------
 echo ">>> Building and installing LLVM..."
-ninja -C build install
+ninja -C build llvm-config install
+rm -rf ../${PKG_DIR}/bin/*
+cp -f "build/bin/llvm-config" "../${PKG_DIR}/bin"
 echo ">>> Build and install complete."
+cd ..
 
 # ----------------------------------------------------------------------------
-# Post-install cleanup
+# Cleanup
 # ----------------------------------------------------------------------------
-echo ">>> Cleaning install..."
-cd "../${PKG_DIR}"
-mv bin/llvm-config .
-rm -rf bin/*
-mv llvm-config bin/
+echo ">>> Cleaning unneeded stuff from install..."
+echo "include..."
+cd "${PKG_DIR}/include"
+rm -rf clang clang-c
 cd ..
+
+echo "lib..."
+cd "lib"
+rm -rf clang libscanbuild libear objects-Release
+# --- Clang: keep only libclang.dylib for bindgen
+rm -f libclang-cpp.dylib libclang*.a
+rm -f libmlir_c_runner_utils.dylib libmlir_runner_utils.dylib \
+   libmlir_async_runtime.dylib libmlir_arm_runner_utils.dylib \
+   libmlir_float16_utils.dylib
+rm -f libLTO.dylib libRemarks.dylib
+# --- MLIR runner dylibs and arm stubs (not needed for bindings)
+rm -f libmlir_c_runner_utils.dylib libmlir_runner_utils.dylib \
+   libmlir_async_runtime.dylib libmlir_arm_sme_abi_stubs.dylib
+cd ..
+
+echo "others..."
+rm -rf libexec share
 echo ">>> Cleanup complete."
+cd ..
 
 # ----------------------------------------------------------------------------
 # Package
