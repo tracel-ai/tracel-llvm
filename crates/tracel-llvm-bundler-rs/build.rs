@@ -153,9 +153,9 @@ fn download_to_path(url: &str, dest: &Path) -> AnyResult<()> {
 
 fn file_sha256_hex(path: &Path) -> AnyResult<String> {
     let f = File::open(path)?;
-    let mut r = BufReader::new(f);
+    let mut r = BufReader::with_capacity(128 * 1024, f);
     let mut hasher = Sha256::new();
-    let mut buf = [0u8; 1024 * 1024];
+    let mut buf = vec![0u8; 64 * 1024];
     loop {
         let n = r.read(&mut buf)?;
         if n == 0 {
