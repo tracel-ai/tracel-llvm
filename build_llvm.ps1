@@ -308,22 +308,22 @@ $arch = switch -Regex ($env:PROCESSOR_ARCHITECTURE) {
 }
 $platform = "windows-$arch"
 
-Write-Section "Package from workspace (.tar.xz)"
+# Write-Section "Package from workspace (.tar.xz)"
 Push-Location $Workspace
 $tarName = "$platform.tar"
 $xzName  = "$platform.tar.xz"
 try {
-  if (Test-Path $tarName) { Remove-Item -Force $tarName }
-  if (Test-Path $xzName)  { Remove-Item -Force $xzName }
+    if (Test-Path $tarName) { Remove-Item -Force $tarName }
+    if (Test-Path $xzName)  { Remove-Item -Force $xzName }
 
-  # Create tar with *folder named llvm-$Version-$ReleaseNumber* at top-level
-  Exec "tar -cf `"$tarName`" `"$PkgDir`"" "tar create failed"
-  Exec "7z a -txz `"$xzName`" `"$tarName`"" "7z xz failed"
-  Remove-Item -Force $tarName
+    # Create tar with *folder named llvm-$Version-$ReleaseNumber* at top-level
+    Exec "tar -cf `"$tarName`" `"$PkgDir`"" "tar create failed"
+    Exec "7z a -txz `"$xzName`" `"$tarName`"" "7z xz failed"
+    Remove-Item -Force $tarName
 
-  Write-Host "Created package: $(Join-Path $Workspace $xzName)" -ForegroundColor Green
+    Write-Host "Created package: $(Join-Path $Workspace $xzName)" -ForegroundColor Green
 } finally {
-  Pop-Location
+    Pop-Location
 }
 
 # Checksum sidecar files
@@ -332,41 +332,54 @@ Write-Section "Compute checksums and write sidecar JSON"
 $archivePath   = Join-Path $Workspace $xzName
 if (-not (Test-Path $archivePath)) { throw "Archive not found: $archivePath" }
 
-# Content SHA-256 of the extracted top-level directory ($InstallDir)
-# Deterministic directory digest:
-# - Walk all regular files under $InstallDir
-# - Sort by normalized relative path (forward slashes)
-# - Feed into a single SHA256 stream:
-#     "PATH\n" (UTF-8, exact case) +
-#     "SIZE\n" (decimal ASCII of byte length) +
-#     raw file bytes
 function Get-DirectoryContentSha256([string]$root) {
   $sha = [System.Security.Cryptography.SHA256]::Create()
   try {
-    $files = Get-ChildItem -LiteralPath $root -Recurse -File -Force | Sort-Object FullName
-    foreach ($f in $files) {
-      $rel = $f.FullName.Substring($root.Length).TrimStart('\','/')
-      $rel = $rel -replace '\\','/'
+    $root = [System.IO.Path]::GetFullPath($root).TrimEnd('\','/')
 
-      $pathBytes = [System.Text.Encoding]::UTF8.GetBytes($rel + "`n")
+    # Collect (Rel, Full, Key) where Key = hex of UTF-8 bytes of Rel (for bytewise sort)
+    $items = [System.Collections.Generic.List[object]]::new()
+    Get-ChildItem -LiteralPath $root -Recurse -File -Force | ForEach-Object {
+      $full = $_.FullName
+      $rel = $null
+      try {
+        # Works on newer PowerShell/.NET
+        $rel = [System.IO.Path]::GetRelativePath($root, $full)
+      } catch {
+        # Fallback for older Windows PowerShell
+        $rel = $full.Substring($root.Length).TrimStart('\','/')
+      }
+      $rel = ($rel -replace '\\','/')
+      $relBytes = [System.Text.Encoding]::UTF8.GetBytes($rel)
+      $keyHex   = ([System.BitConverter]::ToString($relBytes)).Replace('-', '').ToLowerInvariant()
+      $items.Add([PSCustomObject]@{ Rel = $rel; Full = $full; Key = $keyHex })
+    }
+
+    # Sort by UTF-8 bytes (via the hex key)
+    $items = $items | Sort-Object -Property Key -CaseSensitive
+
+    foreach ($it in $items) {
+      # PATH\n  (UTF-8)
+      $pathBytes = [System.Text.Encoding]::UTF8.GetBytes($it.Rel + "`n")
       $sha.TransformBlock($pathBytes, 0, $pathBytes.Length, $null, 0) | Out-Null
 
-      $sizeLine  = [string]$f.Length + "`n"
-      $sizeBytes = [System.Text.Encoding]::UTF8.GetBytes($sizeLine)
-      $sha.TransformBlock($sizeBytes, 0, $sizeBytes.Length, $null, 0) | Out-Null
+      # SIZE\n  (ASCII digits, invariant)
+      $lenStr = ([System.IO.FileInfo]$it.Full).Length.ToString([System.Globalization.CultureInfo]::InvariantCulture) + "`n"
+      $lenBytes = [System.Text.Encoding]::UTF8.GetBytes($lenStr)
+      $sha.TransformBlock($lenBytes, 0, $lenBytes.Length, $null, 0) | Out-Null
 
-      $fs = [System.IO.File]::Open($f.FullName, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+      # BYTES
+      $fs = [System.IO.File]::Open($it.Full, 'Open', 'Read', 'Read')
       try {
         $buffer = New-Object byte[] (1024*1024)
         while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
           $sha.TransformBlock($buffer, 0, $read, $null, 0) | Out-Null
         }
-      } finally {
-        $fs.Dispose()
-      }
+      } finally { $fs.Dispose() }
     }
+
     $sha.TransformFinalBlock([byte[]]::new(0), 0, 0) | Out-Null
-    ($sha.Hash | ForEach-Object { $_.ToString("x2") }) -join ""
+    ($sha.Hash | ForEach-Object { $_.ToString('x2') }) -join ''
   } finally {
     $sha.Dispose()
   }
