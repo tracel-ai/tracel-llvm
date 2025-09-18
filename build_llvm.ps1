@@ -231,29 +231,31 @@ $cmakeConfigure = @(
   "-S `"$SourceDir\llvm`"",
   "-B `"$BuildDir`"",
   "-G Ninja",
-  "-DBUILD_SHARED_LIBS=OFF",
+  "-DLLVM_PARALLEL_LINK_JOBS=$jobs",
   "-DCMAKE_BUILD_TYPE=$Config",
-  "-DCMAKE_CXX_FLAGS=/bigobj -DCMAKE_C_FLAGS=/bigobj",
   "-DCMAKE_INSTALL_PREFIX=`"$InstallDir`"",
-  "-DCMAKE_MSVC_RUNTIME_LIBRARY=$msvcCRT",
-  "-DLLVM_BUILD_DOCS=OFF",
-  "-DLLVM_BUILD_EXAMPLES=OFF",
+  "-DBUILD_SHARED_LIBS=OFF",
+  "-DLLVM_ENABLE_PROJECTS=`"$Projects`"",
+  "-DLLVM_TARGETS_TO_BUILD=`"$Targets`"",
+  "-DLLVM_INCLUDE_TOOLS=ON",
+  "-DLLVM_BUILD_TOOLS=OFF",
   "-DLLVM_BUILD_TESTS=OFF",
+  "-DLLVM_BUILD_EXAMPLES=OFF",
+  "-DLLVM_INCLUDE_TESTS=OFF",
+  "-DLLVM_INCLUDE_DOCS=OFF",
+  "-DLLVM_INCLUDE_EXAMPLES=OFF",
   "-DLLVM_ENABLE_DIA_SDK=OFF",
   "-DLLVM_ENABLE_DOXYGEN=OFF",
-  "-DLLVM_ENABLE_DUMP=ON",
-  "-DLLVM_ENABLE_LIBEDIT=OFF",
-  "-DLLVM_ENABLE_LIBXML2=OFF",
-  "-DLLVM_ENABLE_LTO=OFF",
-  "-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON",
-  "-DLLVM_ENABLE_PROJECTS=`"$Projects`"",
   "-DLLVM_ENABLE_SPHINX=OFF",
   "-DLLVM_ENABLE_ZLIB=OFF",
-  "-DLLVM_INCLUDE_EXAMPLES=OFF",
-  "-DLLVM_INCLUDE_TESTS=OFF",
-  "-DLLVM_PARALLEL_LINK_JOBS=$jobs",
-  "-DLLVM_STATIC_LINK_CXX_STDLIB=ON",
-  "-DLLVM_TARGETS_TO_BUILD=`"$Targets`""
+  "-DLLVM_ENABLE_LIBXML2=OFF",
+  "-DLLVM_ENABLE_LIBEDIT=OFF",
+  "-DLLVM_ENABLE_LTO=OFF",
+  "-DLLVM_ENABLE_RTTI=ON",
+  "-DLLVM_ENABLE_DUMP=ON",
+  "-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON",
+  "-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=`"`"",
+  "-DCMAKE_MSVC_RUNTIME_LIBRARY=$msvcCRT"
 ) -join " "
 Exec $cmakeConfigure "CMake configure failed"
 $buildNinja = Join-Path $BuildDir "build.ninja"
@@ -261,26 +263,42 @@ if (-not (Test-Path $buildNinja)) { throw "Configure failed (no build.ninja gene
 
 Write-Section "Build and Install"
 Exec "cmake --build `"$BuildDir`" --config $Config -- -j $jobs -v -k 0" "Build failed"
+Exec "cmake --build `"$BuildDir`" --target llvm-config --config $Config -- -j $jobs -v -k 0" "Build llvm-config failed"
 Exec "cmake --install `"$BuildDir`" --config $Config" "Install failed"
-$llvmConfig = Join-Path $InstallDir "bin\llvm-config.exe"
-if (-not (Test-Path $llvmConfig)) { throw "Install failed (llvm-config.exe not found)" }
 
 Write-Host "Installed to: $InstallDir" -ForegroundColor Green
 
-Write-Section "Post-install trim (preserve llvm-config + DLLs + PDB...)"
+Write-Section "Post-install cleanup"
 $installBin = Join-Path $InstallDir 'bin'
-$cfgName    = 'llvm-config.exe'
-$cfgPath    = Join-Path $installBin $cfgName
-if (-not (Test-Path $cfgPath)) { throw "Install finished but $cfgName not found in $installBin." }
-$keepNames = @('llvm-config.exe')
-$preserve  = @()
-$preserve += Get-ChildItem -Path (Join-Path $installBin '*') -File -Include *.dll,*.pdb | ForEach-Object FullName
-$preserve += $keepNames | ForEach-Object { Join-Path $installBin $_ }
-"Preserving:`n  " + ($preserve -join "`n  ") | Write-Host
-# Delete everything else in bin (top level only)
-Get-ChildItem -Path $installBin -File | Where-Object {
-    $preserve -notcontains $_.FullName
-} | Remove-Item -Force
+$installInclude = Join-Path $InstallDir 'include'
+$installLib = Join-Path $InstallDir 'lib'
+# Keep only llvm-config.exe and libclang.dll
+Remove-Item -Recurse -Force $installBin
+New-Item -ItemType Directory -Path $installBin -Force | Out-Null
+Copy-Item (Join-Path $BuildDir "bin\llvm-config.exe") $installBin -Force
+Copy-Item (Join-Path $BuildDir "bin\libclang.dll") $installBin -Force
+Write-Host "include..."
+$installInclude = Join-Path $InstallDir 'include'
+Remove-Item -Recurse -Force (Join-Path $installInclude "clang") -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force (Join-Path $installInclude "clang-c") -ErrorAction SilentlyContinue
+Write-Host "lib..."
+$installLib = Join-Path $InstallDir 'lib'
+Remove-Item -Recurse -Force (Join-Path $installLib "clang") -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force (Join-Path $installLib "libear") -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force (Join-Path $installLib "libscanbuild") -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force (Join-Path $installLib "objects-Release") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $installLib "clang*.lib") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $installLib "mlir_*.lib") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $installLib "LTO.lib") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $installLib "Remarks.lib") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $installLib "mlir_*runner_utils*.lib") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $installLib "mlir_*c_runner_utils*.lib") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $installLib "mlir_*async*runtime*.lib") -ErrorAction SilentlyContinue
+Write-Host "others..."
+Remove-Item -Recurse -Force (Join-Path $InstallDir "libexec")
+Remove-Item -Recurse -Force (Join-Path $InstallDir "share")
+# Strip PDBs everywhere (bin + lib)
+Get-ChildItem -Path $InstallDir -Recurse -Include *.pdb -File -ErrorAction SilentlyContinue | Remove-Item -Force
 
 # Platform string for artifact name
 $arch = switch -Regex ($env:PROCESSOR_ARCHITECTURE) {
