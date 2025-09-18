@@ -248,10 +248,14 @@ pub fn bundle_cache() -> AnyResult<()> {
     let checksum_path = opsys.checksum_cache_path()?;
     download_to_path(&opsys.checksum_url(), &checksum_path)
         .with_context(|| format!("downloading {}", opsys.checksum_url()))?;
-    let sidecar_text = fs::read_to_string(&checksum_path)
+    let mut sidecar_text = fs::read_to_string(&checksum_path)
         .with_context(|| format!("reading {}", checksum_path.display()))?;
-    let sidecar: Sidecar =
-        serde_json::from_str(&sidecar_text).with_context(|| "parsing checksum sidecar JSON")?;
+    // Windows fix: strip UTF-8 BOM if present (can happen with some versions of powershell)
+    if sidecar_text.starts_with('\u{FEFF}') {
+        sidecar_text = sidecar_text.trim_start_matches('\u{FEFF}').to_string();
+    }
+    let sidecar: Sidecar = serde_json::from_str(&sidecar_text)
+        .with_context(|| "parsing checksum sidecar JSON")?;
 
     // 3) Download bundle if required (i.e. it does not exist or its checksum does not match)
     let archive_path = opsys.artifact_cache_path()?;
@@ -288,7 +292,7 @@ pub fn bundle_cache() -> AnyResult<()> {
     // 4) Extract bundle
     // The tarball contains exactly one top-level dir: tracel-llvm-<ver>-<rel>
     decompress_tar_xz_file_to(&archive_path, parent)?;
-    // Sanity: the expected directory must now exist
+    // The expected directory must now exist
     if !llvm_path.exists() {
         bail!(
             "Extraction completed but expected directory not found: {}",
@@ -306,8 +310,8 @@ pub fn bundle_cache() -> AnyResult<()> {
             content
         );
     }
+
     // Success, don't clean up
     rollback.commit();
-
     Ok(())
 }
