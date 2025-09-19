@@ -7,8 +7,6 @@ use std::{
     process::exit,
 };
 
-const LLVM_MAJOR_VERSION: usize = 20;
-
 fn main() {
     if let Err(error) = run() {
         eprintln!("{error}");
@@ -17,8 +15,8 @@ fn main() {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    tracel_llvm_bundler::config::init()?;
-    let prefix_env_var = format!("TABLEGEN_{LLVM_MAJOR_VERSION}0_PREFIX");
+    let llvm_major_version = tracel_llvm_bundler::config::init()?;
+    let prefix_env_var = format!("TABLEGEN_{llvm_major_version}0_PREFIX");
     println!("cargo:rerun-if-env-changed={prefix_env_var}");
     println!("cargo:rerun-if-changed=wrapper.h");
     println!("cargo:rerun-if-changed=cc");
@@ -26,9 +24,9 @@ fn run() -> Result<(), Box<dyn Error>> {
     let prefix_os: Option<OsString> = env::var_os(prefix_env_var);
     // Version gate
     let version = tracel_llvm_bundler::config::get_version(prefix_os.as_ref())?;
-    if !version.starts_with(&format!("{LLVM_MAJOR_VERSION}.")) {
+    if !version.starts_with(&format!("{llvm_major_version}.")) {
         return Err(format!(
-            "failed to find correct version ({LLVM_MAJOR_VERSION}.x.x) of llvm-config (found {version})"
+            "failed to find correct version ({llvm_major_version}.x.x) of llvm-config (found {version})"
         )
                    .into());
     }
@@ -54,7 +52,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     if cfg!(not(target_os = "windows")) {
         clang_args.extend(vec!["-I", "/usr/include"]);
     }
-    let linux_clang_includedir = format!("{libdir}/clang/{LLVM_MAJOR_VERSION}/include");
+    let linux_clang_includedir = format!("{libdir}/clang/{llvm_major_version}/include");
     if cfg!(target_os = "linux") {
         // need to point to clang libs on linux
         clang_args.extend(vec!["-I", &linux_clang_includedir]);
