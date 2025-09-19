@@ -1,4 +1,4 @@
-use tracel_tblgen::record::Record;
+use tracel_tblgen_rs::record::Record;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Type {

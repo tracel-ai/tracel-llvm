@@ -1,5 +1,5 @@
 use super::error::{Error, OdsError};
-use tracel_tblgen::{error::WithLocation, record::Record};
+use tracel_tblgen_rs::{error::WithLocation, record::Record};
 
 #[derive(Debug, Clone)]
 pub enum Trait {

@@ -22,7 +22,7 @@ quote = "1"
 regex = "1.11.2"
 syn = { version = "2", features = ["full"] }
 tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "20.1.4-1" }
-tracel-tblgen = { path = "../tracel-tblgen-rs", version = "20.1.4-1" }
+tracel-tblgen-rs = { path = "../tracel-tblgen-rs", version = "20.1.4-1" }
 unindent = "0.2.4"
 
 [dev-dependencies]

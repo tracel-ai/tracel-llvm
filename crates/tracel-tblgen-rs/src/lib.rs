@@ -35,7 +35,7 @@
 //! iterates over classes and defs defined in this file.
 //!
 //! ```rust
-//! use tracel_tblgen::{TableGenParser, RecordKeeper};
+//! use tracel_tblgen_rs::{TableGenParser, RecordKeeper};
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let keeper: RecordKeeper = TableGenParser::new()
@@ -56,7 +56,7 @@
 //! By adding include paths, external TableGen files can be included.
 //!
 //! ```rust
-//! use tracel_tblgen::{TableGenParser, RecordKeeper};
+//! use tracel_tblgen_rs::{TableGenParser, RecordKeeper};
 //! use std::path::Path;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -74,7 +74,7 @@
 //! You can also pass an included filename directly.
 //!
 //! ```rust
-//! use tracel_tblgen::{TableGenParser, RecordKeeper};
+//! use tracel_tblgen_rs::{TableGenParser, RecordKeeper};
 //! use std::path::Path;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {

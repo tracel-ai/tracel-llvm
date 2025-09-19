@@ -23,7 +23,7 @@
 //! `SourceMgr` class.
 //!
 //! ```rust
-//! use tracel_tblgen::{TableGenParser, RecordKeeper};
+//! use tracel_tblgen_rs::{TableGenParser, RecordKeeper};
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let keeper: RecordKeeper = TableGenParser::new()

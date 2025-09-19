@@ -7,7 +7,7 @@ use std::{
     io,
     string::FromUtf8Error,
 };
-use tracel_tblgen::{
+use tracel_tblgen_rs::{
     SourceInfo,
     error::{SourceError, TableGenError},
 };
@@ -17,9 +17,9 @@ pub enum Error {
     InvalidIdentifier(String),
     Io(io::Error),
     Ods(SourceError<OdsError>),
-    Parse(tracel_tblgen::Error),
+    Parse(tracel_tblgen_rs::Error),
     Syn(syn::Error),
-    TableGen(tracel_tblgen::Error),
+    TableGen(tracel_tblgen_rs::Error),
     Utf8(FromUtf8Error),
 }
 

@@ -7,7 +7,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use std::{collections::HashMap, sync::LazyLock};
 use syn::{Ident, Type, parse_quote};
-use tracel_tblgen::{Record, error::TableGenError};
+use tracel_tblgen_rs::{Record, error::TableGenError};
 
 macro_rules! prefixed_string {
     ($prefix:literal, $name:ident) => {

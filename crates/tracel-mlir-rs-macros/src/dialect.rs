@@ -21,7 +21,7 @@ use std::{
     path::{Component, Path},
     str,
 };
-use tracel_tblgen::{TableGenParser, record::Record, record_keeper::RecordKeeper};
+use tracel_tblgen_rs::{TableGenParser, record::Record, record_keeper::RecordKeeper};
 
 pub fn generate_dialect(input: DialectInput) -> Result<TokenStream, Box<dyn std::error::Error>> {
     let llvm_include_directory = tracel_llvm_bundler::config::llvm_path()?.join("include");
