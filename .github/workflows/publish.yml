@@ -5,34 +5,67 @@ on:
 
 jobs:
   publish-tracel-llvm-bundler:
-    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v3
+    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
     with:
       crate: tracel-llvm-bundler
     secrets:
       CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
 
   publish-tracel-mlir-sys:
-    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v3
+    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
     with:
       crate: tracel-mlir-sys
+      apt-packages: "build-essential"
+      runs-on: '[
+        "@id:publish-tracel-mlir-sys-${{ github.run_id }}-${{ github.run_attempt }}",
+        "@image-family:ubuntu-2204-lts",
+        "@image-project:ubuntu-os-cloud",
+        "@disk-size:100",
+        "@keep-alive:false",
+        "@machine-type:n2-standard-48",
+        "@os:linux",
+        "@zone:northamerica-northeast1-b"
+      ]'
     needs:
       - publish-tracel-llvm-bundler
     secrets:
       CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
 
   publish-tracel-tblgen-rs:
-    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v3
+    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
     with:
       crate: tracel-tblgen-rs
+      apt-packages: "build-essential"
+      runs-on: '[
+        "@id:publish-tracel-tblgen-rs-${{ github.run_id }}-${{ github.run_attempt }}",
+        "@image-family:ubuntu-2204-lts",
+        "@image-project:ubuntu-os-cloud",
+        "@disk-size:100",
+        "@keep-alive:false",
+        "@machine-type:n2-standard-48",
+        "@os:linux",
+        "@zone:northamerica-northeast1-b"
+      ]'
     needs:
       - publish-tracel-llvm-bundler
     secrets:
       CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
 
   publish-tracel-mlir-rs-macros:
-    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v3
+    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
     with:
-      crate: tracel-mlir-sys
+      crate: tracel-mlir-rs-macros
+      apt-packages: "build-essential"
+      runs-on: '[
+        "@id:publish-tracel-mlir-rs-macros-${{ github.run_id }}-${{ github.run_attempt }}",
+        "@image-family:ubuntu-2204-lts",
+        "@image-project:ubuntu-os-cloud",
+        "@disk-size:100",
+        "@keep-alive:false",
+        "@machine-type:n2-standard-48",
+        "@os:linux",
+        "@zone:northamerica-northeast1-b"
+      ]'
     needs:
       - publish-tracel-llvm-bundler
       - publish-tracel-tblgen-rs
@@ -40,9 +73,19 @@ jobs:
       CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
 
   publish-tracel-mlir-rs:
-    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v3
+    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
     with:
       crate: tracel-mlir-rs
+      runs-on: '[
+        "@id:publish-tracel-mlir-rs-macros-${{ github.run_id }}-${{ github.run_attempt }}",
+        "@image-family:ubuntu-2204-lts",
+        "@image-project:ubuntu-os-cloud",
+        "@disk-size:100",
+        "@keep-alive:false",
+        "@machine-type:n2-standard-48",
+        "@os:linux",
+        "@zone:northamerica-northeast1-b"
+      ]'
     needs:
       - publish-tracel-mlir-rs-macros
       - publish-tracel-mlir-sys
@@ -50,9 +93,19 @@ jobs:
       CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
 
   publish-tracel-llvm:
-    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v3
+    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
     with:
       crate: tracel-llvm
+      runs-on: '[
+        "@id:publish-tracel-mlir-rs-macros-${{ github.run_id }}-${{ github.run_attempt }}",
+        "@image-family:ubuntu-2204-lts",
+        "@image-project:ubuntu-os-cloud",
+        "@disk-size:100",
+        "@keep-alive:false",
+        "@machine-type:n2-standard-48",
+        "@os:linux",
+        "@zone:northamerica-northeast1-b"
+      ]'
     needs:
       - publish-tracel-mlir-rs
       - publish-tracel-mlir-sys
