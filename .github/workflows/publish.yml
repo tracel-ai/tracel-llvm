@@ -96,6 +96,7 @@ jobs:
     uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
     with:
       crate: tracel-llvm
+      apt-packages: "build-essential"
       runs-on: '[
         "@id:publish-tracel-mlir-rs-macros-${{ github.run_id }}-${{ github.run_attempt }}",
         "@image-family:ubuntu-2204-lts",
