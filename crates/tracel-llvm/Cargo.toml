@@ -11,10 +11,10 @@ repository             = "https://github.com/tracel-ai/tracel-llvm/tree/main/cra
 rust-version.workspace = true
 version.workspace      = true
 
-[dependencies]
-tracel-mlir-rs  = { path = "../tracel-mlir-rs" }
-tracel-mlir-sys = { path = "../tracel-mlir-sys" }
-
 [features]
 mlir-helpers      = ["tracel-mlir-rs/helpers"]
 mlir-ods-dialects = ["tracel-mlir-rs/ods-dialects"]
+
+[dependencies]
+tracel-mlir-rs  = { path = "../tracel-mlir-rs", version = "20.1.4-1" }
+tracel-mlir-sys = { path = "../tracel-mlir-sys", version = "20.1.4-1" }
