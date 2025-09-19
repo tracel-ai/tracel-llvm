@@ -51,9 +51,13 @@ fn run() -> Result<(), Box<dyn Error>> {
     build_c_library(prefix_os.as_ref())?;
 
     let mut clang_args = vec!["-I", &includedir, "-I", "cc/include"];
-    if cfg!(target_os = "windows") {
-    } else {
+    if cfg!(not(target_os = "windows")) {
         clang_args.extend(vec!["-I", "/usr/include"]);
+    }
+    let linux_clang_includedir = format!("{libdir}/clang/{LLVM_MAJOR_VERSION}/include");
+    if cfg!(target_os = "linux") {
+        // need to point to clang libs on linux
+        clang_args.extend(vec!["-I", &linux_clang_includedir]);
     }
     bindgen::builder()
         .header("wrapper.h")

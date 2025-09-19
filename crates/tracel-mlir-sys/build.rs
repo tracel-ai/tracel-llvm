@@ -59,10 +59,19 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     link_mlir_statically()?;
 
+    let mut clang_args = vec!["-I", &includedir];
+    if cfg!(not(target_os = "windows")) {
+        clang_args.extend(vec!["-I", "/usr/include"]);
+    }
+    let linux_clang_includedir = format!("{libdir}/clang/{LLVM_MAJOR_VERSION}/include");
+    if cfg!(target_os = "linux") {
+        // need to point to clang libs on linux
+        clang_args.extend(vec!["-I", &linux_clang_includedir]);
+    }
+
     bindgen::builder()
         .header("wrapper.h")
-        .clang_args(["-I", &includedir])
-        .clang_args(["-I", "/usr/include"])
+        .clang_args(&clang_args)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .unwrap()

@@ -181,27 +181,66 @@ cd ..
 # Cleanup
 # ----------------------------------------------------------------------------
 echo ">>> Cleaning unneeded stuff from install..."
+
+if [[ "$OS" == "macos" ]]; then
+  SHLIB_EXT="dylib"
+  LIBSUB="lib"
+else
+  SHLIB_EXT="so"
+  # Prefer lib64 when present (some distros/package layouts)
+  LIBSUB="lib"
+  [[ -d "${PKG_DIR}/lib64" ]] && LIBSUB="lib64"
+fi
+
 echo "include..."
 cd "${PKG_DIR}/include"
 rm -rf clang clang-c
 cd ..
 
 echo "lib..."
-cd "lib"
-rm -rf clang libscanbuild libear objects-Release
-# --- Clang: keep only libclang.dylib for bindgen
-rm -f libclang-cpp.dylib libclang*.a
-rm -f libmlir_c_runner_utils.dylib libmlir_runner_utils.dylib \
-   libmlir_async_runtime.dylib libmlir_arm_runner_utils.dylib \
-   libmlir_float16_utils.dylib
-rm -f libLTO.dylib libRemarks.dylib
-# --- MLIR runner dylibs and arm stubs (not needed for bindings)
-rm -f libmlir_c_runner_utils.dylib libmlir_runner_utils.dylib \
-   libmlir_async_runtime.dylib libmlir_arm_sme_abi_stubs.dylib
+cd "${LIBSUB}"
+
+# Remove dev-only library subdirs if they exist
+if [[ "$OS" == "macos" ]]; then
+    rm -rf clang libscanbuild libear objects-Release
+else
+    # we need to keep clang on linux
+    rm -rf libscanbuild libear objects-Release
+fi
+
+# Keep only libclang for bindgen, remove clang-cpp and static
+if [[ "$OS" == "macos" ]]; then
+  # keep: libclang.dylib
+  rm -f libclang-cpp.${SHLIB_EXT} libclang*.a
+  # just in case a .tbd stub sneaks in
+  rm -f libclang.tbd libclang-cpp.tbd 2>/dev/null || true
+else
+  # keep: libclang.so and libclang.so.*
+  rm -f libclang-cpp.${SHLIB_EXT} libclang-cpp.${SHLIB_EXT}.* libclang*.a
+fi
+
+# Remove MLIR runner/arm utils we don't need (both unversioned and versioned)
+for base in \
+  libmlir_c_runner_utils \
+  libmlir_runner_utils \
+  libmlir_async_runtime \
+  libmlir_arm_runner_utils \
+  libmlir_float16_utils \
+  libmlir_arm_sme_abi_stubs
+do
+  rm -f "${base}.${SHLIB_EXT}" "${base}.${SHLIB_EXT}."* 2>/dev/null || true
+done
+
+# --- Remove LTO/Remarks shared libs (and versioned on Linux)
+for base in libLTO libRemarks; do
+  rm -f "${base}.${SHLIB_EXT}" "${base}.${SHLIB_EXT}."* 2>/dev/null || true
+done
+
 cd ..
 
 echo "others..."
 rm -rf libexec share
+
 echo ">>> Cleanup complete."
 cd ..
 
