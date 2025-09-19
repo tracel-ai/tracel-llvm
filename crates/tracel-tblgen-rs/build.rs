@@ -17,7 +17,7 @@ fn main() {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    tracel_llvm_bundler_rs::config::init()?;
+    tracel_llvm_bundler::config::init()?;
     let prefix_env_var = format!("TABLEGEN_{LLVM_MAJOR_VERSION}0_PREFIX");
     println!("cargo:rerun-if-env-changed={prefix_env_var}");
     println!("cargo:rerun-if-changed=wrapper.h");
@@ -25,7 +25,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     // Install prefix
     let prefix_os: Option<OsString> = env::var_os(prefix_env_var);
     // Version gate
-    let version = tracel_llvm_bundler_rs::config::get_version(prefix_os.as_ref())?;
+    let version = tracel_llvm_bundler::config::get_version(prefix_os.as_ref())?;
     if !version.starts_with(&format!("{LLVM_MAJOR_VERSION}.")) {
         return Err(format!(
             "failed to find correct version ({LLVM_MAJOR_VERSION}.x.x) of llvm-config (found {version})"
@@ -33,20 +33,20 @@ fn run() -> Result<(), Box<dyn Error>> {
                    .into());
     }
     // Libraries and headers
-    let includedir = tracel_llvm_bundler_rs::config::get_includedir(prefix_os.as_ref())?;
-    let libdir = tracel_llvm_bundler_rs::config::get_libdir(prefix_os.as_ref())?;
+    let includedir = tracel_llvm_bundler::config::get_includedir(prefix_os.as_ref())?;
+    let libdir = tracel_llvm_bundler::config::get_libdir(prefix_os.as_ref())?;
     println!("cargo:rustc-link-search=native={libdir}");
-    for lib in tracel_llvm_bundler_rs::config::get_libs(prefix_os.as_ref())? {
+    for lib in tracel_llvm_bundler::config::get_libs(prefix_os.as_ref())? {
         println!("cargo:rustc-link-lib=static={lib}");
     }
-    for syslib in tracel_llvm_bundler_rs::config::get_system_libs(prefix_os.as_ref())? {
+    for syslib in tracel_llvm_bundler::config::get_system_libs(prefix_os.as_ref())? {
         println!("cargo:rustc-link-lib={syslib}");
     }
-    if let Some(name) = tracel_llvm_bundler_rs::config::get_system_libcpp() {
+    if let Some(name) = tracel_llvm_bundler::config::get_system_libcpp() {
         println!("cargo:rustc-link-lib={name}");
     }
     // required on macos
-    tracel_llvm_bundler_rs::config::set_homebrew_library_path()?;
+    tracel_llvm_bundler::config::set_homebrew_library_path()?;
 
     build_c_library(prefix_os.as_ref())?;
 
@@ -70,7 +70,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 }
 
 fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
-    let includedir = tracel_llvm_bundler_rs::config::get_includedir(prefix_os)?;
+    let includedir = tracel_llvm_bundler::config::get_includedir(prefix_os)?;
     let mut b = cc::Build::new();
     let mut includes = vec!["cc/include"];
     let mut flags = vec![];
@@ -94,9 +94,9 @@ fn build_c_library(prefix_os: Option<&OsString>) -> Result<(), Box<dyn Error>> {
         .includes(includes)
         .flags(flags)
         .std("c++17");
-    let cxxflags = tracel_llvm_bundler_rs::config::get_cxxflags(prefix_os)?;
+    let cxxflags = tracel_llvm_bundler::config::get_cxxflags(prefix_os)?;
     apply_llvm_flags_to_cc(&mut b, &cxxflags);
-    let cflags = tracel_llvm_bundler_rs::config::get_cflags(prefix_os)?;
+    let cflags = tracel_llvm_bundler::config::get_cflags(prefix_os)?;
     apply_llvm_flags_to_cc(&mut b, &cflags);
 
     b.compile("CTableGen");

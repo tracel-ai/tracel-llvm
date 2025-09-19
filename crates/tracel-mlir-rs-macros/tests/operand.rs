@@ -4,9 +4,9 @@ extern crate tracel_mlir_rs as mlir_rs;
 use tracel_mlir_rs::ir::{Block, Location, Type, block::BlockLike, operation::OperationLike};
 use utility::*;
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "operand_test",
-    files: ["crates/tracel-mlir-rs-macro/tests/ods_include/operand.td"],
+    files: ["crates/tracel-mlir-rs-macros/tests/ods_include/operand.td"],
 }
 
 #[test]

@@ -1,6 +1,6 @@
 //! Conversion passes.
 
-tracel_mlir_rs_macro::conversion_passes!(
+tracel_mlir_rs_macros::conversion_passes!(
     mlirCreateConversionArithToAMDGPUConversionPass,
     mlirCreateConversionArithToArmSMEConversionPass,
     mlirCreateConversionArithToLLVMConversionPass,

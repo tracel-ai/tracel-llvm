@@ -112,7 +112,7 @@ pub fn select<'c>(
         .expect("valid operation")
 }
 
-tracel_mlir_rs_macro::binary_operations!(
+tracel_mlir_rs_macros::binary_operations!(
     arith,
     [
         addf,
@@ -148,9 +148,9 @@ tracel_mlir_rs_macro::binary_operations!(
     ]
 );
 
-tracel_mlir_rs_macro::unary_operations!(arith, [negf, truncf]);
+tracel_mlir_rs_macros::unary_operations!(arith, [negf, truncf]);
 
-tracel_mlir_rs_macro::typed_unary_operations!(
+tracel_mlir_rs_macros::typed_unary_operations!(
     arith,
     [
         bitcast,

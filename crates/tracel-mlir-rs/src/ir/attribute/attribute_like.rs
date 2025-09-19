@@ -2,7 +2,7 @@ use crate::{
     ir::{r#type::TypeId, Type},
     ContextRef,
 };
-use tracel_mlir_rs_macro::attribute_check_functions;
+use tracel_mlir_rs_macros::attribute_check_functions;
 use tracel_mlir_sys::{
     mlirAttributeDump, mlirAttributeGetContext, mlirAttributeGetType, mlirAttributeGetTypeID,
     MlirAttribute,

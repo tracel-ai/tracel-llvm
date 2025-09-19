@@ -1,6 +1,6 @@
 //! GPU passes.
 
-tracel_mlir_rs_macro::passes!(
+tracel_mlir_rs_macros::passes!(
     "GPU",
     [
         // spell-checker: disable-next-line
