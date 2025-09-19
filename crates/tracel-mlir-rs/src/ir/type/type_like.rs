@@ -29,7 +29,7 @@ pub trait TypeLike<'c> {
         unsafe { mlirTypeDump(self.to_raw()) }
     }
 
-    tracel_mlir_rs_macro::type_check_functions!(
+    tracel_mlir_rs_macros::type_check_functions!(
         // spell-checker: disable
         mlirTypeIsAAnyQuantizedType,
         mlirTypeIsABF16,

@@ -10,7 +10,7 @@ fn main() {
 }
 
 fn link_mlir_statically() -> Result<(), Box<dyn Error>> {
-    use tracel_llvm_bundler_rs::{
+    use tracel_llvm_bundler::{
         dependency_graph::DependencyGraph, topological_sort::TopologicalSort,
     };
 
@@ -29,12 +29,12 @@ fn link_mlir_statically() -> Result<(), Box<dyn Error>> {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    tracel_llvm_bundler_rs::config::init()?;
+    tracel_llvm_bundler::config::init()?;
     println!("cargo:rerun-if-changed=wrapper.h");
     // Install prefix
     let prefix_os: Option<OsString> = env::var_os(format!("MLIR_SYS_{LLVM_MAJOR_VERSION}0_PREFIX"));
     // Version gate
-    let version = tracel_llvm_bundler_rs::config::get_version(prefix_os.as_ref())?;
+    let version = tracel_llvm_bundler::config::get_version(prefix_os.as_ref())?;
     if !version.starts_with(&format!("{LLVM_MAJOR_VERSION}.")) {
         return Err(format!(
             "failed to find correct version ({LLVM_MAJOR_VERSION}.x.x) of llvm-config (found {version})"
@@ -42,20 +42,20 @@ fn run() -> Result<(), Box<dyn Error>> {
         .into());
     }
     // Libraries and headers
-    let includedir = tracel_llvm_bundler_rs::config::get_includedir(prefix_os.as_ref())?;
-    let libdir = tracel_llvm_bundler_rs::config::get_libdir(prefix_os.as_ref())?;
+    let includedir = tracel_llvm_bundler::config::get_includedir(prefix_os.as_ref())?;
+    let libdir = tracel_llvm_bundler::config::get_libdir(prefix_os.as_ref())?;
     println!("cargo:rustc-link-search=native={libdir}");
-    for lib in tracel_llvm_bundler_rs::config::get_libs(prefix_os.as_ref())? {
+    for lib in tracel_llvm_bundler::config::get_libs(prefix_os.as_ref())? {
         println!("cargo:rustc-link-lib=static={lib}");
     }
-    for syslib in tracel_llvm_bundler_rs::config::get_system_libs(prefix_os.as_ref())? {
+    for syslib in tracel_llvm_bundler::config::get_system_libs(prefix_os.as_ref())? {
         println!("cargo:rustc-link-lib={syslib}");
     }
-    if let Some(name) = tracel_llvm_bundler_rs::config::get_system_libcpp() {
+    if let Some(name) = tracel_llvm_bundler::config::get_system_libcpp() {
         println!("cargo:rustc-link-lib={name}");
     }
     // required on macos
-    tracel_llvm_bundler_rs::config::set_homebrew_library_path()?;
+    tracel_llvm_bundler::config::set_homebrew_library_path()?;
 
     link_mlir_statically()?;
 

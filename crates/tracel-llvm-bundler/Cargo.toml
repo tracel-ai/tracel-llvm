@@ -5,9 +5,9 @@ description            = "Tools to bunlder a portable version of LLVM used in Ru
 edition.workspace      = true
 keywords               = ["cubecl", "llvm", "mlir", "bindings"]
 license.workspace      = true
-name                   = "tracel-llvm-bundler-rs"
+name                   = "tracel-llvm-bundler"
 readme.workspace       = true
-repository             = "https://github.com/tracel-ai/tracel-llvm/tree/main/crates/tracel-llvm-bundler-rs"
+repository             = "https://github.com/tracel-ai/tracel-llvm/tree/main/crates/tracel-llvm-bundler"
 rust-version.workspace = true
 version.workspace      = true
 

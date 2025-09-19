@@ -1,6 +1,6 @@
 //! Transform passes.
 
-tracel_mlir_rs_macro::passes!(
+tracel_mlir_rs_macros::passes!(
     "Transforms",
     [
         // spell-checker: disable-next-line

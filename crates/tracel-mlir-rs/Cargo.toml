@@ -17,7 +17,7 @@ ods-dialects = []
 helpers = ["ods-dialects"]
 
 [dependencies]
-tracel-mlir-rs-macro = { path = "../tracel-mlir-rs-macro" }
+tracel-mlir-rs-macros = { path = "../tracel-mlir-rs-macros" }
 tracel-mlir-sys = { path = "../tracel-mlir-sys" }
 
 [dev-dependencies]

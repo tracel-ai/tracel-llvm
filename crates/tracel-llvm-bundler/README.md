@@ -18,12 +18,12 @@ llvm-bundler-rs = "0.1.0"
 
 To set the env variable and download if missing:
 ```rust
-tracel_llvm_bundler_rs::bundler::bundle_cache()?;
+tracel_llvm_bundler::bundler::bundle_cache()?;
 ```
 
 To get the compile order of MLIR .a:
 ```rust
-use tracel_llvm_bundler_rs::{dependency_graph::DependencyGraph, topological_sort::TopologicalSort};
+use tracel_llvm_bundler::{dependency_graph::DependencyGraph, topological_sort::TopologicalSort};
 
 let prefix =
     Path::new(&env::var(format!("MLIR_SYS_{LLVM_MAJOR_VERSION}0_PREFIX")).unwrap_or_default())

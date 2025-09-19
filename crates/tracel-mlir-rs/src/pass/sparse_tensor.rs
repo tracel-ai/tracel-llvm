@@ -1,6 +1,6 @@
 //! Sparse tensor passes.
 
-tracel_mlir_rs_macro::passes!(
+tracel_mlir_rs_macros::passes!(
     "SparseTensor",
     [
         mlirCreateSparseTensorLowerForeachToSCF,

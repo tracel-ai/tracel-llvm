@@ -7,58 +7,58 @@ pub mod __private {
     pub struct Unset;
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "affine",
     files: ["IR/AffineOps.td", "TransformOps/AffineTransformOps.td", "IR/AffineMemoryOpInterfaces.td"],
     include_directories: ["mlir/Dialect/Affine"],
 }
 
 /* TODO: Fix "error: invalid conversion from Invalid to alloc::string::String" probably tblgen issue?
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "amdgpu",
     files: ["IR/AMDGPU.td", "Transforms/Passes.td"],
     include_directories: ["mlir/Dialect/AMDGPU"],
 }
 */
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "arith",
     files: ["mlir/Dialect/Arith/IR/ArithOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "arm_neon",
     files: ["mlir/Dialect/ArmNeon/ArmNeon.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "arm_sve",
     files: ["mlir/Dialect/ArmSVE/IR/ArmSVE.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "arm_sme",
     files: ["ArmSME.td", "ArmSMEOps.td", "ArmSMEIntrinsicOps.td"],
     include_directories: ["mlir/Dialect/ArmSME/IR"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "async",
     files: ["AsyncDialect.td", "AsyncOps.td", "AsyncTypes.td"],
     include_directories: ["mlir/Dialect/Async/IR"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "amx",
     files: ["mlir/Dialect/AMX/AMX.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "builtin",
     files: ["mlir/IR/BuiltinOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "bufferization",
     files: [
         "IR/BufferizationOps.td",
@@ -71,41 +71,41 @@ tracel_mlir_rs_macro::dialect! {
     include_directories: ["mlir/Dialect/Bufferization"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "complex",
     files: ["ComplexBase.td", "ComplexOps.td"],
     include_directories: ["mlir/Dialect/Complex/IR"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "cf",
     files: ["mlir/Dialect/ControlFlow/IR/ControlFlowOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "dlti",
     files: ["DLTI.td", "DLTIAttrs.td", "DLTIBase.td"],
     include_directories: ["mlir/Dialect/DLTI"]
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "func",
     files: ["IR/FuncOps.td", "TransformOps/FuncTransformOps.td", "Transforms/Passes.td"],
     include_directories: ["mlir/Dialect/Func"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "index",
     files: ["mlir/Dialect/Index/IR/IndexOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "irdl",
     files: ["IRDLOps.td", "IRDL.td"],
     include_directories: ["mlir/Dialect/IRDL/IR"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "llvm",
     // spell-checker: disable-next-line
     files: [
@@ -121,78 +121,78 @@ tracel_mlir_rs_macro::dialect! {
     include_directories: ["mlir/Dialect/LLVMIR"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "memref",
     files: ["mlir/Dialect/MemRef/IR/MemRefOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "scf",
     files: ["mlir/Dialect/SCF/IR/SCFOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "pdl",
     files: ["mlir/Dialect/PDL/IR/PDLOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "pdl_interp",
     files: ["mlir/Dialect/PDLInterp/IR/PDLInterpOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "math",
     files: ["mlir/Dialect/Math/IR/MathOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "gpu",
     files: ["mlir/Dialect/GPU/IR/GPUOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "linalg",
     files: ["mlir/Dialect/Linalg/IR/LinalgOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "quant",
     files: ["IR/QuantOps.td", "Transforms/Passes.td"],
     include_directories: ["mlir/Dialect/Quant"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "shape",
     files: ["mlir/Dialect/Shape/IR/ShapeOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "sparse_tensor",
     files: ["mlir/Dialect/SparseTensor/IR/SparseTensorOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "tensor",
     files: ["mlir/Dialect/Tensor/IR/TensorOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "tosa",
     files: ["mlir/Dialect/Tosa/IR/TosaOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "transform",
     files: ["mlir/Dialect/Transform/IR/TransformOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "vector",
     files: ["mlir/Dialect/Vector/IR/VectorOps.td"],
 }
 
-tracel_mlir_rs_macro::dialect! {
+tracel_mlir_rs_macros::dialect! {
     name: "x86vector",
     files: ["mlir/Dialect/X86Vector/X86Vector.td"],
 }

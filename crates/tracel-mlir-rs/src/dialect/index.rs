@@ -58,7 +58,7 @@ pub fn cmp<'c>(
         .expect("valid operation")
 }
 
-tracel_mlir_rs_macro::binary_operations!(
+tracel_mlir_rs_macros::binary_operations!(
     index,
     [
         add, and, ceildivs, ceildivu, divs, divu, floordivs, maxs, maxu, mins, minu, mul, or, rems,
@@ -66,7 +66,7 @@ tracel_mlir_rs_macro::binary_operations!(
     ]
 );
 
-tracel_mlir_rs_macro::typed_unary_operations!(index, [casts, castu]);
+tracel_mlir_rs_macros::typed_unary_operations!(index, [casts, castu]);
 
 #[cfg(test)]
 mod tests {

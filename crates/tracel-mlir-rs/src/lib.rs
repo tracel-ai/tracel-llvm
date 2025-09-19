@@ -25,7 +25,7 @@ pub use self::{
     string_ref::StringRef,
 };
 
-pub use tracel_mlir_rs_macro::dialect;
+pub use tracel_mlir_rs_macros::dialect;
 
 #[cfg(test)]
 mod tests {

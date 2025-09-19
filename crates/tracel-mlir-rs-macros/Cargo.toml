@@ -5,9 +5,9 @@ description            = "Rust bindings for MLIR libraries used by CubeCL."
 edition.workspace      = true
 keywords               = ["cubecl", "llvm", "mlir", "bindings"]
 license                = "Apache-2.0"
-name                   = "tracel-mlir-rs-macro"
+name                   = "tracel-mlir-rs-macros"
 readme.workspace       = true
-repository             = "https://github.com/tracel-ai/tracel-llvm/tree/main/crates/tracel-mlir-rs-macro"
+repository             = "https://github.com/tracel-ai/tracel-llvm/tree/main/crates/tracel-mlir-rs-macros"
 rust-version.workspace = true
 version.workspace      = true
 
@@ -21,16 +21,13 @@ proc-macro2 = "1"
 quote = "1"
 regex = "1.11.2"
 syn = { version = "2", features = ["full"] }
-tracel-llvm-bundler-rs = { path = "../tracel-llvm-bundler-rs" }
+tracel-llvm-bundler = { path = "../tracel-llvm-bundler" }
 tracel-tblgen = { path = "../tracel-tblgen-rs" }
 unindent = "0.2.4"
-
-[features]
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
 tracel-mlir-rs = { path = "../tracel-mlir-rs", features = ["ods-dialects"] }
-tracel-mlir-sys = { path = "../tracel-mlir-sys" }
 
 [build-dependencies]
-tracel-llvm-bundler-rs = { path = "../tracel-llvm-bundler-rs" }
+tracel-llvm-bundler = { path = "../tracel-llvm-bundler" }
