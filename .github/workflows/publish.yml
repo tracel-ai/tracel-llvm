@@ -15,17 +15,6 @@ jobs:
     uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
     with:
       crate: tracel-mlir-sys
-      apt-packages: "build-essential"
-      runs-on: '[
-        "@id:publish-tracel-mlir-sys-${{ github.run_id }}-${{ github.run_attempt }}",
-        "@image-family:ubuntu-2204-lts",
-        "@image-project:ubuntu-os-cloud",
-        "@disk-size:100",
-        "@keep-alive:false",
-        "@machine-type:n2-standard-48",
-        "@os:linux",
-        "@zone:northamerica-northeast1-b"
-      ]'
     needs:
       - publish-tracel-llvm-bundler
     secrets:
@@ -35,17 +24,6 @@ jobs:
     uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
     with:
       crate: tracel-tblgen-rs
-      apt-packages: "build-essential"
-      runs-on: '[
-        "@id:publish-tracel-tblgen-rs-${{ github.run_id }}-${{ github.run_attempt }}",
-        "@image-family:ubuntu-2204-lts",
-        "@image-project:ubuntu-os-cloud",
-        "@disk-size:100",
-        "@keep-alive:false",
-        "@machine-type:n2-standard-48",
-        "@os:linux",
-        "@zone:northamerica-northeast1-b"
-      ]'
     needs:
       - publish-tracel-llvm-bundler
     secrets:
@@ -55,17 +33,6 @@ jobs:
     uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
     with:
       crate: tracel-mlir-rs-macros
-      apt-packages: "build-essential"
-      runs-on: '[
-        "@id:publish-tracel-mlir-rs-macros-${{ github.run_id }}-${{ github.run_attempt }}",
-        "@image-family:ubuntu-2204-lts",
-        "@image-project:ubuntu-os-cloud",
-        "@disk-size:100",
-        "@keep-alive:false",
-        "@machine-type:n2-standard-48",
-        "@os:linux",
-        "@zone:northamerica-northeast1-b"
-      ]'
     needs:
       - publish-tracel-llvm-bundler
       - publish-tracel-tblgen-rs
@@ -76,16 +43,6 @@ jobs:
     uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
     with:
       crate: tracel-mlir-rs
-      runs-on: '[
-        "@id:publish-tracel-mlir-rs-macros-${{ github.run_id }}-${{ github.run_attempt }}",
-        "@image-family:ubuntu-2204-lts",
-        "@image-project:ubuntu-os-cloud",
-        "@disk-size:100",
-        "@keep-alive:false",
-        "@machine-type:n2-standard-48",
-        "@os:linux",
-        "@zone:northamerica-northeast1-b"
-      ]'
     needs:
       - publish-tracel-mlir-rs-macros
       - publish-tracel-mlir-sys
@@ -96,17 +53,6 @@ jobs:
     uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
     with:
       crate: tracel-llvm
-      apt-packages: "build-essential"
-      runs-on: '[
-        "@id:publish-tracel-mlir-rs-macros-${{ github.run_id }}-${{ github.run_attempt }}",
-        "@image-family:ubuntu-2204-lts",
-        "@image-project:ubuntu-os-cloud",
-        "@disk-size:100",
-        "@keep-alive:false",
-        "@machine-type:n2-standard-48",
-        "@os:linux",
-        "@zone:northamerica-northeast1-b"
-      ]'
     needs:
       - publish-tracel-mlir-rs
       - publish-tracel-mlir-sys
