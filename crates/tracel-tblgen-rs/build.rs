@@ -48,14 +48,29 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     build_c_library(prefix_os.as_ref())?;
 
+    // clang built-in headers (resource dir)
+    let clang_resource_dir = format!("{libdir}/clang/{llvm_major_version}");
+    let linux_clang_includedir = format!("{clang_resource_dir}/include");
+
     let mut clang_args = vec!["-I", &includedir, "-I", "cc/include"];
     if cfg!(not(target_os = "windows")) {
         clang_args.extend(vec!["-I", "/usr/include"]);
     }
-    let linux_clang_includedir = format!("{libdir}/clang/{llvm_major_version}/include");
     if cfg!(target_os = "linux") {
-        // need to point to clang libs on linux
-        clang_args.extend(vec!["-I", &linux_clang_includedir]);
+        // bindgen (clang-sys) will dlopen libclang from here
+        unsafe {
+            std::env::set_var("LIBCLANG_PATH", &libdir);
+
+            // make absolutely sure our libdir is searched first by the loader
+            match std::env::var("LD_LIBRARY_PATH") {
+                Ok(old) => std::env::set_var("LD_LIBRARY_PATH", format!("{libdir}:{old}")),
+                Err(_)  => std::env::set_var("LD_LIBRARY_PATH", &libdir),
+            }
+        }
+        clang_args.extend([
+            "-I", &linux_clang_includedir,
+            "-resource-dir", &clang_resource_dir, // key to avoid picking system headers
+        ]);
     }
     bindgen::builder()
         .header("wrapper.h")
