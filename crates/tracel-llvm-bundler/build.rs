@@ -19,6 +19,9 @@ const TRACEL_LLVM_ARTIFACT_BASE_URL: &str =
 type AnyResult<T> = Result<T>;
 
 fn main() {
+    // Re-run build.rs whenever this env var changes.
+    // This is needed in CI to avoid rust crate caching from skipping this build.rs
+    println!("cargo:rerun-if-env-changed=TRACEL_LLVM_FORCE_BUNDLE_INSTALL");
     if let Err(error) = run() {
         eprintln!("{error}");
         std::process::exit(1);
@@ -217,9 +220,11 @@ fn decompress_tar_xz_file_to(archive_path: &Path, dest_dir: &Path) -> AnyResult<
 }
 
 pub fn bundle_cache() -> AnyResult<()> {
+    let force = std::env::var_os("TRACEL_LLVM_FORCE_BUNDLE_INSTALL").is_some();
+
     // 0) Already installed?
     let llvm_path = llvm_path()?;
-    if llvm_path.exists() {
+    if llvm_path.exists() && !force {
         // This check is lightweight, but we go to great lengths to ensure that if the
         // installation process completes fully, the install is reliable.
         return Ok(());
