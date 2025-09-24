@@ -62,14 +62,14 @@ impl OperatingSystem {
     pub fn artifact_url(&self) -> String {
         let filename = self.filename();
         format!(
-            "{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_VERSION}-{TRACEL_LLVM_RELEASE_NUMBER}/{filename}"
+            "{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_FULL_VERSION}/{filename}"
         )
     }
 
     pub fn checksum_url(&self) -> String {
         let filename = self.checksum_filename();
         format!(
-            "{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_VERSION}-{TRACEL_LLVM_RELEASE_NUMBER}/{filename}"
+            "{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_FULL_VERSION}/{filename}"
         )
     }
 
@@ -83,21 +83,11 @@ impl OperatingSystem {
     }
 
     fn cache_filename(&self) -> String {
-        format!(
-            "tracel-llvm-{ver}-{rel}-{}",
-            self.filename(),
-            ver = TRACEL_LLVM_VERSION,
-            rel = TRACEL_LLVM_RELEASE_NUMBER
-        )
+        format!("tracel-llvm-{TRACEL_LLVM_FULL_VERSION}-{}", self.filename())
     }
 
     fn checksum_cache_filename(&self) -> String {
-        format!(
-            "tracel-llvm-{ver}-{rel}-{}",
-            self.checksum_filename(),
-            ver = TRACEL_LLVM_VERSION,
-            rel = TRACEL_LLVM_RELEASE_NUMBER
-        )
+        format!("tracel-llvm-{TRACEL_LLVM_FULL_VERSION}-{}", self.checksum_filename())
     }
 
     fn artifact_cache_path(&self) -> AnyResult<PathBuf> {

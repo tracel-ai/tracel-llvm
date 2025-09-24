@@ -15,4 +15,4 @@ version.workspace      = true
 
 [build-dependencies]
 bindgen = "0.71.1"
-tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "20.1.4-2" }
+tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "20.1.4-3" }

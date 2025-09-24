@@ -16,5 +16,5 @@ mlir-helpers      = ["tracel-mlir-rs/helpers"]
 mlir-ods-dialects = ["tracel-mlir-rs/ods-dialects"]
 
 [dependencies]
-tracel-mlir-rs  = { path = "../tracel-mlir-rs", version = "20.1.4-2" }
-tracel-mlir-sys = { path = "../tracel-mlir-sys", version = "20.1.4-2" }
+tracel-mlir-rs  = { path = "../tracel-mlir-rs", version = "20.1.4-3" }
+tracel-mlir-sys = { path = "../tracel-mlir-sys", version = "20.1.4-3" }

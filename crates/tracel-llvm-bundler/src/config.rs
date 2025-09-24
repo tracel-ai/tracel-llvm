@@ -8,8 +8,7 @@ use std::{
 const LLVM_MAJOR_VERSION: usize = 20;
 const TRACEL_LLVM_CACHE_DIRECTORY_NAME: &str = "tracel";
 const TRACEL_LLVM_CACHE_PREFIX: &str = "tracel-llvm";
-const TRACEL_LLVM_RELEASE_NUMBER: &str = "1";
-const TRACEL_LLVM_VERSION: &str = "20.1.4";
+const TRACEL_LLVM_FULL_VERSION: &str = "20.1.4-3";
 
 pub type ConfigResult<T> = std::result::Result<T, ConfigError>;
 
@@ -77,7 +76,7 @@ pub fn init() -> ConfigResult<usize> {
 
 pub fn llvm_path() -> ConfigResult<PathBuf> {
     let directory =
-        format!("{TRACEL_LLVM_CACHE_PREFIX}-{TRACEL_LLVM_VERSION}-{TRACEL_LLVM_RELEASE_NUMBER}");
+        format!("{TRACEL_LLVM_CACHE_PREFIX}-{TRACEL_LLVM_FULL_VERSION}");
     data_local_dir()
         .map(|p| p.join(TRACEL_LLVM_CACHE_DIRECTORY_NAME).join(directory))
         .ok_or(ConfigError::UnsupportedSystem)
