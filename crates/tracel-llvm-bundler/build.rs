@@ -19,9 +19,6 @@ const TRACEL_LLVM_ARTIFACT_BASE_URL: &str =
 type AnyResult<T> = Result<T>;
 
 fn main() {
-    // Re-run build.rs whenever this env var changes.
-    // This is needed in CI to avoid rust crate caching from skipping this build.rs
-    println!("cargo:rerun-if-env-changed=TRACEL_LLVM_FORCE_BUNDLE_INSTALL");
     if let Err(error) = run() {
         eprintln!("{error}");
         std::process::exit(1);
@@ -101,6 +98,14 @@ impl OperatingSystem {
     fn checksum_cache_path(&self) -> AnyResult<PathBuf> {
         let base = Self::artifact_cache_dir()?;
         Ok(base.join(self.checksum_cache_filename()))
+    }
+
+    fn sentinel_name(&self) -> &'static str {
+        ".tracel-llvm-installed"
+    }
+
+    fn sentinel_path(&self, llvm_path: &Path) -> PathBuf {
+        llvm_path.join(self.sentinel_name())
     }
 }
 
@@ -220,11 +225,19 @@ fn decompress_tar_xz_file_to(archive_path: &Path, dest_dir: &Path) -> AnyResult<
 }
 
 pub fn bundle_cache() -> AnyResult<()> {
-    let force = std::env::var_os("TRACEL_LLVM_FORCE_BUNDLE_INSTALL").is_some();
+    let opsys = OperatingSystem::current();
+    let llvm_path = llvm_path()?;
+
+    // We use a sentinel to detect if the bundle has been uninstalled.
+    // Given how cargo rerun feature works if can have a perfect solution for this
+    // because it tracks the creation time of the sentinel when the build starts.
+    // So we will rebuild the crate once (but not reinstall the bundle) and only
+    // then cargo will be able to not rebuild the crate if nothing changed.
+    let sentinel = opsys.sentinel_path(&llvm_path);
+    println!("cargo:rerun-if-changed={}", sentinel.display());
 
     // 0) Already installed?
-    let llvm_path = llvm_path()?;
-    if llvm_path.exists() && !force {
+    if llvm_path.exists() {
         // This check is lightweight, but we go to great lengths to ensure that if the
         // installation process completes fully, the install is reliable.
         return Ok(());
@@ -237,7 +250,6 @@ pub fn bundle_cache() -> AnyResult<()> {
     create_dir_all(parent)?;
     // Rollback guard: if anything fails after extraction, remove llvm_path
     let rollback = RollbackDir::new(llvm_path.clone());
-    let opsys = OperatingSystem::current();
 
     // 2) Download and load sidecar file with checksums
     let checksum_path = opsys.checksum_cache_path()?;
@@ -304,6 +316,13 @@ pub fn bundle_cache() -> AnyResult<()> {
             sidecar.content_sha256,
             content
         );
+    }
+
+    // 6) Mark install as complete with a sentinel, if it even disappear we will reinstall.
+    // This is useful in some CI use cases.
+    if !sentinel.exists() {
+        File::create(&sentinel)
+            .with_context(|| format!("creating sentinel {}", sentinel.display()))?;
     }
 
     // Success, don't clean up
