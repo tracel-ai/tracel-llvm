@@ -8,7 +8,7 @@ use std::{
 const LLVM_MAJOR_VERSION: usize = 20;
 const TRACEL_LLVM_CACHE_DIRECTORY_NAME: &str = "tracel";
 const TRACEL_LLVM_CACHE_PREFIX: &str = "tracel-llvm";
-const TRACEL_LLVM_FULL_VERSION: &str = "20.1.4-4";
+const TRACEL_LLVM_FULL_VERSION: &str = "20.1.4-5";
 
 pub type ConfigResult<T> = std::result::Result<T, ConfigError>;
 
