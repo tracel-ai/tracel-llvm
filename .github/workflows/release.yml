@@ -51,7 +51,7 @@ jobs:
       '@keep-alive:false',
       '@machine-type:n2-standard-48',
       '@os:linux',
-      '@zone:northamerica-northeast1-b'
+      '@zones:northamerica-northeast1-b'
       ]
     steps:
       - uses: actions/checkout@v5
@@ -101,7 +101,7 @@ jobs:
       '@keep-alive:false',
       '@machine-type:n2-standard-48',
       '@os:windows',
-      '@zone:northamerica-northeast1-b'
+      '@zones:northamerica-northeast1-b'
       ]
     steps:
       - uses: actions/checkout@v5
