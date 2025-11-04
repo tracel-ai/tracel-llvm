@@ -4,8 +4,8 @@ use tracel_mlir_sys::{
     mlirDialectHandleGetNamespace, mlirDialectHandleInsertDialect, mlirDialectHandleLoadDialect,
     mlirDialectHandleRegisterDialect, mlirGetDialectHandle__async__, mlirGetDialectHandle__cf__,
     mlirGetDialectHandle__func__, mlirGetDialectHandle__gpu__, mlirGetDialectHandle__linalg__,
-    mlirGetDialectHandle__llvm__, mlirGetDialectHandle__pdl__, mlirGetDialectHandle__quant__,
-    mlirGetDialectHandle__scf__, mlirGetDialectHandle__shape__,
+    mlirGetDialectHandle__llvm__, mlirGetDialectHandle__math__, mlirGetDialectHandle__pdl__,
+    mlirGetDialectHandle__quant__, mlirGetDialectHandle__scf__, mlirGetDialectHandle__shape__,
     mlirGetDialectHandle__sparse_tensor__, mlirGetDialectHandle__tensor__, MlirDialectHandle,
 };
 
@@ -44,6 +44,11 @@ impl DialectHandle {
     /// Creates a `llvm` dialect handle.
     pub fn llvm() -> Self {
         unsafe { Self::from_raw(mlirGetDialectHandle__llvm__()) }
+    }
+
+    /// Creates a `math` dialect handle.
+    pub fn math() -> Self {
+        unsafe { Self::from_raw(mlirGetDialectHandle__math__()) }
     }
 
     /// Creates a `pdl` dialect handle.
@@ -123,6 +128,10 @@ mod tests {
     #[test]
     fn llvm() {
         DialectHandle::llvm();
+    }
+
+    fn math() {
+        DialectHandle::math();
     }
 
     #[test]
