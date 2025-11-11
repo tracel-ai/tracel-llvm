@@ -4,6 +4,9 @@ version = "2.1.8"
 edition = "2024"
 
 [dependencies]
+tracel-llvm-bundler = { path = "../crates/tracel-llvm-bundler" }
+tracel-mlir-sys = { path = "../crates/tracel-mlir-sys" }
+bindgen = "0.72.1"
 log = "0.4.28"
 strum = "0.27.2"
-tracel-xtask = "=2.1.9"
+tracel-xtask = "=2.1.11"

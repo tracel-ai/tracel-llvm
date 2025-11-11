@@ -2,11 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+mod bindings;
+#[allow(unused)]
+pub use bindings::*;
 
 #[cfg(test)]
 mod mlir_tests {
-    use super::*;
+    use super::bindings::*;
     use std::ffi::CString;
 
     #[test]

@@ -64,12 +64,14 @@ fn run() -> Result<(), Box<dyn Error>> {
             // make absolutely sure our libdir is searched first by the loader
             match std::env::var("LD_LIBRARY_PATH") {
                 Ok(old) => std::env::set_var("LD_LIBRARY_PATH", format!("{libdir}:{old}")),
-                Err(_)  => std::env::set_var("LD_LIBRARY_PATH", &libdir),
+                Err(_) => std::env::set_var("LD_LIBRARY_PATH", &libdir),
             }
         }
         clang_args.extend([
-            "-I", &linux_clang_includedir,
-            "-resource-dir", &clang_resource_dir, // key to avoid picking system headers
+            "-I",
+            &linux_clang_includedir,
+            "-resource-dir",
+            &clang_resource_dir, // key to avoid picking system headers
         ]);
     }
     bindgen::builder()
