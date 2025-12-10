@@ -228,17 +228,15 @@ pub fn bundle_cache() -> AnyResult<()> {
     let llvm_path = llvm_path()?;
 
     // We use a sentinel to detect if the bundle has been uninstalled.
-    // Given how cargo rerun feature works if can have a perfect solution for this
+    // Given how cargo rerun feature works we cannot have a perfect solution for this
     // because it tracks the creation time of the sentinel when the build starts.
     // So we will rebuild the crate once (but not reinstall the bundle) and only
-    // then cargo will be able to not rebuild the crate if nothing changed.
+    // then cargo will be able to not rebuild the crate as long as the sentinel exists.
     let sentinel = opsys.sentinel_path(&llvm_path);
     println!("cargo:rerun-if-changed={}", sentinel.display());
 
     // 0) Already installed?
-    if llvm_path.exists() {
-        // This check is lightweight, but we go to great lengths to ensure that if the
-        // installation process completes fully, the install is reliable.
+    if sentinel.exists() {
         return Ok(());
     }
 
@@ -306,6 +304,9 @@ pub fn bundle_cache() -> AnyResult<()> {
         );
     }
 
+    // DEBUG: Scan for junk files
+    // debug_scan_for_unwanted_files(&llvm_path)?;
+
     // 5) Verify extracted content checksum on the final destination folder
     let content = directory_content_sha256_hex(&llvm_path)?;
     if content != sidecar.content_sha256 {
@@ -317,7 +318,7 @@ pub fn bundle_cache() -> AnyResult<()> {
         );
     }
 
-    // 6) Mark install as complete with a sentinel, if it even disappear we will reinstall.
+    // 6) Mark install as complete with a sentinel, if this file disappears we will auto-reinstall.
     // This is useful in some CI use cases.
     if !sentinel.exists() {
         File::create(&sentinel)
@@ -326,5 +327,51 @@ pub fn bundle_cache() -> AnyResult<()> {
 
     // Success, don't clean up
     rollback.commit();
+    Ok(())
+}
+
+#[allow(unused)]
+fn debug_scan_for_unwanted_files(root: &Path) -> anyhow::Result<()> {
+    println!("cargo:warning=Scanning LLVM bundle for unexpected files...");
+    const UNWANTED: &[&str] = &[
+        ".DS_Store",
+        ".Trashes",
+    ];
+    let mut found_any = false;
+    for entry in WalkDir::new(root).follow_links(false).into_iter().filter_map(Result::ok) {
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        let abs = entry.path();
+        let rel = abs.strip_prefix(root).unwrap().to_string_lossy();
+        let rel_str = rel.as_ref();
+        // Direct matches
+        if UNWANTED.contains(&rel_str) {
+            println!("cargo:warning=UNWANTED FILE DETECTED: {rel_str}");
+            found_any = true;
+            continue;
+        }
+        // macOS AppleDouble metadata
+        if rel_str.starts_with("._") {
+            println!("cargo:warning=APPLEDOUBLE METADATA FILE DETECTED: {rel_str}");
+            found_any = true;
+            continue;
+        }
+        // Spotlight metadata
+        if rel_str.starts_with(".Spotlight-") {
+            println!("cargo:warning=SPOTLIGHT FILE DETECTED: {rel_str}");
+            found_any = true;
+            continue;
+        }
+        // Generic hidden files
+        if rel_str.starts_with('.') {
+            println!("cargo:warning=HIDDEN FILE DETECTED: {rel_str}");
+            found_any = true;
+            continue;
+        }
+    }
+    if !found_any {
+        println!("cargo:warning=No unexpected files found in extracted LLVM directory.");
+    }
     Ok(())
 }

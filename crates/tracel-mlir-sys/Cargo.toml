@@ -13,7 +13,6 @@ version.workspace      = true
 
 [features]
 default = []
-# supported LLVM patch versions
 llvm_20_1_4 = []
 
 [build-dependencies]
