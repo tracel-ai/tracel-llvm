@@ -1,94 +1,56 @@
-use std::{env, error::Error, ffi::OsString, path::Path, process::exit};
+use std::{env, ffi::OsString, path::Path};
 
 fn main() {
-    if let Err(error) = run() {
-        eprintln!("{error}");
-        exit(1);
-    }
-}
-
-fn link_mlir_statically(llvm_major_version: usize) -> Result<(), Box<dyn Error>> {
-    use tracel_llvm_bundler::{
-        dependency_graph::DependencyGraph, topological_sort::TopologicalSort,
-    };
-
-    let prefix = Path::new(&env::var(format!("MLIR_SYS_{llvm_major_version}0_PREFIX"))?)
-        .join("lib")
-        .join("cmake")
-        .join("mlir")
-        .join("MLIRTargets.cmake");
-    let path = DependencyGraph::from_cmake(prefix)?;
-    let mlirlib = TopologicalSort::get_ordered_list(&path);
-
-    for lib in mlirlib.iter().rev() {
-        println!("cargo:rustc-link-lib=static={lib}");
-    }
-    Ok(())
-}
-
-fn run() -> Result<(), Box<dyn Error>> {
-    let llvm_major_version = tracel_llvm_bundler::config::init()?;
-    println!("cargo:rerun-if-changed=wrapper.h");
+    let llvm_major_version =
+        tracel_llvm_bundler::config::init().expect("Unable to init tracel llvm bundler");
+    println!("cargo::rerun-if-changed=build.rs");
+    let llvm_version = tracel_llvm_bundler::config::llvm_version();
+    println!("cargo:rustc-cfg=feature=\"llvm_{llvm_version}\"");
     // Install prefix
     let prefix_os: Option<OsString> = env::var_os(format!("MLIR_SYS_{llvm_major_version}0_PREFIX"));
-    // Version gate
-    let version = tracel_llvm_bundler::config::get_version(prefix_os.as_ref())?;
-    if !version.starts_with(&format!("{llvm_major_version}.")) {
-        return Err(format!(
-            "failed to find correct version ({llvm_major_version}.x.x) of llvm-config (found {version})"
-        )
-        .into());
-    }
-    // Libraries and headers
-    let includedir = tracel_llvm_bundler::config::get_includedir(prefix_os.as_ref())?;
-    let libdir = tracel_llvm_bundler::config::get_libdir(prefix_os.as_ref())?;
+    let lib_path = tracel_llvm_bundler::config::get_libdir(prefix_os.as_ref())
+        .expect("Unable to get LLVM library directory");
+    println!("cargo::rustc-link-search=native={lib_path}");
+
+    let libdir =
+        tracel_llvm_bundler::config::get_libdir(prefix_os.as_ref()).expect("Unable to get libdir");
     println!("cargo:rustc-link-search=native={libdir}");
-    for lib in tracel_llvm_bundler::config::get_libs(prefix_os.as_ref())? {
+    for lib in
+        tracel_llvm_bundler::config::get_libs(prefix_os.as_ref()).expect("Unable to get libs")
+    {
         println!("cargo:rustc-link-lib=static={lib}");
     }
-    for syslib in tracel_llvm_bundler::config::get_system_libs(prefix_os.as_ref())? {
+    for syslib in tracel_llvm_bundler::config::get_system_libs(prefix_os.as_ref())
+        .expect("Unable to get system libs")
+    {
         println!("cargo:rustc-link-lib={syslib}");
     }
     if let Some(name) = tracel_llvm_bundler::config::get_system_libcpp() {
         println!("cargo:rustc-link-lib={name}");
     }
     // required on macos
-    tracel_llvm_bundler::config::set_homebrew_library_path()?;
+    tracel_llvm_bundler::config::set_homebrew_library_path().expect("Unable to set up homebrew");
 
-    link_mlir_statically(llvm_major_version)?;
+    link_mlir_statically(llvm_major_version);
+}
 
-    // clang built-in headers (resource dir)
-    let clang_resource_dir = format!("{libdir}/clang/{llvm_major_version}");
-    let linux_clang_includedir = format!("{clang_resource_dir}/include");
+fn link_mlir_statically(llvm_major_version: usize) {
+    use tracel_llvm_bundler::{
+        dependency_graph::DependencyGraph, topological_sort::TopologicalSort,
+    };
 
-    let mut clang_args = vec!["-I", &includedir];
-    if cfg!(not(target_os = "windows")) {
-        clang_args.extend(vec!["-I", "/usr/include"]);
+    let prefix = Path::new(
+        &env::var(format!("MLIR_SYS_{llvm_major_version}0_PREFIX"))
+            .expect("Not found env variable"),
+    )
+    .join("lib")
+    .join("cmake")
+    .join("mlir")
+    .join("MLIRTargets.cmake");
+    let path = DependencyGraph::from_cmake(prefix).expect("Path not found");
+    let mlirlib = TopologicalSort::get_ordered_list(&path);
+
+    for lib in mlirlib.iter().rev() {
+        println!("cargo:rustc-link-lib=static={lib}");
     }
-    if cfg!(target_os = "linux") {
-        // bindgen (clang-sys) will dlopen libclang from here
-        unsafe {
-            std::env::set_var("LIBCLANG_PATH", &libdir);
-
-            // make absolutely sure our libdir is searched first by the loader
-            match std::env::var("LD_LIBRARY_PATH") {
-                Ok(old) => std::env::set_var("LD_LIBRARY_PATH", format!("{libdir}:{old}")),
-                Err(_)  => std::env::set_var("LD_LIBRARY_PATH", &libdir),
-            }
-        }
-        clang_args.extend([
-            "-I", &linux_clang_includedir,
-            "-resource-dir", &clang_resource_dir, // key to avoid picking system headers
-        ]);
-    }
-
-    bindgen::builder()
-        .header("wrapper.h")
-        .clang_args(&clang_args)
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
-        .generate()
-        .unwrap()
-        .write_to_file(Path::new(&env::var("OUT_DIR")?).join("bindings.rs"))?;
-
-    Ok(())
 }

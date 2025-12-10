@@ -12,7 +12,9 @@ rust-version.workspace = true
 version.workspace      = true
 
 [features]
+default = []
+# supported LLVM patch versions
+llvm_20_1_4 = []
 
 [build-dependencies]
-bindgen = "0.71.1"
 tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "20.1.4-5" }

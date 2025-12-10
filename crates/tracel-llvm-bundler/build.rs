@@ -61,16 +61,12 @@ impl OperatingSystem {
 
     pub fn artifact_url(&self) -> String {
         let filename = self.filename();
-        format!(
-            "{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_FULL_VERSION}/{filename}"
-        )
+        format!("{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_FULL_VERSION}/{filename}")
     }
 
     pub fn checksum_url(&self) -> String {
         let filename = self.checksum_filename();
-        format!(
-            "{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_FULL_VERSION}/{filename}"
-        )
+        format!("{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_FULL_VERSION}/{filename}")
     }
 
     /// Returns the same cache directory on all OSes for consistency sake
@@ -87,7 +83,10 @@ impl OperatingSystem {
     }
 
     fn checksum_cache_filename(&self) -> String {
-        format!("tracel-llvm-{TRACEL_LLVM_FULL_VERSION}-{}", self.checksum_filename())
+        format!(
+            "tracel-llvm-{TRACEL_LLVM_FULL_VERSION}-{}",
+            self.checksum_filename()
+        )
     }
 
     fn artifact_cache_path(&self) -> AnyResult<PathBuf> {
@@ -261,8 +260,8 @@ pub fn bundle_cache() -> AnyResult<()> {
     if sidecar_text.starts_with('\u{FEFF}') {
         sidecar_text = sidecar_text.trim_start_matches('\u{FEFF}').to_string();
     }
-    let sidecar: Sidecar = serde_json::from_str(&sidecar_text)
-        .with_context(|| "parsing checksum sidecar JSON")?;
+    let sidecar: Sidecar =
+        serde_json::from_str(&sidecar_text).with_context(|| "parsing checksum sidecar JSON")?;
 
     // 3) Download bundle if required (i.e. it does not exist or its checksum does not match)
     let archive_path = opsys.artifact_cache_path()?;
