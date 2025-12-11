@@ -206,18 +206,18 @@ fn update_feature_gated_region(member: &WorkspaceMember) -> anyhow::Result<()> {
 
         // Strip "bindings_" and ".rs"
         let stem = &name["bindings_".len()..name.len() - ".rs".len()];
-        // Expected format: "<os>_<arch>", e.g. "macos_aarch64"
-        let segments: Vec<&str> = stem.split('_').collect();
-        if segments.len() != 2 {
-            // Not a "<os>_<arch>" pattern, skip
-            continue;
-        }
-
-        let os = segments[0].to_string();
-        let arch = segments[1].to_string();
+        // we expect "<os>_<arch>", where <arch> may contain underscores (e.g. "x86_64")
+        // so we split on the first underscore:
+        let (os, arch) = match stem.split_once('_') {
+            Some((os, arch)) => (os.to_string(), arch.to_string()),
+            None => {
+                // No underscore at all -> unknown format, skip
+                continue;
+            }
+        };
 
         // Module name from filename without ".rs", sanitized
-        // e.g. "bindings_macos_aarch64"
+        // e.g. "bindings_macos_aarch64", "bindings_windows_x86_64"
         let module_name = sanitize_for_ident(name.strip_suffix(".rs").unwrap());
         entries.push((module_name, os, arch));
     }
