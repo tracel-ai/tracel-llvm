@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 tracel-llvm-bundler = { path = "../crates/tracel-llvm-bundler" }
-tracel-mlir-sys = { path = "../crates/tracel-mlir-sys" }
+tracel-mlir-sys = { path = "../crates/tracel-mlir-sys", features = ["bindgen"] }
 bindgen = "0.72.1"
 log = "0.4.28"
 strum = "0.27.2"

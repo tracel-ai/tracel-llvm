@@ -11,5 +11,9 @@ repository             = "https://github.com/tracel-ai/tracel-llvm/tree/main/cra
 rust-version.workspace = true
 version.workspace      = true
 
+[features]
+# allow xtask bindgen to bypass compilation error from bindings/mod.rs
+bindgen = []
+
 [build-dependencies]
 tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "20.1.4-5" }

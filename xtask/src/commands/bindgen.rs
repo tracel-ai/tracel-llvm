@@ -217,47 +217,55 @@ fn update_feature_gated_region(member: &WorkspaceMember) -> anyhow::Result<()> {
         let arch = segments[1].to_string();
 
         // Module name from filename without ".rs", sanitized
-        let module_name = sanitize_for_ident(name.strip_suffix(".rs").unwrap());
         // e.g. "bindings_macos_aarch64"
-
+        let module_name = sanitize_for_ident(name.strip_suffix(".rs").unwrap());
         entries.push((module_name, os, arch));
     }
 
-    // Stable ordering for idempotence
+    // Stable ordering for idempotency
     entries.sort_by(|a, b| {
         a.1.cmp(&b.1) // os
             .then(a.2.cmp(&b.2)) // arch
     });
 
-    // Build the generated region
     let mut generated = String::new();
     let mut conditions: Vec<String> = Vec::new();
 
     for (module, os, arch) in &entries {
-        let cond = format!("all(target_os = \"{os}\", target_arch = \"{arch}\")");
-        conditions.push(cond.clone());
+        // Base condition without feature
+        let base_cond = format!("all(target_os = \"{os}\", target_arch = \"{arch}\")");
+        conditions.push(base_cond.clone());
 
-        generated.push_str(&format!("#[cfg({cond})]\n"));
+        // In normal mode, we enforce to not be in bindgen mode
+        let cfg_expr = format!("all(not(feature = \"bindgen\"), {base_cond})");
+
+        generated.push_str(&format!("#[cfg({cfg_expr})]\n"));
         generated.push_str(&format!("mod {module};\n\n"));
 
-        generated.push_str(&format!("#[cfg({cond})]\n"));
+        generated.push_str(&format!("#[cfg({cfg_expr})]\n"));
         generated.push_str(&format!("pub use {module}::*;\n\n"));
     }
 
     if !entries.is_empty() {
+        // Fallback error only in normal mode
         let joined_conditions = conditions
             .iter()
-            .map(|c| format!("    {c}"))
+            .map(|c| format!("        {c},"))
             .collect::<Vec<_>>()
-            .join(",\n");
+            .join("\n");
 
-        generated.push_str("#[cfg(not(any(\n");
+        generated.push_str("#[cfg(all(\n");
+        generated.push_str("    not(feature = \"bindgen\"),\n");
+        generated.push_str("    not(any(\n");
         generated.push_str(&joined_conditions);
-        generated.push_str("\n)))]\n");
+        generated.push_str("\n    )),\n");
+        generated.push_str("))]\n");
         generated.push_str(
             "compile_error!(\"No pre-generated MLIR bindings available for this target_os/target_arch combination.\");\n",
         );
     } else {
+        // If there are no bindings at all, still only error in normal mode.
+        generated.push_str("#[cfg(not(feature = \"bindgen\"))]\n");
         generated.push_str(
             "compile_error!(\"No generated bindings modules were found in src/bindings.\");\n",
         );
