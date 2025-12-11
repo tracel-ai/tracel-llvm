@@ -11,9 +11,5 @@ repository             = "https://github.com/tracel-ai/tracel-llvm/tree/main/cra
 rust-version.workspace = true
 version.workspace      = true
 
-[features]
-default = []
-llvm_20_1_4 = []
-
 [build-dependencies]
 tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "20.1.4-5" }

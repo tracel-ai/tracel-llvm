@@ -73,8 +73,7 @@ fn run_bindgen(crates: &[String]) -> anyhow::Result<()> {
             group_info!("Generate bindings: {}", member.name);
 
             let header_path = get_wrapper_file_path(&member)?;
-            let bindings_path =
-                get_bindings_file_path(&member, &tracel_llvm_bundler::config::llvm_version())?;
+            let bindings_path = get_bindings_file_path(&member)?;
             println!("bindings path: {bindings_path}");
 
             bindgen::Builder::default()
@@ -86,6 +85,7 @@ fn run_bindgen(crates: &[String]) -> anyhow::Result<()> {
                 .write_to_file(&bindings_path)
                 .expect("Should write bindings file");
             update_feature_gated_region(&member)?;
+
             endgroup!();
         } else {
             group_info!("Skip '{}' because it has been excluded!", &member.name);
@@ -130,13 +130,12 @@ fn sanitize_for_ident(s: &str) -> String {
         .collect()
 }
 
-fn get_bindings_file_path(member: &WorkspaceMember, patch: &str) -> anyhow::Result<String> {
+fn get_bindings_file_path(member: &WorkspaceMember) -> anyhow::Result<String> {
     let out_path = get_output_path(member)?;
     let platform = platform_suffix_for_feature();
-    // Example: bindings_20.1.4_linux_x86_64.rs
-    let filename = format!("bindings_{}_{}.rs", patch, platform);
+    // Example: bindings_macos_aarch64.rs, bindings_linux_x86_64.rs
+    let filename = format!("bindings_{}.rs", platform);
     let path = out_path.join(filename);
-
     Ok(path.to_string_lossy().into_owned())
 }
 
@@ -185,8 +184,8 @@ fn update_feature_gated_region(member: &WorkspaceMember) -> anyhow::Result<()> {
     let bindings_dir = get_output_path(member)?;
 
     // Collect bindings_*.rs files
-    // entry = (feature_name, module_name, os, arch)
-    let mut entries: Vec<(String, String, String, String)> = Vec::new();
+    // entry = (module_name, os, arch)
+    let mut entries: Vec<(String, String, String)> = Vec::new();
 
     for entry in fs::read_dir(&bindings_dir).expect("Should read bindings directory") {
         let entry = entry.expect("Should read directory entry");
@@ -205,39 +204,39 @@ fn update_feature_gated_region(member: &WorkspaceMember) -> anyhow::Result<()> {
             continue;
         }
 
+        // Strip "bindings_" and ".rs"
         let stem = &name["bindings_".len()..name.len() - ".rs".len()];
+        // Expected format: "<os>_<arch>", e.g. "macos_aarch64"
         let segments: Vec<&str> = stem.split('_').collect();
-
-        if segments.len() < 3 {
+        if segments.len() != 2 {
+            // Not a "<os>_<arch>" pattern, skip
             continue;
         }
 
-        let arch = segments[segments.len() - 1].to_string();
-        let os = segments[segments.len() - 2].to_string();
-        let version_raw = segments[..segments.len() - 2].join("_");
+        let os = segments[0].to_string();
+        let arch = segments[1].to_string();
 
-        let version_ident = sanitize_for_ident(&version_raw);
-        let feature_name = format!("llvm_{version_ident}");
+        // Module name from filename without ".rs", sanitized
         let module_name = sanitize_for_ident(name.strip_suffix(".rs").unwrap());
+        // e.g. "bindings_macos_aarch64"
 
-        entries.push((feature_name, module_name, os, arch));
+        entries.push((module_name, os, arch));
     }
 
+    // Stable ordering for idempotence
     entries.sort_by(|a, b| {
-        a.0.cmp(&b.0) // version
-            .then(a.2.cmp(&b.2)) // os
-            .then(a.3.cmp(&b.3)) // arch
+        a.1.cmp(&b.1) // os
+            .then(a.2.cmp(&b.2)) // arch
     });
 
+    // Build the generated region
     let mut generated = String::new();
     let mut conditions: Vec<String> = Vec::new();
 
-    for (feature, module, os, arch) in &entries {
-        let cond =
-            format!("all(feature = \"{feature}\", target_os = \"{os}\", target_arch = \"{arch}\")");
+    for (module, os, arch) in &entries {
+        let cond = format!("all(target_os = \"{os}\", target_arch = \"{arch}\")");
         conditions.push(cond.clone());
 
-        // Add linebreak AFTER the #[cfg] line
         generated.push_str(&format!("#[cfg({cond})]\n"));
         generated.push_str(&format!("mod {module};\n\n"));
 
@@ -256,7 +255,7 @@ fn update_feature_gated_region(member: &WorkspaceMember) -> anyhow::Result<()> {
         generated.push_str(&joined_conditions);
         generated.push_str("\n)))]\n");
         generated.push_str(
-            "compile_error!(\"No LLVM bindings found for this LLVM version and target platform.\");\n",
+            "compile_error!(\"No pre-generated MLIR bindings available for this target_os/target_arch combination.\");\n",
         );
     } else {
         generated.push_str(
@@ -264,7 +263,7 @@ fn update_feature_gated_region(member: &WorkspaceMember) -> anyhow::Result<()> {
         );
     }
 
-    // Inject
+    // Inject into FEATURE GATED REGION
     let existing = fs::read_to_string(&selector_path).expect("Should read selector file");
 
     let begin_idx = existing
