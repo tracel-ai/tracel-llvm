@@ -156,7 +156,7 @@ cmake -S llvm -B build -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX="../${PKG_DIR}" \
   -DBUILD_SHARED_LIBS=OFF \
-  -DLLVM_ENABLE_PROJECTS="clang;mlir" \
+  -DLLVM_ENABLE_PROJECTS="mlir" \
   -DLLVM_TARGETS_TO_BUILD="host" \
   -DLLVM_INCLUDE_TOOLS=ON \
   -DLLVM_BUILD_TOOLS=OFF \
@@ -192,43 +192,19 @@ else
   [[ -d "${PKG_DIR}/lib64" ]] && LIBSUB="lib64"
 fi
 
-echo "include..."
-cd "${PKG_DIR}/include"
-rm -rf clang clang-c
-cd ..
-
 echo "lib..."
 cd "${LIBSUB}"
 
 # Remove dev-only library subdirs if they exist
 if [[ "$OS" == "macos" ]]; then
-    rm -rf clang libscanbuild libear objects-Release
+    rm -rf libscanbuild libear objects-Release
 else
     # we need to keep clang on linux
     rm -rf libscanbuild libear objects-Release
 fi
 
-# Keep only libclang for bindgen, remove clang-cpp and static
-if [[ "$OS" == "macos" ]]; then
-  # keep: libclang.dylib
-  rm -f libclang-cpp.${SHLIB_EXT} libclang*.a
-  # just in case a .tbd stub sneaks in
-  rm -f libclang.tbd libclang-cpp.tbd 2>/dev/null || true
-else
-  # keep: libclang.so and libclang.so.*
-  rm -f libclang-cpp.${SHLIB_EXT} libclang-cpp.${SHLIB_EXT}.* libclang*.a
-fi
-
-# Remove MLIR runner/arm utils we don't need (both unversioned and versioned)
-for base in \
-  libmlir_c_runner_utils \
-  libmlir_runner_utils \
-  libmlir_async_runtime \
-  libmlir_arm_runner_utils \
-  libmlir_float16_utils \
-  libmlir_arm_sme_abi_stubs
 do
-  rm -f "${base}.${SHLIB_EXT}" "${base}.${SHLIB_EXT}."* 2>/dev/null || true
+    rm -f "${base}.${SHLIB_EXT}" "${base}.${SHLIB_EXT}."* 2>/dev/null || true
 done
 
 # --- Remove LTO/Remarks shared libs (and versioned on Linux)

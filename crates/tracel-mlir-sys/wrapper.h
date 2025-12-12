@@ -16,7 +16,7 @@
 #include <mlir-c/Dialect/LLVM.h>
 #include <mlir-c/Dialect/Linalg.h>
 // #include <mlir-c/Dialect/MLProgram.h>
-#include <mlir-c/Dialect/Math.h>
+// #include <mlir-c/Dialect/Math.h>
 // #include <mlir-c/Dialect/MemRef.h>
 #include <mlir-c/Dialect/NVGPU.h>
 // #include <mlir-c/Dialect/NVVM.h>

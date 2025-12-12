@@ -18,7 +18,7 @@ param(
   # optional
   [string]$RepoUrl   = "https://github.com/llvm/llvm-project.git",
   [string]$Targets   = "host",
-  [string]$Projects  = "clang;mlir",
+  [string]$Projects  = "mlir",
 
   [string]$Workspace = (Join-Path $PSScriptRoot ".llvm"),
 
@@ -272,22 +272,14 @@ Write-Section "Post-install cleanup"
 $installBin = Join-Path $InstallDir 'bin'
 $installInclude = Join-Path $InstallDir 'include'
 $installLib = Join-Path $InstallDir 'lib'
-# Keep only llvm-config.exe and libclang.dll
 Remove-Item -Recurse -Force $installBin
 New-Item -ItemType Directory -Path $installBin -Force | Out-Null
 Copy-Item (Join-Path $BuildDir "bin\llvm-config.exe") $installBin -Force
-Copy-Item (Join-Path $BuildDir "bin\libclang.dll") $installBin -Force
-Write-Host "include..."
-$installInclude = Join-Path $InstallDir 'include'
-Remove-Item -Recurse -Force (Join-Path $installInclude "clang") -ErrorAction SilentlyContinue
-Remove-Item -Recurse -Force (Join-Path $installInclude "clang-c") -ErrorAction SilentlyContinue
 Write-Host "lib..."
 $installLib = Join-Path $InstallDir 'lib'
-Remove-Item -Recurse -Force (Join-Path $installLib "clang") -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force (Join-Path $installLib "libear") -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force (Join-Path $installLib "libscanbuild") -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force (Join-Path $installLib "objects-Release") -ErrorAction SilentlyContinue
-Remove-Item -Force (Join-Path $installLib "clang*.lib") -ErrorAction SilentlyContinue
 Remove-Item -Force (Join-Path $installLib "mlir_*.lib") -ErrorAction SilentlyContinue
 Remove-Item -Force (Join-Path $installLib "LTO.lib") -ErrorAction SilentlyContinue
 Remove-Item -Force (Join-Path $installLib "Remarks.lib") -ErrorAction SilentlyContinue
