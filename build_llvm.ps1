@@ -280,12 +280,11 @@ $installLib = Join-Path $InstallDir 'lib'
 Remove-Item -Recurse -Force (Join-Path $installLib "libear") -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force (Join-Path $installLib "libscanbuild") -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force (Join-Path $installLib "objects-Release") -ErrorAction SilentlyContinue
-Remove-Item -Force (Join-Path $installLib "mlir_*.lib") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $installLib "MLIR*runner_utils*.lib") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $installLib "MLIR*c_runner_utils*.lib") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $installLib "MLIR*async*runtime*.lib") -ErrorAction SilentlyContinue
 Remove-Item -Force (Join-Path $installLib "LTO.lib") -ErrorAction SilentlyContinue
 Remove-Item -Force (Join-Path $installLib "Remarks.lib") -ErrorAction SilentlyContinue
-Remove-Item -Force (Join-Path $installLib "mlir_*runner_utils*.lib") -ErrorAction SilentlyContinue
-Remove-Item -Force (Join-Path $installLib "mlir_*c_runner_utils*.lib") -ErrorAction SilentlyContinue
-Remove-Item -Force (Join-Path $installLib "mlir_*async*runtime*.lib") -ErrorAction SilentlyContinue
 Write-Host "others..."
 Remove-Item -Recurse -Force (Join-Path $InstallDir "libexec")
 Remove-Item -Recurse -Force (Join-Path $InstallDir "share")

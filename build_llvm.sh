@@ -150,8 +150,6 @@ mkdir -p build
 # ----------------------------------------------------------------------------
 # Configure
 # ----------------------------------------------------------------------------
-LLVM_TARGETS="host"
-
 cmake -S llvm -B build -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX="../${PKG_DIR}" \
@@ -195,16 +193,19 @@ fi
 echo "lib..."
 cd "${LIBSUB}"
 
-# Remove dev-only library subdirs if they exist
-if [[ "$OS" == "macos" ]]; then
-    rm -rf libscanbuild libear objects-Release
-else
-    # we need to keep clang on linux
-    rm -rf libscanbuild libear objects-Release
-fi
+# Remove dev-only library subdirs
+rm -rf libscanbuild libear objects-Release
 
+# Remove MLIR runner/arm utils
+for base in \
+    libmlir_c_runner_utils \
+    libmlir_runner_utils \
+    libmlir_async_runtime \
+    libmlir_arm_runner_utils \
+    libmlir_float16_utils \
+    libmlir_arm_sme_abi_stubs
 do
-    rm -f "${base}.${SHLIB_EXT}" "${base}.${SHLIB_EXT}."* 2>/dev/null || true
+    rm -f "${base}.a" 2>/dev/null || true
 done
 
 # --- Remove LTO/Remarks shared libs (and versioned on Linux)
