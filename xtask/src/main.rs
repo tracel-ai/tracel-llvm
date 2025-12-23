@@ -1,4 +1,6 @@
 mod commands;
+mod utils;
+
 
 #[macro_use]
 extern crate log;
@@ -10,6 +12,7 @@ use tracel_xtask::prelude::*;
 enum Command {
     /// Generate bindings.
     Bindgen(commands::bindgen::BindgenCmdArgs),
+    Bundle(commands::bundle::BundleCmdArgs),
 }
 
 fn main() -> anyhow::Result<()> {
@@ -17,6 +20,7 @@ fn main() -> anyhow::Result<()> {
     let args = init_xtask::<Command>(parse_args::<Command>()?)?;
     match args.command {
         Command::Bindgen(cmd_args) => commands::bindgen::handle_command(cmd_args),
+        Command::Bundle(cmd_args) => commands::bundle::handle_command(cmd_args),
         _ => dispatch_base_commands(args),
     }?;
     let duration = start.elapsed();

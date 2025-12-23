@@ -12,8 +12,8 @@ rust-version.workspace = true
 version.workspace      = true
 
 [features]
-# allow xtask bindgen to bypass compilation error from bindings/mod.rs
-bindgen = []
+# allow xtask to bypass compilation error from bindings/mod.rs
+xtask = ["tracel-llvm-bundler/xtask"]
 
 [build-dependencies]
-tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "20.1.4-5" }
+tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "20.1.4-6" }

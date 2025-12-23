@@ -106,12 +106,14 @@ mod util;
 
 /// This module contains raw bindings for TableGen. Note that these bindings are
 /// unstable and can change at any time.
+/// Moreover bindings and libs are generated and built by xtask bindgen command
 #[allow(non_upper_case_globals)]
 #[allow(non_camel_case_types)]
 #[allow(non_snake_case)]
 pub mod raw {
-    include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+    pub use bindings::*;
 }
+pub mod bindings;
 
 use std::ffi::CStr;
 use std::ffi::CString;

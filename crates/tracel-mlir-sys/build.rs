@@ -1,22 +1,19 @@
 use std::{env, ffi::OsString, path::Path};
 
-const LLVM_FEATURE_PREFIX: &str = "CARGO_FEATURE_LLVM_";
-
 fn main() {
+    // in xtask mode we skip the bundler installation alltogether
+    if std::env::var_os("CARGO_FEATURE_XTASK").is_some() {
+        println!("cargo:warning=xtask mode enabled, skipping bundle installation.");
+        return;
+    }
+
     let llvm_major_version =
         tracel_llvm_bundler::config::init().expect("Should init tracel llvm bundler");
 
     println!("cargo:rerun-if-changed=build.rs");
 
-    let llvm_version = tracel_llvm_bundler::config::llvm_version();
-
-    // Either respect an explicit Cargo feature or set a default cfg(feature="llvm_...").
-    select_or_set_llvm_feature(&llvm_version);
-
-    // Then do all your link logic as before...
     let prefix_os: Option<OsString> =
         env::var_os(format!("MLIR_SYS_{llvm_major_version}0_PREFIX"));
-
     let libdir = tracel_llvm_bundler::config::get_libdir(prefix_os.as_ref())
         .expect("Should get LLVM library directory");
     println!("cargo:rustc-link-search=native={libdir}");
@@ -41,44 +38,6 @@ fn main() {
         .expect("Should set up homebrew library path");
 
     link_mlir_statically(llvm_major_version);
-}
-
-fn select_or_set_llvm_feature(detected_version: &str) {
-    // detected_version: e.g. "20.1.4"
-    // convert to "LLVM_20_1_4" for env var, "llvm_20_1_4" for feature name.
-    let version_ident: String = detected_version
-        .chars()
-        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
-        .collect();
-
-    // Collect enabled llvm_* Cargo features (if any)
-    let mut enabled_features = Vec::new();
-    for (key, value) in env::vars() {
-        if key.starts_with(LLVM_FEATURE_PREFIX) && value == "1" {
-            enabled_features.push(key);
-        }
-    }
-
-    match enabled_features.len() {
-        0 => {
-            // No version feature selected by Cargo. We set a default cfg(feature="llvm_...").
-            let default_feature = format!("llvm_{version_ident}");
-            println!("cargo:rustc-cfg=feature=\"{default_feature}\"");
-        }
-        1 => {
-            // User explicitly selected a feature in Cargo.toml / CLI. Respect it.
-            // Optional: verify it matches detected_version and panic if it doesn't.
-            // let selected_env = &enabled_features[0]; // e.g. "CARGO_FEATURE_LLVM_20_1_4"
-            // ...
-        }
-        _ => {
-            // More than one llvm_* feature — this is invalid.
-            panic!(
-                "tracel-mlir-sys: Multiple llvm_* features enabled; \
-                 select exactly one LLVM version feature."
-            );
-        }
-    }
 }
 
 fn link_mlir_statically(llvm_major_version: usize) {

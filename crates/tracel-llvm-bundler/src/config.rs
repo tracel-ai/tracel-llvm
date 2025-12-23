@@ -1,6 +1,7 @@
 use dirs::data_local_dir;
 use std::{
     ffi::OsString,
+    fs,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -8,10 +9,88 @@ use std::{
 const LLVM_MAJOR_VERSION: usize = 20;
 const TRACEL_LLVM_CACHE_DIRECTORY_NAME: &str = "tracel";
 const TRACEL_LLVM_CACHE_PREFIX: &str = "tracel-llvm";
-const TRACEL_LLVM_VERSION: &str = "20.1.4";
-const TRACEL_LLVM_RELEASE_NUMBER: &str = "5";
-const TRACEL_LLVM_FULL_VERSION: &str =
+const TRACEL_LLVM_ARTIFACT_BASE_URL: &str =
+    "https://github.com/tracel-ai/tracel-llvm/releases/download";
+pub const TRACEL_LLVM_RELEASE_NUMBER: &str = "6";
+pub const TRACEL_LLVM_VERSION: &str = "20.1.4";
+pub const TRACEL_LLVM_FULL_VERSION: &str =
     constcat::concat!(TRACEL_LLVM_VERSION, "-", TRACEL_LLVM_RELEASE_NUMBER);
+
+pub enum OperatingSystem {
+    Linux,
+    MacOs,
+    Windows,
+}
+
+impl OperatingSystem {
+    pub fn current() -> Self {
+        #[cfg(target_os = "linux")]
+        return Self::Linux;
+        #[cfg(target_os = "macos")]
+        return Self::MacOs;
+        #[cfg(target_os = "windows")]
+        return Self::Windows;
+    }
+
+    pub fn artifact_cache_path(&self) -> anyhow::Result<PathBuf> {
+        let base = Self::artifact_cache_dir()?;
+        Ok(base.join(self.cache_filename()))
+    }
+
+    pub fn checksum_cache_path(&self) -> anyhow::Result<PathBuf> {
+        let base = Self::artifact_cache_dir()?;
+        Ok(base.join(self.checksum_cache_filename()))
+    }
+
+    pub fn sentinel_path(&self, llvm_path: &Path) -> PathBuf {
+        llvm_path.join(self.sentinel_name())
+    }
+
+    fn filename(&self) -> &'static str {
+        match self {
+            OperatingSystem::Linux => "linux-x64.tar.xz",
+            OperatingSystem::MacOs => "macos-AArch64.tar.xz",
+            OperatingSystem::Windows => "windows-x64.tar.xz",
+        }
+    }
+
+    fn checksum_filename(&self) -> String {
+        self.filename().replace(".tar.xz", ".checksums.json")
+    }
+
+    pub fn artifact_url(&self) -> String {
+        let filename = self.filename();
+        format!("{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_FULL_VERSION}/{filename}")
+    }
+
+    pub fn checksum_url(&self) -> String {
+        let filename = self.checksum_filename();
+        format!("{TRACEL_LLVM_ARTIFACT_BASE_URL}/v{TRACEL_LLVM_FULL_VERSION}/{filename}")
+    }
+
+    pub fn artifact_cache_dir() -> anyhow::Result<PathBuf> {
+        let home = dirs::home_dir()
+            .ok_or_else(|| anyhow::anyhow!("Could not determine home directory"))?;
+        let base = home.join(".cache").join("tracel");
+        fs::create_dir_all(&base)?;
+        Ok(base)
+    }
+
+    fn cache_filename(&self) -> String {
+        format!("tracel-llvm-{TRACEL_LLVM_FULL_VERSION}-{}", self.filename())
+    }
+
+    fn checksum_cache_filename(&self) -> String {
+        format!(
+            "tracel-llvm-{TRACEL_LLVM_FULL_VERSION}-{}",
+            self.checksum_filename()
+        )
+    }
+
+    fn sentinel_name(&self) -> &'static str {
+        ".tracel-llvm-installed"
+    }
+}
 
 pub type ConfigResult<T> = std::result::Result<T, ConfigError>;
 
@@ -20,7 +99,6 @@ pub enum ConfigError {
     UnsupportedSystem,
     IoError(std::io::Error),
     Utf8(std::str::Utf8Error),
-    /// External tool executed but failed with a non-zero status.
     ToolExit {
         path: String,
         status: i32,
@@ -97,13 +175,13 @@ fn norm_lib(token: &str) -> Option<String> {
     if let Some(rest) = s.strip_prefix("-l") {
         s = rest;
     }
-    // Windows path or *.lib → take file stem
+    // Windows path or *.lib
     if s.contains('\\') || s.contains('/') || s.ends_with(".lib") {
         return Path::new(s)
             .file_stem()
             .map(|x| x.to_string_lossy().into_owned());
     }
-    Some(s.to_owned()) // already a bare name
+    Some(s.to_owned())
 }
 
 /// Returns a vector of all libraries required by LLVM (bare names).
@@ -204,7 +282,7 @@ pub fn set_homebrew_library_path() -> ConfigResult<()> {
 /// Run `llvm-config` with a given argument, meant to be used in `build.rs` files.
 /// - `prefix_os`: Optional install prefix (usually from an env var).
 ///   If `None`, we fall back to searching `llvm-config` in PATH.
-/// - `argument`: Argument to pass to `llvm-config` (e.g., `--libs`, `--cflags`).
+/// - `argument`: Argument to pass to `llvm-config` (e.g. `--libs`, `--cflags`).
 fn llvm_config(prefix_os: Option<&OsString>, argument: &str) -> ConfigResult<String> {
     let prefix = prefix_os
         .as_ref()
