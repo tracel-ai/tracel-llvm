@@ -1,7 +1,6 @@
 mod commands;
 mod utils;
 
-
 #[macro_use]
 extern crate log;
 
@@ -10,9 +9,12 @@ use tracel_xtask::prelude::*;
 
 #[macros::base_commands(Build, Bump, Check, Compile, Fix, Test, Publish)]
 enum Command {
-    /// Generate bindings.
+    /// Generate Rust bindings.
     Bindgen(commands::bindgen::BindgenCmdArgs),
+    /// Generat LLVM bundle.
     Bundle(commands::bundle::BundleCmdArgs),
+    /// Install build prerequisites (cmake, ninja, git, etc.)
+    Setup(commands::setup::SetupCmdArgs),
 }
 
 fn main() -> anyhow::Result<()> {
@@ -21,6 +23,7 @@ fn main() -> anyhow::Result<()> {
     match args.command {
         Command::Bindgen(cmd_args) => commands::bindgen::handle_command(cmd_args),
         Command::Bundle(cmd_args) => commands::bundle::handle_command(cmd_args),
+        Command::Setup(cmd_args) => commands::setup::handle_command(cmd_args),
         _ => dispatch_base_commands(args),
     }?;
     let duration = start.elapsed();

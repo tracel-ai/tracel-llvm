@@ -1,6 +1,7 @@
 pub(crate) mod bindgen;
 pub(crate) mod bundle;
 pub(crate) mod generators;
+pub(crate) mod setup;
 
 use std::{
     fs,

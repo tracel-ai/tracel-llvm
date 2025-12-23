@@ -38,7 +38,6 @@ install_macos_deps() {
     fi
   fi
 
-  brew update || true
   brew install cmake ninja xz git jq || true
   echo ">>> macOS dependencies installed."
 }
