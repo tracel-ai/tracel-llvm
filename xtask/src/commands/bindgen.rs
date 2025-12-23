@@ -17,7 +17,7 @@ const FEATURE_GATE: &str = "xtask";
 #[derive(clap::Args)]
 pub struct BindgenCmdArgs {
     /// Name of the crates for which we need to generate bindings.
-    #[arg(short, long, value_delimiter = ',', default_value = "tracel-mlir-sys")]
+    #[arg(short, long, value_delimiter = ',', default_value = "tracel-mlir-sys,tracel-tblgen-rs")]
     crates: Vec<String>,
 
     /// Bundle workspace directory.
@@ -41,10 +41,9 @@ pub(crate) fn handle_command(args: BindgenCmdArgs) -> anyhow::Result<()> {
 
     let members = get_workspace_members(WorkspaceMemberType::Crate);
     for member in members {
-        if !(member.name == "all" || crates.contains(&member.name)) {
+        if !crates.contains(&member.name) {
             continue;
         }
-
         match member.name.as_str() {
             "tracel-mlir-sys" => generators::mlir_sys::bindgen(&member, &ws)?,
             "tracel-tblgen-rs" => generators::tblgen_sys::bindgen(&member, &ws)?,
