@@ -18,15 +18,20 @@ pub fn bindgen(member: &WorkspaceMember, ws: &BundleWorkspace) -> anyhow::Result
 
     let cc_include = Path::new(&member.path).join("cc").join("include");
 
-    let mut clang_args = vec![
+    let clang_args = vec![
         "-I".to_string(),
         ws.bundle_include_dir.to_string_lossy().into_owned(),
         "-I".to_string(),
+        ws.clang_include_dir.to_string_lossy().into_owned(),
+        "-I".to_string(),
+        ws.clang_resource_include_dir.to_string_lossy().into_owned(),
+        "-I".to_string(),
         cc_include.to_string_lossy().into_owned(),
+        "-x".to_string(),
+        "c++".to_string(),
+        "-std=c++17".to_string(),
+        format!("-resource-dir={}", ws.clang_resource_dir.to_string_lossy()),
     ];
-    if cfg!(not(target_os = "windows")) {
-        clang_args.extend(["-I".to_string(), "/usr/include".to_string()]);
-    }
 
     group_info!("Generate bindings: {}", member.name);
     let header_path = get_wrapper_file_path(member)?;
@@ -37,6 +42,13 @@ pub fn bindgen(member: &WorkspaceMember, ws: &BundleWorkspace) -> anyhow::Result
         .clang_args(&clang_args)
         .default_enum_style(bindgen::EnumVariation::ModuleConsts)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        .derive_debug(true)
+        .layout_tests(false)
+        .derive_default(true)
+        .raw_line("#![allow(non_camel_case_types)]")
+        .raw_line("#![allow(non_snake_case)]")
+        .raw_line("#![allow(non_upper_case_globals)]")
+        .raw_line("#![allow(dead_code)]")
         .generate()
         .expect("Bindings generation should succeed")
         .write_to_file(&bindings_path)

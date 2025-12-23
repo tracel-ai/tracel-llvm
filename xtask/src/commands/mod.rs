@@ -40,14 +40,18 @@ pub(crate) struct BundleWorkspace {
 
     // Clang toolchain build used only for Rust bindgen
     pub clang_build_dir: PathBuf,
+    pub clang_include_dir: PathBuf,
     pub clang_install_dir: PathBuf,
     pub clang_lib_dir: PathBuf,
+    pub clang_resource_dir: PathBuf,
+    pub clang_resource_include_dir: PathBuf,
 }
 
 impl BundleWorkspace {
     pub fn new(workspace_dir: &Path) -> anyhow::Result<Self> {
         let platform = PlatformTriple::detect()?;
         let version = tracel_llvm_bundler::config::TRACEL_LLVM_VERSION.to_string();
+        let major = llvm_major_version_from(&version)?;
         let release_number = tracel_llvm_bundler::config::TRACEL_LLVM_RELEASE_NUMBER.to_string();
         let workspace_dir = workspace_dir.to_path_buf();
         let llvm_project_dir = workspace_dir.join("llvm-project");
@@ -59,16 +63,19 @@ impl BundleWorkspace {
 
         // mlir runtime bundle layout
         let pkg_dir_name = format!("tracel-llvm-{}-{}", version, release_number);
-        let mlir_build_dir = workspace_dir.join(".mlir_build");
         let mlir_install_dir = workspace_dir.join(&pkg_dir_name);
         let mlir_bin_dir = mlir_install_dir.join("bin");
-        let mlir_lib_dir = mlir_install_dir.join(mlir_libdir_name);
+        let mlir_build_dir = workspace_dir.join(".mlir_build");
         let mlir_include_dir = mlir_install_dir.join("include");
+        let mlir_lib_dir = mlir_install_dir.join(mlir_libdir_name);
 
         // clang bindgen toolchain layout
-        let clang_build_dir = workspace_dir.join(".clang-bindgen-build");
         let clang_install_dir = workspace_dir.join(".clang-bindgen");
+        let clang_build_dir = workspace_dir.join(".clang-bindgen-build");
+        let clang_include_dir = clang_install_dir.join("include");
         let clang_lib_dir = clang_install_dir.join(clang_libdir_name);
+        let clang_resource_dir = clang_lib_dir.join("clang").join(major.to_string());
+        let clang_resource_include_dir = clang_resource_dir.join("include");
 
         Ok(Self {
             platform,
@@ -77,14 +84,17 @@ impl BundleWorkspace {
             workspace_dir,
             llvm_project_dir,
             llvm_dir,
-            bundle_build_dir: mlir_build_dir,
-            bundle_install_dir: mlir_install_dir,
             bundle_bin_dir: mlir_bin_dir,
-            bundle_lib_dir: mlir_lib_dir,
+            bundle_build_dir: mlir_build_dir,
             bundle_include_dir: mlir_include_dir,
+            bundle_install_dir: mlir_install_dir,
+            bundle_lib_dir: mlir_lib_dir,
             clang_build_dir,
+            clang_include_dir,
             clang_install_dir,
             clang_lib_dir,
+            clang_resource_dir,
+            clang_resource_include_dir,
         })
     }
 
@@ -286,4 +296,14 @@ fn libdir_name_for_platform(platform: &PlatformTriple) -> &'static str {
         // windows + macos
         "lib"
     }
+}
+
+fn llvm_major_version_from(version: &str) -> anyhow::Result<usize> {
+    let major = version
+        .split('.')
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("LLVM version should have a major component"))?
+        .parse::<usize>()
+        .with_context(|| "LLVM major version should parse")?;
+    Ok(major)
 }
