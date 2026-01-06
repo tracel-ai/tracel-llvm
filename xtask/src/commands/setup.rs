@@ -55,7 +55,7 @@ fn run_windows(scripts_dir: &PathBuf) -> anyhow::Result<()> {
 
     group_info!("xtask setup: installing prerequisites (windows)");
     run_checked(
-        "pwsh",
+        "powershell",
         &[
             "-NoProfile".into(),
             "-ExecutionPolicy".into(),

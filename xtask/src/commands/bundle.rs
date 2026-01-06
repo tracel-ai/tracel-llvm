@@ -2,16 +2,14 @@ use std::{
     fs,
     io::{self, Write as _},
     path::{Path, PathBuf},
+    process::{Command, Stdio},
 };
 
 use clap::{Args, Subcommand};
-use tracel_llvm_bundler::build_support::{
-    archive::create_tar_xz,
-    checksums::{sha256_file_hex, sha256_tree_content_hex},
-};
+use tracel_llvm_bundler::build_support::checksums::{sha256_file_hex, sha256_tree_content_hex};
 use tracel_xtask::prelude::{anyhow::Context as _, *};
 
-use crate::utils::tblgen_shim::{build_and_install_ctablegen_shim, CTableGenShimConfig};
+use crate::utils::tblgen_shim::{CTableGenShimConfig, build_and_install_ctablegen_shim};
 
 use super::BundleWorkspace;
 
@@ -61,7 +59,11 @@ pub fn handle_command(args: BundleCmdArgs) -> anyhow::Result<()> {
 }
 
 fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
-    crate::utils::process::require_tools(&["git", "cmake", "ninja"])?;
+    if cfg!(windows) {
+        crate::utils::process::require_tools(&["git", "cmake", "ninja", "tar", "7z"])?;
+    } else {
+        crate::utils::process::require_tools(&["git", "cmake", "ninja", "tar"])?;
+    }
 
     ws.ensure_workspace_dir()?;
     // Clean up workspace
@@ -83,7 +85,7 @@ fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
     // Build  CTableGen shim into the bundle lib directory.
     group_info!("Bundle: build CTableGen shim");
     let shim_cfg = CTableGenShimConfig {
-        repo_root: repo_root()?,
+        repo_root: git::git_repo_root_or_cwd()?,
         bundle_install_dir: ws.bundle_install_dir.clone(),
         build_dir: ws.workspace_dir.join(".tblgen_shim_build"),
     };
@@ -93,6 +95,7 @@ fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
     group_info!("Bundle: cleanup");
     cleanup_bundle(ws)?;
     endgroup!();
+
     // Package and checksums.
     group_info!("Bundle: package + checksums");
     {
@@ -101,12 +104,10 @@ fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
         let out_name = format!("{}.tar.xz", ws.platform.archive_stem());
         let out_archive = ws.workspace_dir.join(&out_name);
 
-        if out_archive.exists() {
-            fs::remove_file(&out_archive)?;
-        }
+        eprintln!("Creating archive, please wait...");
+        create_tar_xz(&out_archive, &ws, &pkg_dir_name)?;
 
-        create_tar_xz(&out_archive, &ws.bundle_install_dir, &pkg_dir_name)?;
-
+        eprintln!("Computing checksums, please wait...");
         let archive_sha = sha256_file_hex(&out_archive)?;
         let content_sha = sha256_tree_content_hex(&ws.bundle_install_dir)?;
 
@@ -123,7 +124,8 @@ fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
             "archive_sha256": archive_sha,
             "content_sha256": content_sha,
         });
-        fs::write(&sidecar, serde_json::to_vec_pretty(&manifest)?)?;
+        fs::write(&sidecar, serde_json::to_vec_pretty(&manifest)?)
+            .with_context(|| "checksums sidecar should be written")?;
 
         group_info!("Bundle outputs");
         println!("Install dir: {}", ws.bundle_install_dir.display());
@@ -132,6 +134,116 @@ fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
         endgroup!();
     }
     endgroup!();
+
+    Ok(())
+}
+
+/// Creates a `.tar.xz` using CLI tools
+fn create_tar_xz(
+    out_archive: &Path,
+    workspace: &BundleWorkspace,
+    top_level_name: &str,
+) -> anyhow::Result<()> {
+    if out_archive.exists() {
+        fs::remove_file(&out_archive).with_context(|| "archive file should be removed")?;
+    }
+
+    if cfg!(windows) {
+        create_tar_xz_windows(out_archive, &workspace.workspace_dir, top_level_name)?;
+    } else {
+        create_tar_xz_unix(out_archive, &workspace.workspace_dir, top_level_name)?;
+    }
+
+    Ok(())
+}
+
+fn create_tar_xz_windows(
+    out_archive: &Path,
+    workdir: &Path,
+    top_level_name: &str,
+) -> anyhow::Result<()> {
+    let tar_name = Path::new(
+        Path::new(&out_archive)
+            .file_stem()
+            .expect("archive path should have a file name"),
+    );
+    if tar_name.exists() {
+        fs::remove_file(tar_name)?;
+    }
+    let tar_name = tar_name.to_string_lossy();
+    let archive_name = Path::new(
+        Path::new(&out_archive)
+            .file_name()
+            .expect("archive path should have a file name"),
+    );
+    if archive_name.exists() {
+        fs::remove_file(archive_name)?;
+    }
+    let archive_name = archive_name.to_string_lossy();
+    run_process(
+        "tar",
+        &["-cf", &tar_name, top_level_name],
+        None,
+        Some(workdir),
+        "",
+    )?;
+    run_process(
+        "7z",
+        &[
+            "a",
+            "-txz",
+            "-mx=9",
+            "-m0=lzma2",
+            "-md=1536m",
+            "-mfb=273",
+            "-mmt=on",
+            &archive_name,
+            &tar_name,
+        ],
+        None,
+        Some(workdir),
+        "",
+    )?;
+    Ok(())
+}
+
+fn create_tar_xz_unix(out_path: &Path, workdir: &Path, top_level_name: &str) -> anyhow::Result<()> {
+    if out_path.exists() {
+        fs::remove_file(out_path)?;
+    }
+
+    if cfg!(target_os = "macos") {
+        // First try with no-xattrs flags
+        let res = run_cmd_with_env(
+            "tar",
+            &[
+                "--no-mac-metadata",
+                "--no-xattrs",
+                "-cJf",
+                out_path.to_string_lossy().as_ref(),
+                top_level_name,
+            ],
+            Some(workdir),
+            &[("COPYFILE_DISABLE", "1")],
+        );
+
+        // Fallback for older tar
+        if res.is_err() {
+            run_cmd_with_env(
+                "tar",
+                &["-cJf", out_path.to_string_lossy().as_ref(), top_level_name],
+                Some(workdir),
+                &[("COPYFILE_DISABLE", "1")],
+            )?;
+        }
+    } else {
+        // Linux
+        run_cmd(
+            "tar",
+            &["-cJf", out_path.to_string_lossy().as_ref(), top_level_name],
+            Some(workdir),
+        )?;
+    }
 
     Ok(())
 }
@@ -222,20 +334,6 @@ fn cleanup_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn repo_root() -> anyhow::Result<PathBuf> {
-    let out = std::process::Command::new("git")
-        .args(["rev-parse", "--show-toplevel"])
-        .output()
-        .with_context(|| "git rev-parse should run")?;
-
-    if !out.status.success() {
-        return Err(anyhow::anyhow!("git rev-parse should succeed"));
-    }
-
-    let s = String::from_utf8(out.stdout)?;
-    Ok(PathBuf::from(s.trim()))
-}
-
 fn chrono_utc_iso8601() -> String {
     let now = std::time::SystemTime::now();
     let dt: chrono::DateTime<chrono::Utc> = now.into();
@@ -271,6 +369,59 @@ fn clean_bundle_workspace(workspace_dir: &Path, yes: bool) -> anyhow::Result<()>
     println!("Deleting workspace '{}'...", ws.display());
     fs::remove_dir_all(&ws).with_context(|| "workspace directory should be deleted")?;
     println!("Workspace deleted.");
+
+    Ok(())
+}
+
+fn run_cmd(program: &str, args: &[&str], cwd: Option<&Path>) -> anyhow::Result<()> {
+    let mut cmd = Command::new(program);
+    cmd.args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit());
+
+    if let Some(dir) = cwd {
+        cmd.current_dir(dir);
+    }
+
+    let status = cmd
+        .status()
+        .with_context(|| format!("failed to spawn `{program}`"))?;
+
+    if !status.success() {
+        return Err(anyhow::anyhow!("`{program}` exited with status {status}"));
+    }
+
+    Ok(())
+}
+
+fn run_cmd_with_env(
+    program: &str,
+    args: &[&str],
+    cwd: Option<&Path>,
+    env: &[(&str, &str)],
+) -> anyhow::Result<()> {
+    let mut cmd = Command::new(program);
+    cmd.args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit());
+
+    if let Some(dir) = cwd {
+        cmd.current_dir(dir);
+    }
+
+    for (k, v) in env {
+        cmd.env(k, v);
+    }
+
+    let status = cmd
+        .status()
+        .with_context(|| format!("failed to spawn `{program}`"))?;
+
+    if !status.success() {
+        return Err(anyhow::anyhow!("`{program}` exited with status {status}"));
+    }
 
     Ok(())
 }

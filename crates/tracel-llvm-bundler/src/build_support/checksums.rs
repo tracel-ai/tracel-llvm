@@ -11,7 +11,8 @@ use walkdir::WalkDir;
 pub fn sha256_file_hex(path: &Path) -> anyhow::Result<String> {
     let mut f = File::open(path).with_context(|| "file should be opened")?;
     let mut h = Sha256::new();
-    let mut buf = [0u8; 1024 * 1024];
+    // read buffer
+    let mut buf = vec![0u8; 1024 * 1024];
     loop {
         let n = f
             .read(&mut buf)
@@ -47,6 +48,8 @@ pub fn sha256_tree_content_hex(root: &Path) -> anyhow::Result<String> {
 
     let mut h = Sha256::new();
 
+    // read buffer
+    let mut buf = vec![0u8; 1024 * 1024];
     for (rel, full) in items {
         h.update(rel.as_bytes());
         h.update(b"\n");
@@ -56,11 +59,8 @@ pub fn sha256_tree_content_hex(root: &Path) -> anyhow::Result<String> {
         h.update(b"\n");
 
         let mut f = File::open(&full).with_context(|| "file should be opened")?;
-        let mut buf = [0u8; 1024 * 1024];
         loop {
-            let n = f
-                .read(&mut buf)
-                .with_context(|| "file read should succeed")?;
+            let n = f.read(&mut buf).with_context(|| "file read should succeed")?;
             if n == 0 {
                 break;
             }
