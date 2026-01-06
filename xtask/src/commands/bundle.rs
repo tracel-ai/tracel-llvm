@@ -1,8 +1,8 @@
 use std::{
+    collections::HashMap,
     fs,
     io::{self, Write as _},
     path::{Path, PathBuf},
-    process::{Command, Stdio},
 };
 
 use clap::{Args, Subcommand};
@@ -75,7 +75,8 @@ fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
         &ws.clang_install_dir,
     ] {
         if dir.exists() {
-            fs::remove_dir_all(dir).with_context(|| format!("Should delete '{}'", dir.display()))?;
+            fs::remove_dir_all(dir)
+                .with_context(|| format!("Should delete '{}'", dir.display()))?;
         }
     }
     ws.clone_llvm_project_fresh()?;
@@ -144,42 +145,46 @@ fn create_tar_xz(
     workspace: &BundleWorkspace,
     top_level_name: &str,
 ) -> anyhow::Result<()> {
+    let tar_name = Path::new(
+        Path::new(&out_archive)
+            .file_stem()
+            .expect("archive path should have a file name"),
+    );
+    let archive_name = Path::new(
+        Path::new(&out_archive)
+            .file_name()
+            .expect("archive path should have a file name"),
+    );
+
     if out_archive.exists() {
         fs::remove_file(&out_archive).with_context(|| "archive file should be removed")?;
     }
+    if tar_name.exists() {
+        fs::remove_file(tar_name)?;
+    }
 
+    let archive_name = archive_name.to_string_lossy();
+    let tar_name = tar_name.to_string_lossy();
     if cfg!(windows) {
-        create_tar_xz_windows(out_archive, &workspace.workspace_dir, top_level_name)?;
+        create_tar_xz_windows(
+            &archive_name,
+            &tar_name,
+            &workspace.workspace_dir,
+            top_level_name,
+        )?;
     } else {
-        create_tar_xz_unix(out_archive, &workspace.workspace_dir, top_level_name)?;
+        create_tar_xz_unix(&archive_name, &workspace.workspace_dir, top_level_name)?;
     }
 
     Ok(())
 }
 
 fn create_tar_xz_windows(
-    out_archive: &Path,
+    archive_name: &str,
+    tar_name: &str,
     workdir: &Path,
     top_level_name: &str,
 ) -> anyhow::Result<()> {
-    let tar_name = Path::new(
-        Path::new(&out_archive)
-            .file_stem()
-            .expect("archive path should have a file name"),
-    );
-    if tar_name.exists() {
-        fs::remove_file(tar_name)?;
-    }
-    let tar_name = tar_name.to_string_lossy();
-    let archive_name = Path::new(
-        Path::new(&out_archive)
-            .file_name()
-            .expect("archive path should have a file name"),
-    );
-    if archive_name.exists() {
-        fs::remove_file(archive_name)?;
-    }
-    let archive_name = archive_name.to_string_lossy();
     run_process(
         "tar",
         &["-cf", &tar_name, top_level_name],
@@ -207,41 +212,34 @@ fn create_tar_xz_windows(
     Ok(())
 }
 
-fn create_tar_xz_unix(out_path: &Path, workdir: &Path, top_level_name: &str) -> anyhow::Result<()> {
-    if out_path.exists() {
-        fs::remove_file(out_path)?;
-    }
-
+fn create_tar_xz_unix(
+    archive_name: &str,
+    workdir: &Path,
+    top_level_name: &str,
+) -> anyhow::Result<()> {
     if cfg!(target_os = "macos") {
-        // First try with no-xattrs flags
-        let res = run_cmd_with_env(
+        let envs: HashMap<&str, &str> = [("COPYFILE_DISABLE", "1")].into_iter().collect();
+        run_process(
             "tar",
             &[
                 "--no-mac-metadata",
                 "--no-xattrs",
                 "-cJf",
-                out_path.to_string_lossy().as_ref(),
+                archive_name,
                 top_level_name,
             ],
+            Some(envs),
             Some(workdir),
-            &[("COPYFILE_DISABLE", "1")],
-        );
-
-        // Fallback for older tar
-        if res.is_err() {
-            run_cmd_with_env(
-                "tar",
-                &["-cJf", out_path.to_string_lossy().as_ref(), top_level_name],
-                Some(workdir),
-                &[("COPYFILE_DISABLE", "1")],
-            )?;
-        }
+            "",
+        )?;
     } else {
         // Linux
-        run_cmd(
+        run_process(
             "tar",
-            &["-cJf", out_path.to_string_lossy().as_ref(), top_level_name],
+            &["-cJf", archive_name, top_level_name],
+            None,
             Some(workdir),
+            "",
         )?;
     }
 
@@ -369,59 +367,6 @@ fn clean_bundle_workspace(workspace_dir: &Path, yes: bool) -> anyhow::Result<()>
     println!("Deleting workspace '{}'...", ws.display());
     fs::remove_dir_all(&ws).with_context(|| "workspace directory should be deleted")?;
     println!("Workspace deleted.");
-
-    Ok(())
-}
-
-fn run_cmd(program: &str, args: &[&str], cwd: Option<&Path>) -> anyhow::Result<()> {
-    let mut cmd = Command::new(program);
-    cmd.args(args)
-        .stdin(Stdio::null())
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit());
-
-    if let Some(dir) = cwd {
-        cmd.current_dir(dir);
-    }
-
-    let status = cmd
-        .status()
-        .with_context(|| format!("failed to spawn `{program}`"))?;
-
-    if !status.success() {
-        return Err(anyhow::anyhow!("`{program}` exited with status {status}"));
-    }
-
-    Ok(())
-}
-
-fn run_cmd_with_env(
-    program: &str,
-    args: &[&str],
-    cwd: Option<&Path>,
-    env: &[(&str, &str)],
-) -> anyhow::Result<()> {
-    let mut cmd = Command::new(program);
-    cmd.args(args)
-        .stdin(Stdio::null())
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit());
-
-    if let Some(dir) = cwd {
-        cmd.current_dir(dir);
-    }
-
-    for (k, v) in env {
-        cmd.env(k, v);
-    }
-
-    let status = cmd
-        .status()
-        .with_context(|| format!("failed to spawn `{program}`"))?;
-
-    if !status.success() {
-        return Err(anyhow::anyhow!("`{program}` exited with status {status}"));
-    }
 
     Ok(())
 }
