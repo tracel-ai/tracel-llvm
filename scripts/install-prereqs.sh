@@ -12,8 +12,18 @@ case "$OS_NAME" in
   *) echo "!!! Unsupported OS: $OS_NAME" >&2; exit 1 ;;
 esac
 
-install_linux_deps() {
-  echo ">>> Installing Linux dependencies..."
+detect_linux_distro() {
+  if [[ -r /etc/os-release ]]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    echo "${ID:-unknown}"
+  else
+    echo "unknown"
+  fi
+}
+
+install_debian_deps() {
+  echo ">>> Installing Debian/Ubuntu dependencies..."
   sudo apt-get update -y
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
     build-essential \
@@ -22,7 +32,38 @@ install_linux_deps() {
     xz-utils \
     git \
     jq
-  echo ">>> Linux dependencies installed."
+  echo ">>> Debian/Ubuntu dependencies installed."
+}
+
+install_arch_deps() {
+  echo ">>> Installing Arch Linux dependencies..."
+  sudo pacman -Syu --noconfirm --needed \
+    base-devel \
+    cmake \
+    ninja \
+    xz \
+    git \
+    jq
+  echo ">>> Arch Linux dependencies installed."
+}
+
+install_linux_deps() {
+  local distro
+  distro="$(detect_linux_distro)"
+
+  case "$distro" in
+    arch|manjaro|endeavouros|garuda)
+      install_arch_deps
+      ;;
+    debian|ubuntu|linuxmint|pop|elementary|kali)
+      install_debian_deps
+      ;;
+    *)
+      echo "!!! Unsupported Linux distro: $distro (from /etc/os-release)" >&2
+      echo "    Supported: Debian/Ubuntu-based (apt), Arch-based (pacman)" >&2
+      exit 1
+      ;;
+  esac
 }
 
 install_macos_deps() {
