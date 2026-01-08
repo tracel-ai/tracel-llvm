@@ -2,17 +2,10 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      llvm_version:
-        description: "LLVM version (e.g. 21.1.0)"
-        required: true
-        type: string
-      # increment the release number if we publish multiple releases for the same llvm_version
-      release_number:
-        description: "Release number (will be suffixed to llvm_version)"
-        default: "1"
-        required: true
-        type: string
+
+# The LLVM version and release numbers are set in the file `crates/tracel-llvm-bundler/src/config.rs`:
+# pub const TRACEL_LLVM_VERSION: &str = "20.1.4";
+# pub const TRACEL_LLVM_RELEASE_NUMBER: &str = "6";
 
 jobs:
   create-release:
@@ -56,8 +49,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       # ----------------------------------------------------------------------
-      - name: Build LLVM
-        run: bash build_llvm.sh ${{ inputs.llvm_version }} ${{ inputs.release_number }}
+      - name: Build LLVM bunlde
+        run: cargo xtask bundle build
       # ----------------------------------------------------------------------
       - name: Upload Release
         uses: softprops/action-gh-release@v2
@@ -106,9 +99,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       # ----------------------------------------------------------------------
-      - name: Build LLVM
-        shell: pwsh
-        run: ./build_llvm.ps1 -Version ${{ inputs.llvm_version }} ${{ inputs.release_number }}
+      - name: Build LLVM bunlde
+        run: cargo xtask bundle build
       # ----------------------------------------------------------------------
       - name: Upload Release
         uses: softprops/action-gh-release@v2
