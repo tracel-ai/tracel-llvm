@@ -8,6 +8,8 @@ use tracel_xtask::{
     utils::workspace::{WorkspaceMember, WorkspaceMemberType, get_workspace_members},
 };
 
+use crate::commands::bundle::{BundleBuildArgs, BundleCmdArgs, BundleSubCmd};
+
 use super::{BundleWorkspace, generators};
 
 const FEATURE_GATED_REGION_BEGIN: &str = "// BEGIN AUTO-GENERATED FEATURE GATED REGION";
@@ -323,6 +325,10 @@ fn ensure_bundle_is_built(ws: &BundleWorkspace) -> anyhow::Result<()> {
         ws.clone_llvm_project_fresh()?;
     }
 
-    ws.build_mlir_project()?;
+    super::bundle::handle_command(BundleCmdArgs {
+        cmd: BundleSubCmd::Build(BundleBuildArgs {
+            workspace_dir: ws.workspace_dir.to_string_lossy().to_string(),
+        }),
+    })?;
     Ok(())
 }

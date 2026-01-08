@@ -16,11 +16,11 @@ use super::BundleWorkspace;
 #[derive(Args)]
 pub struct BundleCmdArgs {
     #[command(subcommand)]
-    cmd: BundleSubCmd,
+    pub cmd: BundleSubCmd,
 }
 
 #[derive(Subcommand)]
-enum BundleSubCmd {
+pub enum BundleSubCmd {
     /// Build the runtime bundle (LLVM+MLIR + CTableGen shim) then package it with checksums.
     Build(BundleBuildArgs),
     /// Delete the bundle workspace directory.
@@ -28,14 +28,14 @@ enum BundleSubCmd {
 }
 
 #[derive(Args)]
-struct BundleBuildArgs {
+pub struct BundleBuildArgs {
     /// Workspace directory used for building
     #[arg(long, default_value = ".llvm")]
-    workspace_dir: String,
+    pub workspace_dir: String,
 }
 
 #[derive(Args)]
-struct BundleCleanArgs {
+pub struct BundleCleanArgs {
     /// Workspace directory used for building
     #[arg(long, default_value = ".llvm")]
     workspace_dir: String,
