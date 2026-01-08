@@ -57,23 +57,19 @@ impl BundleWorkspace {
         let llvm_project_dir = workspace_dir.join("llvm-project");
         let llvm_dir = llvm_project_dir.join("llvm");
 
-        // platform-specific libdir name
-        let mlir_libdir_name = libdir_name_for_platform(&platform);
-        let clang_libdir_name = libdir_name_for_platform(&platform);
-
         // mlir runtime bundle layout
         let pkg_dir_name = format!("tracel-llvm-{}-{}", version, release_number);
         let mlir_install_dir = workspace_dir.join(&pkg_dir_name);
         let mlir_bin_dir = mlir_install_dir.join("bin");
         let mlir_build_dir = workspace_dir.join(".mlir_build");
         let mlir_include_dir = mlir_install_dir.join("include");
-        let mlir_lib_dir = mlir_install_dir.join(mlir_libdir_name);
+        let mlir_lib_dir = mlir_install_dir.join("lib");
 
         // clang bindgen toolchain layout
         let clang_install_dir = workspace_dir.join(".clang-bindgen");
         let clang_build_dir = workspace_dir.join(".clang-bindgen-build");
         let clang_include_dir = clang_install_dir.join("include");
-        let clang_lib_dir = clang_install_dir.join(clang_libdir_name);
+        let clang_lib_dir = clang_install_dir.join("lib");
         let clang_resource_dir = clang_lib_dir.join("clang").join(major.to_string());
         let clang_resource_include_dir = clang_resource_dir.join("include");
 
@@ -278,22 +274,6 @@ struct LlvmCmakeBuild {
     shared_libs: bool,
     extra_cmake_args: Vec<String>,
     ninja_targets_before_install: Vec<String>,
-}
-
-fn libdir_name_for_platform(platform: &PlatformTriple) -> &'static str {
-    let stem = platform.archive_stem();
-
-    // examples: "linux-x64", "linux-AArch64", "macos-AArch64", "windows-x64"
-    if stem.starts_with("linux-") {
-        if stem.contains("x64") {
-            "lib64"
-        } else {
-            "lib"
-        }
-    } else {
-        // windows + macos
-        "lib"
-    }
 }
 
 fn llvm_major_version_from(version: &str) -> anyhow::Result<usize> {
