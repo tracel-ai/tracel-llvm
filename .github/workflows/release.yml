@@ -68,12 +68,13 @@ jobs:
       '@zones:northamerica-northeast1-b'
       ]
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      # ----------------------------------------------------------------------
       - name: Install pre-reqs
         shell: bash
         run: |
           bash scripts/install-prereqs.sh
-          pkg-config --version
-          pkg-config --libs --cflags openssl
       # ----------------------------------------------------------------------
       - name: Setup Rust
         uses: tracel-ai/github-actions/setup-rust@v6
@@ -129,7 +130,6 @@ jobs:
       '@zones:northamerica-northeast1-b'
       ]
     steps:
-      # ----------------------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v6
       # ----------------------------------------------------------------------
