@@ -36,12 +36,16 @@ function Choco-Install([string[]]$packages) {
 
 function Ensure-Basic-Tools {
   Choco-Install @(
-    "git",        # provides git + bash
+    "git",
+    "python",
     "cmake",
     "ninja",
     "7zip",
     "vswhere"
   )
+
+  & python --version | Out-Host
+  & pip --version | Out-Host
 }
 
 function Ensure-VSBuildTools {
@@ -54,7 +58,7 @@ function Ensure-VSBuildTools {
     return
   }
 
-  Write-Host "Installing Visual Studio 2022 Build Tools (C++ workload)..." -ForegroundColor Yellow
+  Write-Host "Installing Visual Studio 2022 Build Tools..." -ForegroundColor Yellow
   Choco-Install @(
     "visualstudio2022buildtools",
     "visualstudio2022-workload-vctools"
@@ -69,24 +73,30 @@ function Ensure-VSBuildTools {
   }
 }
 
-function Ensure-Bash {
-  if (Get-Command bash -ErrorAction SilentlyContinue) {
-    bash --version | Out-Host
-    return
+function Ensure-Rust {
+  if (-not (Get-Command rustup -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing rustup via Chocolatey..." -ForegroundColor Yellow
+    Choco-Install @("rustup.install")
+  } else {
+    Write-Host "rustup found." -ForegroundColor Green
   }
 
-  $gitBash = "${env:ProgramFiles}\Git\usr\bin"
-  if (Test-Path "$gitBash\bash.exe") {
-    if ($env:GITHUB_ACTIONS -eq "true") {
-      $gitBash | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-    } else {
-      $env:PATH = "$gitBash;$env:PATH"
+  if (-not (& rustup toolchain list | Select-String '^stable')) {
+    Write-Host "Installing Rust stable toolchain..." -ForegroundColor Cyan
+    & rustup toolchain install stable
+    if ($LASTEXITCODE -ne 0) {
+      throw "rustup toolchain install stable should succeed"
     }
-    bash --version | Out-Host
-    return
   }
 
-  throw "bash.exe not found (Git for Windows should provide it)"
+  Write-Host "Setting Rust default toolchain to stable..." -ForegroundColor Cyan
+  & rustup default stable
+  if ($LASTEXITCODE -ne 0) {
+    throw "rustup default stable should succeed"
+  }
+
+  & rustc --version | Out-Host
+  & cargo --version | Out-Host
 }
 
 # ---------------- main ----------------
@@ -94,6 +104,6 @@ function Ensure-Bash {
 Ensure-Choco
 Ensure-Basic-Tools
 Ensure-VSBuildTools
-Ensure-Bash
+Ensure-Rust
 
 Write-Host "Windows prerequisites installed." -ForegroundColor Green
