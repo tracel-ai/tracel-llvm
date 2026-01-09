@@ -82,8 +82,8 @@ function Ensure-Rust {
 # ---------------- main ----------------
 
 Ensure-Choco
+Ensure-Rust
 Ensure-Basic-Tools
 Ensure-VSBuildTools
-Ensure-Rust
 
 Write-Host "Windows prerequisites installed." -ForegroundColor Green
