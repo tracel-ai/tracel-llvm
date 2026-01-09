@@ -43,7 +43,8 @@ jobs:
       # ----------------------------------------------------------------------
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v2
+        # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
+        uses: softprops/action-gh-release@v2.4.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -86,7 +87,8 @@ jobs:
         run: cargo xtask bundle build
       # ----------------------------------------------------------------------
       - name: Upload Release
-        uses: softprops/action-gh-release@v2
+        # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
+        uses: softprops/action-gh-release@v2.4.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -107,7 +109,8 @@ jobs:
   #       run: bash build_llvm.sh ${{ inputs.llvm_version }} ${{ inputs.release_number }}
   #     # ----------------------------------------------------------------------
   #     - name: Upload Release
-  #       uses: softprops/action-gh-release@v2
+  #      # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
+  #      uses: softprops/action-gh-release@v2.4.2
   #       env:
   #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   #       with:
@@ -146,7 +149,8 @@ jobs:
           cmd /c "`"$vsDevCmd`" -arch=x64 && cargo xtask bundle build"
       # ----------------------------------------------------------------------
       - name: Upload Release
-        uses: softprops/action-gh-release@v2
+        # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
+        uses: softprops/action-gh-release@v2.4.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -165,7 +169,8 @@ jobs:
       # ----------------------------------------------------------------------
       - name: Make Release the latest one
         id: create_release
-        uses: softprops/action-gh-release@v2
+        # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
+        uses: softprops/action-gh-release@v2.4.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
