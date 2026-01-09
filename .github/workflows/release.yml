@@ -47,7 +47,11 @@ jobs:
       '@zones:northamerica-northeast1-b'
       ]
     steps:
-      - uses: actions/checkout@v5
+      - name: Setup Rust
+        uses: tracel-ai/github-actions/setup-rust@v6
+        with:
+          rust-toolchain: stable
+          cache-key: stable-linux
       # ----------------------------------------------------------------------
       - name: Build LLVM bunlde
         run: cargo xtask bundle build
@@ -97,7 +101,11 @@ jobs:
       '@zones:northamerica-northeast1-b'
       ]
     steps:
-      - uses: actions/checkout@v5
+      - name: Setup Rust
+        uses: tracel-ai/github-actions/setup-rust@v6
+        with:
+          rust-toolchain: stable
+          cache-key: stable-windows
       # ----------------------------------------------------------------------
       - name: Build LLVM bunlde
         run: cargo xtask bundle build
