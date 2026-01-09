@@ -13,82 +13,76 @@ function Ensure-Scoop {
         Write-Host "Scoop found." -ForegroundColor Green
         return
     }
-
     Write-Host "Installing Scoop..." -ForegroundColor Cyan
-
     try {
         Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force -ErrorAction Stop
     } catch {
         Write-Host "Execution policy already enforced at higher scope, continuing..." -ForegroundColor Yellow
     }
-
     Invoke-RestMethod https://get.scoop.sh | Invoke-Expression
-
     if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
         throw "Scoop installation failed"
     }
 }
 
-function Ensure-Git-Bootstrap {
+function Ensure-Git {
     if (Get-Command git -ErrorAction SilentlyContinue) {
         Write-Host "Git found." -ForegroundColor Green
         return
     }
-
-    # Scoop bucket operations require git. Bootstrap with winget if needed.
-    if (Get-Command winget -ErrorAction SilentlyContinue) {
-        Write-Host "Bootstrapping Git via winget..." -ForegroundColor Cyan
-        winget install --id Git.Git -e --source winget --accept-package-agreements --accept-source-agreements
-    }
-
+    Write-Host "Ensuring Scoop 'main' bucket..." -ForegroundColor Cyan
+    scoop bucket add main https://github.com/ScoopInstaller/Main
+    Write-Host "Installing git via Scoop..." -ForegroundColor Cyan
+    scoop install git
     if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-        throw "Git is required but could not be installed (winget missing or failed)."
+        throw "Git installation failed"
     }
 }
 
-function Ensure-Bash-Shim {
-    $scoopRoot = (scoop prefix git 2>$null)
-    if (-not $scoopRoot) {
-        # If git was bootstrapped by winget, try common install path
-        $candidate = "${env:ProgramFiles}\Git"
-        if (Test-Path $candidate) { $scoopRoot = $candidate }
+function Ensure-Bash {
+    $gitRoot = $null
+    try {
+        $gitRoot = scoop prefix git 2>$null
+    } catch {
+        $gitRoot = $null
     }
-
-    $bashExe = Join-Path $scoopRoot "usr\bin\bash.exe"
+    if (-not $gitRoot) {
+        # Fallback if not installed via Scoop
+        $candidate = "${env:ProgramFiles}\Git"
+        if (Test-Path $candidate) { $gitRoot = $candidate }
+    }
+    if (-not $gitRoot) {
+        Write-Host "Git root not found; cannot create bash shim." -ForegroundColor Yellow
+        return
+    }
+    $bashExe = Join-Path $gitRoot "usr\bin\bash.exe"
     if (-not (Test-Path $bashExe)) {
         Write-Host "bash.exe not found under Git installation; skipping bash shim." -ForegroundColor Yellow
         return
-    }
-    $shimDir = Join-Path $env:SCOOP "shims"
-    if (-not (Test-Path $shimDir)) {
-        New-Item -ItemType Directory -Path $shimDir | Out-Null
     }
     Write-Host "Ensuring 'bash' shim..." -ForegroundColor Cyan
     scoop shim add bash $bashExe | Out-Null
 }
 
 Ensure-Scoop
-Ensure-Git-Bootstrap
+Ensure-Git
 
-# Core buckets
-scoop bucket add main
+Write-Host "Adding Scoop buckets..." -ForegroundColor Cyan
 scoop bucket add extras
 
-# Tools
+# Tools (git already ensured above, keep it out of list)
 $tools = @(
     "cmake",
     "ninja",
-    "git",
     "git-bash",
     "7zip"
 )
 
-# Skip python in CI, we install it with actions/setup-python in the workflow
-$installPython = -not [bool]$env:CI
-if ($installPython) {
-    $tools += "python"
+# Skip python in GitHub Actions (we install it with actions/setup-python in the workflow)
+if ($env:GITHUB_ACTIONS -eq "true") {
+    Write-Host "GITHUB_ACTIONS=true: skipping Scoop Python install; use actions/setup-python." -ForegroundColor Yellow
 } else {
-    Write-Host "CI detected (GITHUB_ACTIONS=1): skipping Scoop Python install; use actions/setup-python." -ForegroundColor Yellow
+    $tools += "python"
 }
 
 foreach ($tool in $tools) {
@@ -100,6 +94,6 @@ foreach ($tool in $tools) {
     }
 }
 
-Ensure-Bash-Shim
+Ensure-Bash
 
 Write-Host "Scoop prerequisites installed." -ForegroundColor Green
