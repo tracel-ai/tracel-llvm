@@ -64,6 +64,46 @@ function Ensure-Bash {
     scoop shim add bash $bashExe | Out-Null
 }
 
+function Export-CIPaths {
+    # Only relevant in GitHub Actions
+    if ($env:GITHUB_ACTIONS -ne "true") {
+        return
+    }
+
+    $scoopRoot = $null
+    if (Get-Command scoop -ErrorAction SilentlyContinue) {
+        try {
+            $scoopRoot = (& scoop config rootPath) -join ""
+            if ([string]::IsNullOrWhiteSpace($scoopRoot)) { $scoopRoot = $null }
+        } catch { $scoopRoot = $null }
+    }
+    if (-not $scoopRoot) {
+        $candidate = Join-Path $env:USERPROFILE "scoop"
+        if (Test-Path $candidate) { $scoopRoot = $candidate }
+    }
+    if (-not $scoopRoot) {
+        throw "Scoop root path should be detected"
+    }
+
+    $shims = Join-Path $scoopRoot "shims"
+    if (-not (Test-Path $shims)) {
+        throw "Scoop shims directory should exist"
+    }
+    $shims | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+    $gitPrefix = $null
+    try { $gitPrefix = (& scoop prefix git) -join "" } catch { $gitPrefix = $null }
+
+    if ($gitPrefix) {
+        $gitUsrBin = Join-Path $gitPrefix "usr\bin"
+        if (Test-Path $gitUsrBin) {
+            $gitUsrBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        }
+    }
+    "SCOOP=$scoopRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+    bash --version
+}
+
+
 Ensure-Scoop
 Ensure-Git
 
@@ -95,5 +135,6 @@ foreach ($tool in $tools) {
 }
 
 Ensure-Bash
+Export-CIPaths
 
 Write-Host "Scoop prerequisites installed." -ForegroundColor Green
