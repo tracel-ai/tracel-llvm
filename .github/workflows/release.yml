@@ -149,8 +149,12 @@ jobs:
           rust-toolchain: stable
           cache-key: stable-windows
       # ----------------------------------------------------------------------
-      - name: Build LLVM bunlde
-        run: cargo xtask bundle build
+      - name: Build LLVM bundle
+        shell: pwsh
+        run: |
+          $vsInstall = & vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $vsDevCmd  = Join-Path $vsInstall "Common7\Tools\VsDevCmd.bat"
+          cmd /c "`"$vsDevCmd`" -arch=x64 && cargo xtask bundle build"
       # ----------------------------------------------------------------------
       - name: Upload Release
         uses: softprops/action-gh-release@v2
