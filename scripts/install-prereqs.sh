@@ -26,24 +26,28 @@ install_debian_deps() {
   echo ">>> Installing Debian/Ubuntu dependencies..."
   sudo apt-get update -y
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    build-essential \
-    cmake \
-    ninja-build \
-    xz-utils \
-    git \
-    jq
+       build-essential \
+       cmake \
+       ninja-build \
+       xz-utils \
+       git \
+       jq \
+       pkg-config \
+       libssl-dev
   echo ">>> Debian/Ubuntu dependencies installed."
 }
 
 install_arch_deps() {
   echo ">>> Installing Arch Linux dependencies..."
   sudo pacman -Syu --noconfirm --needed \
-    base-devel \
-    cmake \
-    ninja \
-    xz \
-    git \
-    jq
+       base-devel \
+       cmake \
+       ninja \
+       xz \
+       git \
+       jq \
+       pkgconf \
+       openssl
   echo ">>> Arch Linux dependencies installed."
 }
 
