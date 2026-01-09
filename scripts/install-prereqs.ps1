@@ -34,6 +34,7 @@ $tools = @(
     "cmake",
     "ninja",
     "git",
+    "git-bash",
     "7zip",
     "python"
 )

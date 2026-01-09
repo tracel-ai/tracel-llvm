@@ -52,6 +52,12 @@ jobs:
         with:
           rust-toolchain: stable
           cache-key: stable-linux
+      # --------------------------------------------------------------------------------
+      - name: Install dependencies
+        run: |
+          : Install dependencies
+          sudo apt-get install -y build-essential
+        shell: bash
       # ----------------------------------------------------------------------
       - name: Build LLVM bunlde
         run: cargo xtask bundle build
@@ -101,6 +107,15 @@ jobs:
       '@zones:northamerica-northeast1-b'
       ]
     steps:
+      # ----------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      # ----------------------------------------------------------------------
+      - name: Install pre-reqs
+        shell: pwsh
+        run: |
+          pwsh -ExecutionPolicy Bypass -File scripts/install-prereqs.ps1
+      # ----------------------------------------------------------------------
       - name: Setup Rust
         uses: tracel-ai/github-actions/setup-rust@v6
         with:
