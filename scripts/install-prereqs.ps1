@@ -13,9 +13,12 @@ function Ensure-Scoop {
         Write-Host "Scoop found." -ForegroundColor Green
         return
     }
-
     Write-Host "Installing Scoop..." -ForegroundColor Cyan
-    Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
+    try {
+        Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force -ErrorAction Stop
+    } catch {
+        Write-Host "Execution policy already enforced at higher scope, continuing..." -ForegroundColor Yellow
+    }
     Invoke-RestMethod https://get.scoop.sh | Invoke-Expression
 
     if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
