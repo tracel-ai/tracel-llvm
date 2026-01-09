@@ -11,14 +11,35 @@ jobs:
   create-release:
     runs-on: ubuntu-22.04
     outputs:
+      llvm_version: ${{ steps.read_config.outputs.llvm_version }}
+      release_number: ${{ steps.read_config.outputs.release_number }}
       tag: ${{ steps.compute_tag.outputs.tag }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
+      # ----------------------------------------------------------------------
+      - name: Read LLVM version from config.rs
+        id: read_config
+        shell: bash
+        run: |
+          CONFIG_FILE="crates/tracel-llvm-bundler/src/config.rs"
+
+          llvm_version=$(sed -n 's/.*TRACEL_LLVM_VERSION: &str = "\(.*\)";/\1/p' "$CONFIG_FILE")
+          release_number=$(sed -n 's/.*TRACEL_LLVM_RELEASE_NUMBER: &str = "\(.*\)";/\1/p' "$CONFIG_FILE")
+
+          if [[ -z "$llvm_version" || -z "$release_number" ]]; then
+            echo "Failed to extract LLVM version or release number from config.rs"
+            exit 1
+          fi
+
+          echo "llvm_version=$llvm_version" >> "$GITHUB_OUTPUT"
+          echo "release_number=$release_number" >> "$GITHUB_OUTPUT"
       # ----------------------------------------------------------------------
       - name: Compute tag
         id: compute_tag
-        run: echo "tag=v${{ inputs.llvm_version }}-${{ inputs.release_number }}" >> "$GITHUB_OUTPUT"
+        shell: bash
+        run: |
+          echo "tag=v${{ steps.read_config.outputs.llvm_version }}-${{ steps.read_config.outputs.release_number }}" >> "$GITHUB_OUTPUT"
       # ----------------------------------------------------------------------
       - name: Create Release
         id: create_release
