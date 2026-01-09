@@ -43,9 +43,6 @@ function Ensure-Basic-Tools {
     "7zip",
     "vswhere"
   )
-
-  & python --version | Out-Host
-  & pip --version | Out-Host
 }
 
 function Ensure-VSBuildTools {
@@ -80,23 +77,6 @@ function Ensure-Rust {
   } else {
     Write-Host "rustup found." -ForegroundColor Green
   }
-
-  if (-not (& rustup toolchain list | Select-String '^stable')) {
-    Write-Host "Installing Rust stable toolchain..." -ForegroundColor Cyan
-    & rustup toolchain install stable
-    if ($LASTEXITCODE -ne 0) {
-      throw "rustup toolchain install stable should succeed"
-    }
-  }
-
-  Write-Host "Setting Rust default toolchain to stable..." -ForegroundColor Cyan
-  & rustup default stable
-  if ($LASTEXITCODE -ne 0) {
-    throw "rustup default stable should succeed"
-  }
-
-  & rustc --version | Out-Host
-  & cargo --version | Out-Host
 }
 
 # ---------------- main ----------------
