@@ -1,12 +1,8 @@
-use std::{
-    fs::{self, File},
-    io::{BufReader, BufWriter},
-    path::Path,
-};
+use std::{fs::File, io::BufReader, path::Path};
 
 use anyhow::Context as _;
-use liblzma::{bufread::XzDecoder, write::XzEncoder};
-use tar::{Archive, Builder};
+use liblzma::bufread::XzDecoder;
+use tar::Archive;
 
 pub fn decompress_tar_xz_file_to(archive_path: &Path, dest_dir: &Path) -> anyhow::Result<()> {
     let f = File::open(archive_path).with_context(|| "archive file should be opened")?;
@@ -19,4 +15,3 @@ pub fn decompress_tar_xz_file_to(archive_path: &Path, dest_dir: &Path) -> anyhow
         .with_context(|| "tar.xz archive unpack should succeed")?;
     Ok(())
 }
-
