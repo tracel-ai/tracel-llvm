@@ -153,6 +153,7 @@ impl BundleWorkspace {
                 "-DLLVM_BUILD_EXAMPLES=OFF".into(),
                 "-DLLVM_BUILD_TESTS=OFF".into(),
                 "-DLLVM_BUILD_TOOLS=OFF".into(),
+                "-DLLVM_ENABLE_DIA_SDK=OFF".into(),
                 "-DLLVM_ENABLE_DUMP=ON".into(),
                 "-DLLVM_ENABLE_LIBEDIT=OFF".into(),
                 "-DLLVM_ENABLE_LIBXML2=OFF".into(),
@@ -209,6 +210,7 @@ impl BundleWorkspace {
             extra_cmake_args: vec![
                 "-DLLVM_BUILD_EXAMPLES=OFF".into(),
                 "-DLLVM_BUILD_TESTS=OFF".into(),
+                "-DLLVM_ENABLE_DIA_SDK=OFF".into(),
                 "-DLLVM_ENABLE_LIBEDIT=OFF".into(),
                 "-DLLVM_ENABLE_LIBXML2=OFF".into(),
                 "-DLLVM_ENABLE_LTO=OFF".into(),
