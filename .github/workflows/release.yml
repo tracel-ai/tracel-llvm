@@ -145,7 +145,7 @@ jobs:
         shell: pwsh
         run: |
           $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
-          cmd /v:on /c "set ORIG_PATH=%PATH% && call `"$vsDevCmd`" -arch=x64 && set PATH=%ORIG_PATH%;%PATH% && cargo xtask bundle build"
+          cmd /v:on /c "`"$vsDevCmd`" -arch=x64 && where cl && where cmake && cargo xtask bundle build"
       # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709

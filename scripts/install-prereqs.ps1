@@ -86,4 +86,12 @@ Ensure-Rust
 Ensure-Basic-Tools
 Ensure-VSBuildTools
 
+# Make newly installed tools visible in this process
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
+[System.Environment]::GetEnvironmentVariable("Path","User")
+if ($env:GITHUB_ACTIONS -eq "true") {
+    $env:Path.Split(';') | Where-Object { $_ -and (Test-Path $_) } | Select-Object -Unique |
+      ForEach-Object { $_ | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append }
+}
+
 Write-Host "Windows prerequisites installed." -ForegroundColor Green
