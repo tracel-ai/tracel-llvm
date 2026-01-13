@@ -5,14 +5,14 @@ on:
 
 jobs:
   publish-tracel-llvm-bundler:
-    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
+    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v6.1
     with:
       crate: tracel-llvm-bundler
     secrets:
       CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
 
   publish-tracel-mlir-sys:
-    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
+    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v6.1
     with:
       crate: tracel-mlir-sys
     needs:
@@ -21,7 +21,7 @@ jobs:
       CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
 
   publish-tracel-tblgen-rs:
-    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
+    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v6.1
     with:
       crate: tracel-tblgen-rs
     needs:
@@ -30,7 +30,7 @@ jobs:
       CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
 
   publish-tracel-mlir-rs-macros:
-    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
+    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v6.1
     with:
       crate: tracel-mlir-rs-macros
     needs:
@@ -40,7 +40,7 @@ jobs:
       CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
 
   publish-tracel-mlir-rs:
-    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
+    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v6.1
     with:
       crate: tracel-mlir-rs
     needs:
@@ -50,7 +50,7 @@ jobs:
       CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
 
   publish-tracel-llvm:
-    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v4
+    uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v6.1
     with:
       crate: tracel-llvm
     needs:
