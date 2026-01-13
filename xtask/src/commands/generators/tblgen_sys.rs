@@ -1,10 +1,13 @@
 use std::path::Path;
 use tracel_xtask::{prelude::*, utils::workspace::WorkspaceMember};
 
-use crate::commands::{bindgen::{
-    get_bindings_file_path, get_wrapper_file_path,
-    llvm_major_version, update_feature_gated_region,
-}, BundleWorkspace};
+use crate::commands::{
+    BundleWorkspace,
+    bindgen::{
+        get_bindings_file_path, get_wrapper_file_path, llvm_major_version,
+        update_feature_gated_region,
+    },
+};
 
 pub fn bindgen(member: &WorkspaceMember, ws: &BundleWorkspace) -> anyhow::Result<()> {
     let major = llvm_major_version()?;

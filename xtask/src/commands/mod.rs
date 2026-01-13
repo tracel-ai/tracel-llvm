@@ -245,7 +245,10 @@ impl BundleWorkspace {
             "Ninja".into(),
             "-DCMAKE_BUILD_TYPE=Release".into(),
             "-DBUILD_SHARED_LIBS=OFF".into(),
-            format!("-DCMAKE_INSTALL_PREFIX={}", cfg.install_dir.to_string_lossy()),
+            format!(
+                "-DCMAKE_INSTALL_PREFIX={}",
+                cfg.install_dir.to_string_lossy()
+            ),
             format!("-DLLVM_ENABLE_PROJECTS={}", cfg.projects),
             "-DLLVM_TARGETS_TO_BUILD=host".into(),
         ];

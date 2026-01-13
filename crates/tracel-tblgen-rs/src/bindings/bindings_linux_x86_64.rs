@@ -911,7 +911,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn tableGenRecordValGetValAsBit(rv_ref: TableGenRecordValRef, bit: *mut i8)
-        -> TableGenBool;
+    -> TableGenBool;
 }
 unsafe extern "C" {
     pub fn tableGenRecordValGetValAsBits(rv_ref: TableGenRecordValRef, len: *mut usize) -> *mut i8;
@@ -945,7 +945,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn tableGenDagRecordGet(rv_ref: TableGenTypedInitRef, index: usize)
-        -> TableGenTypedInitRef;
+    -> TableGenTypedInitRef;
 }
 unsafe extern "C" {
     pub fn tableGenDagRecordArgName(

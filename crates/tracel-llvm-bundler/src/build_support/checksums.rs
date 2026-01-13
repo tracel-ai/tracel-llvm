@@ -60,7 +60,9 @@ pub fn sha256_tree_content_hex(root: &Path) -> anyhow::Result<String> {
 
         let mut f = File::open(&full).with_context(|| "file should be opened")?;
         loop {
-            let n = f.read(&mut buf).with_context(|| "file read should succeed")?;
+            let n = f
+                .read(&mut buf)
+                .with_context(|| "file read should succeed")?;
             if n == 0 {
                 break;
             }

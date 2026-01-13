@@ -908,7 +908,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates new AsmState from value.\n Must be freed with a call to mlirAsmStateDestroy()."]
     pub fn mlirAsmStateCreateForValue(value: MlirValue, flags: MlirOpPrintingFlags)
-        -> MlirAsmState;
+    -> MlirAsmState;
 }
 unsafe extern "C" {
     #[doc = " Destroys printing flags created with mlirAsmStateCreate."]
@@ -1142,7 +1142,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Returns an attribute attached to the operation given its name.\n Deprecated, please use `mlirOperationGetInherentAttributeByName` or\n `mlirOperationGetDiscardableAttributeByName`."]
     pub fn mlirOperationGetAttributeByName(op: MlirOperation, name: MlirStringRef)
-        -> MlirAttribute;
+    -> MlirAttribute;
 }
 unsafe extern "C" {
     #[doc = " Sets an attribute by name, replacing the existing if it exists or\n adding a new one otherwise.\n Deprecated, please use `mlirOperationSetInherentAttributeByName` or\n `mlirOperationSetDiscardableAttributeByName`."]
@@ -2386,23 +2386,23 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn mlirDenseI16ArrayGet(ctx: MlirContext, size: isize, values: *const i16)
-        -> MlirAttribute;
+    -> MlirAttribute;
 }
 unsafe extern "C" {
     pub fn mlirDenseI32ArrayGet(ctx: MlirContext, size: isize, values: *const i32)
-        -> MlirAttribute;
+    -> MlirAttribute;
 }
 unsafe extern "C" {
     pub fn mlirDenseI64ArrayGet(ctx: MlirContext, size: isize, values: *const i64)
-        -> MlirAttribute;
+    -> MlirAttribute;
 }
 unsafe extern "C" {
     pub fn mlirDenseF32ArrayGet(ctx: MlirContext, size: isize, values: *const f32)
-        -> MlirAttribute;
+    -> MlirAttribute;
 }
 unsafe extern "C" {
     pub fn mlirDenseF64ArrayGet(ctx: MlirContext, size: isize, values: *const f64)
-        -> MlirAttribute;
+    -> MlirAttribute;
 }
 unsafe extern "C" {
     #[doc = " Get the size of a dense array."]
@@ -2478,14 +2478,14 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn mlirDenseElementsAttrUInt32SplatGet(shapedType: MlirType, element: u32)
-        -> MlirAttribute;
+    -> MlirAttribute;
 }
 unsafe extern "C" {
     pub fn mlirDenseElementsAttrInt32SplatGet(shapedType: MlirType, element: i32) -> MlirAttribute;
 }
 unsafe extern "C" {
     pub fn mlirDenseElementsAttrUInt64SplatGet(shapedType: MlirType, element: u64)
-        -> MlirAttribute;
+    -> MlirAttribute;
 }
 unsafe extern "C" {
     pub fn mlirDenseElementsAttrInt64SplatGet(shapedType: MlirType, element: i64) -> MlirAttribute;
@@ -2495,7 +2495,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn mlirDenseElementsAttrDoubleSplatGet(shapedType: MlirType, element: f64)
-        -> MlirAttribute;
+    -> MlirAttribute;
 }
 unsafe extern "C" {
     #[doc = " Creates a dense elements attribute with the given shaped type from elements\n of a specific type. Expects the element type of the shaped type to match the\n data element type."]
@@ -2891,7 +2891,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates a signed integer type of the given bitwidth in the context. The type\n is owned by the context."]
     pub fn mlirIntegerTypeSignedGet(ctx: MlirContext, bitwidth: ::std::os::raw::c_uint)
-        -> MlirType;
+    -> MlirType;
 }
 unsafe extern "C" {
     #[doc = " Creates an unsigned integer type of the given bitwidth in the context. The\n type is owned by the context."]
@@ -3358,7 +3358,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates an Unranked MemRef type with the given element type and in the given\n memory space. The type is owned by the context of element type."]
     pub fn mlirUnrankedMemRefTypeGet(elementType: MlirType, memorySpace: MlirAttribute)
-        -> MlirType;
+    -> MlirType;
 }
 unsafe extern "C" {
     #[doc = " Same as \"mlirUnrankedMemRefTypeGet\" but returns a nullptr wrapping\n MlirType on illegal arguments, emitting appropriate diagnostics."]
@@ -5053,7 +5053,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Returns `true` if the `candidate` type is compatible with the given\n quantized `type`."]
     pub fn mlirQuantizedTypeIsCompatibleExpressedType(type_: MlirType, candidate: MlirType)
-        -> bool;
+    -> bool;
 }
 unsafe extern "C" {
     #[doc = " Returns the element type of the given quantized type as another quantized\n type."]
@@ -5070,7 +5070,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Casts from a type based on the expressed type of the given type to a\n corresponding type based on the given type. Returns a null type if the cast\n is not valid."]
     pub fn mlirQuantizedTypeCastFromExpressedType(type_: MlirType, candidate: MlirType)
-        -> MlirType;
+    -> MlirType;
 }
 unsafe extern "C" {
     #[doc = " Casts from a type based on a quantized type to a corresponding typed based\n on the expressed type. Returns a null type if the cast is not valid."]

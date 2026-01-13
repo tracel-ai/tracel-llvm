@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use clap::Args;
 use tracel_xtask::prelude::*;
@@ -22,7 +22,7 @@ pub fn handle_command(args: SetupCmdArgs) -> anyhow::Result<()> {
     }
 }
 
-fn run_unix(scripts_dir: &PathBuf) -> anyhow::Result<()> {
+fn run_unix(scripts_dir: &Path) -> anyhow::Result<()> {
     let script = scripts_dir.join("install-prereqs.sh");
 
     if !script.exists() {
@@ -33,17 +33,13 @@ fn run_unix(scripts_dir: &PathBuf) -> anyhow::Result<()> {
     }
 
     group_info!("xtask setup: installing prerequisites (unix)");
-    run_checked(
-        "bash",
-        &[script.to_string_lossy().into_owned()],
-        None,
-    )?;
+    run_checked("bash", &[script.to_string_lossy().into_owned()], None)?;
     endgroup!();
 
     Ok(())
 }
 
-fn run_windows(scripts_dir: &PathBuf) -> anyhow::Result<()> {
+fn run_windows(scripts_dir: &Path) -> anyhow::Result<()> {
     let script = scripts_dir.join("install-prereqs.ps1");
 
     if !script.exists() {

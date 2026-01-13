@@ -1,8 +1,8 @@
 use tracel_xtask::{prelude::*, utils::workspace::WorkspaceMember};
 
 use crate::commands::{
-    bindgen::{get_bindings_file_path, get_wrapper_file_path, update_feature_gated_region},
     BundleWorkspace,
+    bindgen::{get_bindings_file_path, get_wrapper_file_path, update_feature_gated_region},
 };
 
 pub(crate) fn bindgen(member: &WorkspaceMember, ws: &BundleWorkspace) -> anyhow::Result<()> {

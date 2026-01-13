@@ -12,15 +12,12 @@ fn main() {
 
     println!("cargo:rerun-if-changed=build.rs");
 
-    let prefix_os: Option<OsString> =
-        env::var_os(format!("MLIR_SYS_{llvm_major_version}0_PREFIX"));
+    let prefix_os: Option<OsString> = env::var_os(format!("MLIR_SYS_{llvm_major_version}0_PREFIX"));
     let libdir = tracel_llvm_bundler::config::get_libdir(prefix_os.as_ref())
         .expect("Should get LLVM library directory");
     println!("cargo:rustc-link-search=native={libdir}");
 
-    for lib in tracel_llvm_bundler::config::get_libs(prefix_os.as_ref())
-        .expect("Should get libs")
-    {
+    for lib in tracel_llvm_bundler::config::get_libs(prefix_os.as_ref()).expect("Should get libs") {
         println!("cargo:rustc-link-lib=static={lib}");
     }
 
@@ -42,8 +39,7 @@ fn main() {
 
 fn link_mlir_statically(llvm_major_version: usize) {
     use tracel_llvm_bundler::{
-        dependency_graph::DependencyGraph,
-        topological_sort::TopologicalSort,
+        dependency_graph::DependencyGraph, topological_sort::TopologicalSort,
     };
 
     let prefix = Path::new(

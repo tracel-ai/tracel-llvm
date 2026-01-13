@@ -21,9 +21,9 @@ fn run() -> Result<(), Box<dyn Error>> {
     // Double check the version
     let version = tracel_llvm_bundler::config::get_version(prefix.as_ref())?;
     if !version.starts_with(&format!("{llvm_major}.")) {
-        return Err(format!(
-            "llvm-config version should be {llvm_major}.x.x (found {version})"
-        ).into());
+        return Err(
+            format!("llvm-config version should be {llvm_major}.x.x (found {version})").into(),
+        );
     }
     // Search paths
     let libdir = tracel_llvm_bundler::config::get_libdir(prefix.as_ref())?;

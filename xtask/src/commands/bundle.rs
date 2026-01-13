@@ -106,7 +106,7 @@ fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
         let out_archive = ws.workspace_dir.join(&out_name);
 
         eprintln!("Creating archive, please wait...");
-        create_tar_xz(&out_archive, &ws, &pkg_dir_name)?;
+        create_tar_xz(&out_archive, ws, &pkg_dir_name)?;
 
         eprintln!("Computing checksums, please wait...");
         let archive_sha = sha256_file_hex(&out_archive)?;
@@ -157,7 +157,7 @@ fn create_tar_xz(
     );
 
     if out_archive.exists() {
-        fs::remove_file(&out_archive).with_context(|| "archive file should be removed")?;
+        fs::remove_file(out_archive).with_context(|| "archive file should be removed")?;
     }
     if tar_name.exists() {
         fs::remove_file(tar_name)?;
@@ -187,7 +187,7 @@ fn create_tar_xz_windows(
 ) -> anyhow::Result<()> {
     run_process(
         "tar",
-        &["-cf", &tar_name, top_level_name],
+        &["-cf", tar_name, top_level_name],
         None,
         Some(workdir),
         "",
@@ -202,8 +202,8 @@ fn create_tar_xz_windows(
             "-md=1536m",
             "-mfb=273",
             "-mmt=on",
-            &archive_name,
-            &tar_name,
+            archive_name,
+            tar_name,
         ],
         None,
         Some(workdir),

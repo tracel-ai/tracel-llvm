@@ -21,12 +21,7 @@ impl PlatformTriple {
             "aarch64" => "AArch64",
             other => other,
         };
-        let os = match self.os.as_str() {
-            "macos" => "macos",
-            "linux" => "linux",
-            "windows" => "windows",
-            other => other,
-        };
+        let os = self.os.as_str();
         format!("{os}-{arch}")
     }
 }

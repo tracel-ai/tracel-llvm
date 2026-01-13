@@ -19,7 +19,12 @@ const FEATURE_GATE: &str = "xtask";
 #[derive(clap::Args)]
 pub struct BindgenCmdArgs {
     /// Name of the crates for which we need to generate bindings.
-    #[arg(short, long, value_delimiter = ',', default_value = "tracel-mlir-sys,tracel-tblgen-rs")]
+    #[arg(
+        short,
+        long,
+        value_delimiter = ',',
+        default_value = "tracel-mlir-sys,tracel-tblgen-rs"
+    )]
     crates: Vec<String>,
 
     /// Bundle workspace directory.
@@ -253,7 +258,7 @@ fn ensure_selector_file(member: &WorkspaceMember) -> anyhow::Result<PathBuf> {
         let mut content = String::new();
         content.push_str("//! Auto-generated binding selector. Do not edit by hand.\n");
         content.push_str("//! This file is partially managed by xtask.\n");
-        content.push_str("\n");
+        content.push('\n');
         content.push_str(FEATURE_GATED_REGION_BEGIN);
         content.push('\n');
         content.push_str(FEATURE_GATED_REGION_END);
