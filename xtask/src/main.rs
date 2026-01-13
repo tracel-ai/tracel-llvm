@@ -7,12 +7,16 @@ extern crate log;
 use std::time::Instant;
 use tracel_xtask::prelude::*;
 
-#[macros::base_commands(Build, Bump, Check, Compile, Fix, Test, Publish)]
+#[macros::base_commands(Publish)]
 enum Command {
     /// Generate Rust bindings.
     Bindgen(commands::bindgen::BindgenCmdArgs),
     /// Generat LLVM bundle.
     Bundle(commands::bundle::BundleCmdArgs),
+    #[doc = r"Run checks like formatting, linting etc... This command only reports issues, use the 'fix' command to auto-fix issues."]
+    Check(base_commands::check::CheckCmdArgs),
+    #[doc = r"Fix issues found with the 'check' command."]
+    Fix(base_commands::fix::FixCmdArgs),
     /// Install build prerequisites (cmake, ninja, git, etc.)
     Setup(commands::setup::SetupCmdArgs),
 }
@@ -23,6 +27,18 @@ fn main() -> anyhow::Result<()> {
     match args.command {
         Command::Bindgen(cmd_args) => commands::bindgen::handle_command(cmd_args),
         Command::Bundle(cmd_args) => commands::bundle::handle_command(cmd_args),
+        Command::Check(mut cmd_args) => {
+            // override the target to avoid using the workspace
+            // because we don't want the xtask feature to be defined
+            cmd_args.target = Target::AllPackages;
+            base_commands::check::handle_command(cmd_args, environment, args.context)
+        }
+        Command::Fix(mut cmd_args) => {
+            // override the target to avoid using the workspace
+            // because we don't want the xtask feature to be defined
+            cmd_args.target = Target::AllPackages;
+            base_commands::fix::handle_command(cmd_args, environment, args.context, None)
+        }
         Command::Setup(cmd_args) => commands::setup::handle_command(cmd_args),
         _ => dispatch_base_commands(args, environment),
     }?;
