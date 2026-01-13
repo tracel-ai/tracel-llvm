@@ -148,7 +148,6 @@ impl BundleWorkspace {
             build_dir: self.bundle_build_dir.clone(),
             install_dir: self.bundle_install_dir.clone(),
             projects: "mlir".to_string(),
-            shared_libs: false,
             extra_cmake_args: vec![
                 "-DLLVM_BUILD_EXAMPLES=OFF".into(),
                 "-DLLVM_BUILD_TESTS=OFF".into(),
@@ -206,7 +205,6 @@ impl BundleWorkspace {
             build_dir: self.clang_build_dir.clone(),
             install_dir: self.clang_install_dir.clone(),
             projects: "clang".to_string(),
-            shared_libs: true,
             extra_cmake_args: vec![
                 "-DLLVM_BUILD_EXAMPLES=OFF".into(),
                 "-DLLVM_BUILD_TESTS=OFF".into(),
@@ -273,7 +271,6 @@ struct LlvmCmakeBuild {
     build_dir: PathBuf,
     install_dir: PathBuf,
     projects: String,
-    shared_libs: bool,
     extra_cmake_args: Vec<String>,
     ninja_targets_before_install: Vec<String>,
 }
