@@ -3,9 +3,9 @@ The purpose of this repository is to provide an interface to MLIR from Rust for 
 
 ## Publish a new release
 
-1) Update the LLVM version and release number if file []().
+1) Update the LLVM version and release number in file [`config.rs`](./crates/tracel-llvm-bundler/src/config.rs).
 
-2) Creates the bindgins with `cargo xtask bindgen` and commit the new bindings to the repository.
+2) Creates and commit the bindings with `cargo xtask bindgen` for Linux, MacOS and Windows.
 
 3) Dispatch the workflow `Release` manually.
 
