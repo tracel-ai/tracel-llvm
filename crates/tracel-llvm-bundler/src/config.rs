@@ -16,6 +16,23 @@ pub const TRACEL_LLVM_RELEASE_NUMBER: &str = "6";
 pub const TRACEL_LLVM_FULL_VERSION: &str =
     constcat::concat!(TRACEL_LLVM_VERSION, "-", TRACEL_LLVM_RELEASE_NUMBER);
 
+pub enum Architecture {
+    X86_64,
+    AArch64,
+}
+
+impl Architecture {
+    pub fn current() -> Architecture {
+        if cfg!(target_arch = "x86_64") {
+            Architecture::X86_64
+        } else if cfg!(target_arch = "aarch64") {
+            Architecture::AArch64
+        } else {
+            panic!("Unsupported target architecture for tracel-llvm-bundler.")
+        }
+    }
+}
+
 pub enum OperatingSystem {
     Linux,
     MacOs,
@@ -24,12 +41,29 @@ pub enum OperatingSystem {
 
 impl OperatingSystem {
     pub fn current() -> Self {
-        #[cfg(target_os = "linux")]
-        return Self::Linux;
-        #[cfg(target_os = "macos")]
-        return Self::MacOs;
-        #[cfg(target_os = "windows")]
-        return Self::Windows;
+        if cfg!(target_os = "linux") {
+            Self::Linux
+        } else if cfg!(target_os = "macos") {
+            Self::MacOs
+        } else if cfg!(target_os = "windows") {
+            Self::Windows
+        } else {
+            panic!("Unsupported operating system for tracel-llvm-bundler.")
+        }
+    }
+}
+
+pub struct Environment {
+    pub os: OperatingSystem,
+    pub arch: Architecture,
+}
+
+impl Environment {
+    pub fn current() -> Self {
+        Self {
+            os: OperatingSystem::current(),
+            arch: Architecture::current(),
+        }
     }
 
     pub fn artifact_cache_path(&self) -> anyhow::Result<PathBuf> {
@@ -47,10 +81,13 @@ impl OperatingSystem {
     }
 
     fn filename(&self) -> &'static str {
-        match self {
-            OperatingSystem::Linux => "linux-x64.tar.xz",
-            OperatingSystem::MacOs => "macos-AArch64.tar.xz",
-            OperatingSystem::Windows => "windows-x64.tar.xz",
+        match (&self.os, &self.arch) {
+            (OperatingSystem::Linux, Architecture::X86_64) => "linux-x64.tar.xz",
+            (OperatingSystem::Linux, Architecture::AArch64) => "linux-AArch64.tar.xz",
+            (OperatingSystem::MacOs, Architecture::X86_64) => "macos-x64.tar.xz",
+            (OperatingSystem::MacOs, Architecture::AArch64) => "macos-AArch64.tar.xz",
+            (OperatingSystem::Windows, Architecture::X86_64) => "windows-x64.tar.xz",
+            (OperatingSystem::Windows, Architecture::AArch64) => "windows-AArch64.tar.xz",
         }
     }
 
