@@ -50,7 +50,7 @@ Before publishing the bindings and LLVM toolchain, test them against CubeCL. The
 5. Finally, in `cubecl/crates/cubecl-cpu`, run the tests.
    ```sh
    cd ../cubecl/crates/cubecl-cpu
-   TRACEL_LLVM_BUNDLER_SKIP_DOWNLOAD=1 cargo test
+   TRACEL_LLVM_BUNDLER_SKIP_CHECKSUM_DOWNLOAD=1 cargo test
    ```
 6. In `tracel-llvm` run `cargo xtask check` and fix any reported issues.
 

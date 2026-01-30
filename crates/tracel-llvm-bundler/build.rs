@@ -92,7 +92,7 @@ pub fn bundle_cache() -> AnyResult<()> {
 
     // 2) Download and parse checksums sidecar
 
-    let skip_download = std::env::var_os("TRACEL_LLVM_BUNDLER_SKIP_DOWNLOAD").is_some();
+    let skip_download = std::env::var_os("TRACEL_LLVM_BUNDLER_SKIP_CHECKSUM_DOWNLOAD").is_some();
 
     let checksum_path = env.checksum_cache_path()?;
     if !skip_download {
@@ -100,7 +100,7 @@ pub fn bundle_cache() -> AnyResult<()> {
             .with_context(|| format!("downloading {}", env.checksum_url()))?;
     } else {
         println!(
-            "cargo:warning=TRACEL_LLVM_BUNDLER_SKIP_DOWNLOAD is set, skipping checksum download."
+            "cargo:warning=TRACEL_LLVM_BUNDLER_SKIP_CHECKSUM_DOWNLOAD is set, skipping checksum download."
         );
     }
 
