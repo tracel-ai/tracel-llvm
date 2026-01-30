@@ -72,10 +72,10 @@ fn download_to_path(url: &str, dest: &Path) -> AnyResult<()> {
 }
 
 pub fn bundle_cache() -> AnyResult<()> {
-    let opsys = OperatingSystem::current();
+    let env = Environment::current();
     let llvm_path = llvm_path()?;
 
-    let sentinel = opsys.sentinel_path(&llvm_path);
+    let sentinel = env.sentinel_path(&llvm_path);
     println!("cargo:rerun-if-changed={}", sentinel.display());
 
     // 0) Already installed?
@@ -91,9 +91,17 @@ pub fn bundle_cache() -> AnyResult<()> {
     let rollback = RollbackDir::new(llvm_path.clone());
 
     // 2) Download and parse checksums sidecar
-    let checksum_path = opsys.checksum_cache_path()?;
-    download_to_path(&opsys.checksum_url(), &checksum_path)
-        .with_context(|| format!("downloading {}", opsys.checksum_url()))?;
+
+    let skip_download = std::env::var_os("TRACEL_LLVM_BUNDLER_SKIP_DOWNLOAD").is_some();
+
+    let checksum_path = env.checksum_cache_path()?;
+    if !skip_download {
+        download_to_path(&env.checksum_url(), &checksum_path)
+            .with_context(|| format!("downloading {}", env.checksum_url()))?;
+    }
+    else {
+        println!("cargo:warning=TRACEL_LLVM_BUNDLER_SKIP_DOWNLOAD is set, skipping checksum download.");
+    }
 
     let mut sidecar_text = fs::read_to_string(&checksum_path)
         .with_context(|| format!("reading {}", checksum_path.display()))?;
@@ -104,32 +112,32 @@ pub fn bundle_cache() -> AnyResult<()> {
         serde_json::from_str(&sidecar_text).with_context(|| "parsing checksum sidecar JSON")?;
 
     // 3) Download bundle if required / verify archive checksum
-    let archive_path = opsys.artifact_cache_path()?;
+    let archive_path = env.artifact_cache_path()?;
     if archive_path.exists() {
         let local = build_support::checksums::sha256_file_hex(&archive_path)?;
         if local != sidecar.archive_sha256 {
-            download_to_path(&opsys.artifact_url(), &archive_path)
-                .with_context(|| format!("re-downloading {}", opsys.artifact_url()))?;
+            download_to_path(&env.artifact_url(), &archive_path)
+                .with_context(|| format!("re-downloading {}", env.artifact_url()))?;
             let again = build_support::checksums::sha256_file_hex(&archive_path)?;
             if again != sidecar.archive_sha256 {
                 bail!(
                     "Archive checksum mismatch after re-download.\n  expected: {}\n  got:      {}\nURL: {}",
                     sidecar.archive_sha256,
                     again,
-                    opsys.artifact_url()
+                    env.artifact_url()
                 );
             }
         }
     } else {
-        download_to_path(&opsys.artifact_url(), &archive_path)
-            .with_context(|| format!("downloading {}", opsys.artifact_url()))?;
+        download_to_path(&env.artifact_url(), &archive_path)
+            .with_context(|| format!("downloading {}", env.artifact_url()))?;
         let got = build_support::checksums::sha256_file_hex(&archive_path)?;
         if got != sidecar.archive_sha256 {
             bail!(
                 "Archive checksum mismatch after download.\n  expected: {}\n  got:      {}\nURL: {}",
                 sidecar.archive_sha256,
                 got,
-                opsys.artifact_url()
+                env.artifact_url()
             );
         }
     }
