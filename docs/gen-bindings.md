@@ -44,8 +44,8 @@ Before publishing the bindings and LLVM toolchain, test them against CubeCL. The
    ```
 4. Copy locally built LLVM toolchain archive and checksum sidecar to `~/.cache/tracel/`, and rename them to include the version number so the `cubecl` build can find them; e.g.:
    ```sh
-   cp .llvm/linux-AArch64.tar.xz ~/.cache/tracel/tracel-llvm-20.1.4-6-linux-AArch64.tar.xz
-   cp .llvm/linux-AArch64.checksums.json ~/.cache/tracel/tracel-llvm-20.1.4-6-linux-AArch64.checksums.json
+   cp .llvm/linux-AArch64.tar.xz ~/.cache/tracel/tracel-llvm-20.1.4-7-linux-AArch64.tar.xz
+   cp .llvm/linux-AArch64.checksums.json ~/.cache/tracel/tracel-llvm-20.1.4-7-linux-AArch64.checksums.json
    ```
 5. Finally, in `cubecl/crates/cubecl-cpu`, run the tests.
    ```sh
