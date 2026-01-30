@@ -14,7 +14,7 @@ It will install tools such as `cmake`, `ninja`, `git`, etc., necessary for the b
 
 ## Creating LLVM Toolchain Archive
  
-A custom build of LLVM is used to create the platform-specific bindings. Pre-built versions are published as a part of a [GitHub release](https://github.com/tracel-ai/tracel-llvm/releases).  If your platform is not new supported, build it for your platform and create an archive with `cargo xtask bundle`. The build process will take a while. 
+A custom build of LLVM is used to create the platform-specific bindings. Pre-built versions are published as a part of a [GitHub release](https://github.com/tracel-ai/tracel-llvm/releases).  If your platform is not yet supported, build it for your platform and create an archive with `cargo xtask bundle`. The build process will take a while. 
 
 The resulting bundle is placed in `.llvm/{os}-{arch}.tar.xz` (e.g. `.llvm/linux-AArch64.tar.xz`) along with a checksum sidecar file (`.llvm/{os}-{arch}.checksums.json`).
 
@@ -29,7 +29,7 @@ cargo xtask bindgen
 ```
 ## Testing
 
-Before the bindings and LLVM toolchain, test them against CubeCL. The following manual steps are required:
+Before publishing the bindings and LLVM toolchain, test them against CubeCL. The following manual steps are required:
 
 1. Clone the [CubeCL repository](https://github.com/tracel-ai/cubecl) as a sibling of the `tracel-llvm` repository.
 2. In the root `cubecl/Cargo.toml`, point the `tracel-llvm` dependency to the local `tracel-llvm` repository, enabling the `mlir-helpers` feature:
@@ -37,7 +37,7 @@ Before the bindings and LLVM toolchain, test them against CubeCL. The following 
    ```toml
    tracel-llvm = { path = "../tracel-llvm/crates/tracel-llvm", features = ["mlir-helpers"] }
    ``` 
-3. In `cubeecl/crates/cubecl-cpu/Cargo.toml`, point `tracel-llvm-bundler` to the local path of the `tracel-llvm-bundler` crate:
+3. In `cubecl/crates/cubecl-cpu/Cargo.toml`, point `tracel-llvm-bundler` to the local path of the `tracel-llvm-bundler` crate:
 
    ```toml
    tracel-llvm-bundler = { path = "../../../tracel-llvm/crates/tracel-llvm-bundler" }

@@ -98,9 +98,10 @@ pub fn bundle_cache() -> AnyResult<()> {
     if !skip_download {
         download_to_path(&env.checksum_url(), &checksum_path)
             .with_context(|| format!("downloading {}", env.checksum_url()))?;
-    }
-    else {
-        println!("cargo:warning=TRACEL_LLVM_BUNDLER_SKIP_DOWNLOAD is set, skipping checksum download.");
+    } else {
+        println!(
+            "cargo:warning=TRACEL_LLVM_BUNDLER_SKIP_DOWNLOAD is set, skipping checksum download."
+        );
     }
 
     let mut sidecar_text = fs::read_to_string(&checksum_path)

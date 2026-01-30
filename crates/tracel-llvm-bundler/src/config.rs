@@ -23,10 +23,13 @@ pub enum Architecture {
 
 impl Architecture {
     pub fn current() -> Architecture {
-        #[cfg(target_arch = "x86_64")]
-        return Architecture::X86_64;
-        #[cfg(target_arch = "aarch64")]
-        return Architecture::AArch64;
+        if cfg!(target_arch = "x86_64") {
+            Architecture::X86_64
+        } else if cfg!(target_arch = "aarch64") {
+            Architecture::AArch64
+        } else {
+            panic!("Unsupported target architecture for tracel-llvm-bundler.")
+        }
     }
 }
 
@@ -38,12 +41,15 @@ pub enum OperatingSystem {
 
 impl OperatingSystem {
     pub fn current() -> Self {
-        #[cfg(target_os = "linux")]
-        return Self::Linux;
-        #[cfg(target_os = "macos")]
-        return Self::MacOs;
-        #[cfg(target_os = "windows")]
-        return Self::Windows;
+        if cfg!(target_os = "linux") {
+            Self::Linux
+        } else if cfg!(target_os = "macos") {
+            Self::MacOs
+        } else if cfg!(target_os = "windows") {
+            Self::Windows
+        } else {
+            panic!("Unsupported operating system for tracel-llvm-bundler.")
+        }
     }
 }
 
