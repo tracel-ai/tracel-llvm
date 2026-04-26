@@ -6,13 +6,13 @@ use std::{
     process::Command,
 };
 
-const LLVM_MAJOR_VERSION: usize = 20;
+const LLVM_MAJOR_VERSION: usize = 22;
 const TRACEL_LLVM_CACHE_DIRECTORY_NAME: &str = "tracel";
 const TRACEL_LLVM_CACHE_PREFIX: &str = "tracel-llvm";
 const TRACEL_LLVM_ARTIFACT_BASE_URL: &str =
     "https://github.com/tracel-ai/tracel-llvm/releases/download";
-pub const TRACEL_LLVM_VERSION: &str = "20.1.4";
-pub const TRACEL_LLVM_RELEASE_NUMBER: &str = "7";
+pub const TRACEL_LLVM_VERSION: &str = "22.1.4";
+pub const TRACEL_LLVM_RELEASE_NUMBER: &str = "8";
 pub const TRACEL_LLVM_FULL_VERSION: &str =
     constcat::concat!(TRACEL_LLVM_VERSION, "-", TRACEL_LLVM_RELEASE_NUMBER);
 
@@ -184,8 +184,8 @@ pub fn init() -> ConfigResult<usize> {
     let libclang_path = llvm_path.join("lib");
     let include_path = llvm_path.join("include");
     unsafe {
-        std::env::set_var("TABLEGEN_200_PREFIX", &llvm_path);
-        std::env::set_var("MLIR_SYS_200_PREFIX", &llvm_path);
+        std::env::set_var("TABLEGEN_220_PREFIX", &llvm_path);
+        std::env::set_var("MLIR_SYS_220_PREFIX", &llvm_path);
         std::env::set_var("LIBCLANG_PATH", &libclang_path);
         std::env::set_var("LLVM_INCLUDE_DIRECTORY", &include_path);
     }

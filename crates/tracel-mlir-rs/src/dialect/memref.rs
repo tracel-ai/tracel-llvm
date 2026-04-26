@@ -292,6 +292,18 @@ pub fn store<'c>(
         .expect("valid operation")
 }
 
+/// Create a `memref.store` operation.
+pub fn copy<'c>(
+    source: Value<'c, '_>,
+    target: Value<'c, '_>,
+    location: Location<'c>,
+) -> Operation<'c> {
+    OperationBuilder::new("memref.copy", location)
+        .add_operands(&[source, target])
+        .build()
+        .expect("valid operation")
+}
+
 /// Create a `memref.realloc` operation.
 pub fn realloc<'c>(
     context: &'c Context,

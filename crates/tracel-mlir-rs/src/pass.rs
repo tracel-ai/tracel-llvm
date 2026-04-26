@@ -6,6 +6,7 @@ pub mod external;
 pub mod gpu;
 pub mod linalg;
 mod manager;
+pub mod memref;
 mod operation_manager;
 pub mod sparse_tensor;
 pub mod transform;

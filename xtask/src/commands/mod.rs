@@ -164,6 +164,7 @@ impl BundleWorkspace {
                 "-DLLVM_INCLUDE_EXAMPLES=OFF".into(),
                 "-DLLVM_INCLUDE_TESTS=OFF".into(),
                 "-DLLVM_INCLUDE_TOOLS=ON".into(),
+                "-DLLVM_ENABLE_WARNINGS=OFF".into(),
             ],
             ninja_targets_before_install: vec!["llvm-config".into()],
         };
@@ -208,6 +209,9 @@ impl BundleWorkspace {
             extra_cmake_args: vec![
                 "-DLLVM_BUILD_EXAMPLES=OFF".into(),
                 "-DLLVM_BUILD_TESTS=OFF".into(),
+                "-DCLANG_TOOL_C_INDEX_TEST_BUILD=OFF".into(),
+                "-DCLANG_INCLUDE_TESTS=OFF".into(),
+                "-DCLANG_ENABLE_ARCMT=OFF".into(),
                 "-DLLVM_ENABLE_DIA_SDK=OFF".into(),
                 "-DLLVM_ENABLE_LIBEDIT=OFF".into(),
                 "-DLLVM_ENABLE_LIBXML2=OFF".into(),
@@ -218,6 +222,7 @@ impl BundleWorkspace {
                 "-DLLVM_INCLUDE_DOCS=OFF".into(),
                 "-DLLVM_INCLUDE_EXAMPLES=OFF".into(),
                 "-DLLVM_INCLUDE_TESTS=OFF".into(),
+                "-DLLVM_ENABLE_WARNINGS=OFF".into(),
             ],
             ninja_targets_before_install: vec!["libclang".into()],
         };

@@ -1024,7 +1024,7 @@ mod tests {
         assert!(module.as_operation().verify());
         insta::assert_snapshot!(module.as_operation());
 
-        let engine = crate::ExecutionEngine::new(&module, 2, &[], false);
+        let engine = crate::ExecutionEngine::new(&module, 2, &[], false, false);
 
         assert_eq!(unsafe { engine.invoke_packed("kernel", &mut [],) }, Ok(()));
     }

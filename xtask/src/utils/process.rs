@@ -20,6 +20,8 @@ pub fn run_checked(
 ) -> anyhow::Result<()> {
     let mut cmd = Command::new(bin);
     cmd.args(args);
+    let joined_args = args.join(" ");
+    group_info!("Command line: {} {}", bin, &joined_args);
     if let Some(d) = cwd {
         cmd.current_dir(d);
     }
