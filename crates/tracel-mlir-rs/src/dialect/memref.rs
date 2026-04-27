@@ -292,7 +292,7 @@ pub fn store<'c>(
         .expect("valid operation")
 }
 
-/// Create a `memref.store` operation.
+/// Create a `memref.copy` operation.
 pub fn copy<'c>(
     source: Value<'c, '_>,
     target: Value<'c, '_>,

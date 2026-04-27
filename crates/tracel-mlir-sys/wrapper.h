@@ -7,7 +7,7 @@
 // #include <mlir-c/Debug.h>
 #include <mlir-c/Diagnostics.h>
 // #include <mlir-c/Dialect/AMDGPU.h>
-// #include <mlir-c/Dialect/Arith.h>
+#include <mlir-c/Dialect/Arith.h>
 #include <mlir-c/Dialect/Async.h>
 #include <mlir-c/Dialect/ControlFlow.h>
 // #include <mlir-c/Dialect/EmitC.h>

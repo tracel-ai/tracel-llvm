@@ -1,5 +1,6 @@
 //! Passes and pass managers.
 
+pub mod arith;
 pub mod r#async;
 pub mod conversion;
 pub mod external;
