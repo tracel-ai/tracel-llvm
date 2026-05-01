@@ -22,8 +22,8 @@ pub const _HAS_NODISCARD: u32 = 1;
 pub const _STL_WARNING_LEVEL: u32 = 3;
 pub const _STL_DISABLED_WARNING_C5053: u32 = 5053;
 pub const _CPPLIB_VER: u32 = 650;
-pub const _MSVC_STL_VERSION: u32 = 143;
-pub const _MSVC_STL_UPDATE: u32 = 202503;
+pub const _MSVC_STL_VERSION: u32 = 145;
+pub const _MSVC_STL_UPDATE: u32 = 202508;
 pub const _HAS_STATIC_RTTI: u32 = 1;
 pub const _HAS_STD_BYTE: u32 = 1;
 pub const _ENFORCE_MATCHING_ALLOCATORS: u32 = 1;
@@ -122,10 +122,8 @@ pub const __cpp_lib_variant: u32 = 202102;
 pub const __cpp_lib_experimental_filesystem: u32 = 201406;
 pub const _USE_EXTERN_CXX_EVERYWHERE_FOR_STL: u32 = 0;
 pub const _STL_WIN32_WINNT_VISTA: u32 = 1536;
-pub const _STL_WIN32_WINNT_WIN7: u32 = 1537;
-pub const _STL_WIN32_WINNT_WIN8: u32 = 1538;
 pub const _STL_WIN32_WINNT_WIN10: u32 = 2560;
-pub const _STL_WIN32_WINNT: u32 = 1537;
+pub const _STL_WIN32_WINNT: u32 = 2560;
 pub const WCHAR_MIN: u32 = 0;
 pub const WCHAR_MAX: u32 = 65535;
 pub const WINT_MIN: u32 = 0;
@@ -537,7 +535,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn tableGenRecordValGetValAsBit(rv_ref: TableGenRecordValRef, bit: *mut i8)
-    -> TableGenBool;
+        -> TableGenBool;
 }
 unsafe extern "C" {
     pub fn tableGenRecordValGetValAsBits(rv_ref: TableGenRecordValRef, len: *mut usize) -> *mut i8;
@@ -571,7 +569,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn tableGenDagRecordGet(rv_ref: TableGenTypedInitRef, index: usize)
-    -> TableGenTypedInitRef;
+        -> TableGenTypedInitRef;
 }
 unsafe extern "C" {
     pub fn tableGenDagRecordArgName(

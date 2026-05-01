@@ -14,7 +14,6 @@ tracel_mlir_rs_macros::passes!(
         mlirCreateLinalgLinalgFoldUnitExtentDimsPass,
         mlirCreateLinalgLinalgGeneralizeNamedOpsPass,
         mlirCreateLinalgLinalgInlineScalarOperandsPass,
-        mlirCreateLinalgLinalgNamedOpConversionPass,
         mlirCreateLinalgLinalgSpecializeGenericOpsPass,
     ]
 );

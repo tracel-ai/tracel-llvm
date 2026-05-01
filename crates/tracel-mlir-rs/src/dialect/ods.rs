@@ -114,6 +114,7 @@ tracel_mlir_rs_macros::dialect! {
         "LLVMDialect.td",
         "LLVMInterfaces.td",
         "LLVMTypes.td",
+        "LLVMEnums.td",
         "LLVMOpBase.td",
         "LLVMAttrDefs.td",
         "BasicPtxBuilderInterface.td",
@@ -177,10 +178,12 @@ tracel_mlir_rs_macros::dialect! {
     files: ["mlir/Dialect/Tensor/IR/TensorOps.td"],
 }
 
+/* TODO: Fix "error: invalid conversion from Invalid to alloc::string::String" probably tblgen issue?
 tracel_mlir_rs_macros::dialect! {
     name: "tosa",
     files: ["mlir/Dialect/Tosa/IR/TosaOps.td"],
 }
+*/
 
 tracel_mlir_rs_macros::dialect! {
     name: "transform",

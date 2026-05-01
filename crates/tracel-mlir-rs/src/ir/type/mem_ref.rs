@@ -1,11 +1,11 @@
 use super::{shaped_type_like::ShapedTypeLike, TypeLike};
 use crate::{
     ir::{affine_map::AffineMap, attribute::AttributeLike, Attribute, Location, Type},
-    Error,
+    Context, Error,
 };
 use tracel_mlir_sys::{
     mlirMemRefTypeGet, mlirMemRefTypeGetAffineMap, mlirMemRefTypeGetChecked,
-    mlirMemRefTypeGetLayout, mlirMemRefTypeGetMemorySpace, MlirType,
+    mlirMemRefTypeGetLayout, mlirMemRefTypeGetMemorySpace, mlirStridedLayoutAttrGet, MlirType,
 };
 
 /// A mem-ref type.
@@ -80,6 +80,33 @@ impl<'c> MemRefType<'c> {
 impl<'c> ShapedTypeLike<'c> for MemRefType<'c> {}
 
 type_traits!(MemRefType, is_mem_ref, "mem ref");
+
+/// A strided layout attribute.
+#[derive(Clone, Copy, Debug)]
+pub struct StridedLayoutAttr<'c> {
+    attr: Attribute<'c>,
+}
+
+impl<'c> StridedLayoutAttr<'c> {
+    pub fn new(context: &Context, offset: i64, strides: &[i64]) -> Self {
+        unsafe {
+            Self {
+                attr: Attribute::from_raw(mlirStridedLayoutAttrGet(
+                    context.to_raw(),
+                    offset,
+                    strides.len() as isize,
+                    strides.as_ptr(),
+                )),
+            }
+        }
+    }
+}
+
+impl<'c> From<StridedLayoutAttr<'c>> for Attribute<'c> {
+    fn from(value: StridedLayoutAttr<'c>) -> Self {
+        value.attr
+    }
+}
 
 #[cfg(test)]
 mod tests {

@@ -20,6 +20,7 @@ impl ExecutionEngine {
         optimization_level: usize,
         shared_library_paths: &[&str],
         enable_object_dump: bool,
+        enable_pic: bool,
     ) -> Self {
         Self {
             raw: unsafe {
@@ -33,6 +34,7 @@ impl ExecutionEngine {
                         .collect::<Vec<_>>()
                         .as_ptr(),
                     enable_object_dump,
+                    enable_pic,
                 )
             },
         }
@@ -115,7 +117,7 @@ mod tests {
 
         assert_eq!(pass_manager.run(&mut module), Ok(()));
 
-        let engine = ExecutionEngine::new(&module, 2, &[], false);
+        let engine = ExecutionEngine::new(&module, 2, &[], false, false);
 
         let mut argument = 42;
         let mut result = -1;
@@ -159,6 +161,6 @@ mod tests {
 
         assert_eq!(pass_manager.run(&mut module), Ok(()));
 
-        ExecutionEngine::new(&module, 2, &[], true).dump_to_object_file("/tmp/mlir-rs/test.o");
+        ExecutionEngine::new(&module, 2, &[], true, false).dump_to_object_file("/tmp/mlir-rs/test.o");
     }
 }

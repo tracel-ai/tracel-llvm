@@ -1,15 +1,15 @@
 [package]
-authors                = ["Tracel Technologies Inc."]
-categories             = ["api-bindings"]
-description            = "Rust bindings for MLIR libraries used by CubeCL."
-edition                = "2021"
-keywords               = ["cubecl", "llvm", "mlir", "bindings"]
-license                = "Apache-2.0"
-name                   = "tracel-mlir-rs"
-readme.workspace       = true
-repository             = "https://github.com/tracel-ai/tracel-llvm/tree/main/crates/tracel-mlir-rs"
+authors = ["Tracel Technologies Inc."]
+categories = ["api-bindings"]
+description = "Rust bindings for MLIR libraries used by CubeCL."
+edition = "2021"
+keywords = ["cubecl", "llvm", "mlir", "bindings"]
+license = "Apache-2.0"
+name = "tracel-mlir-rs"
+readme.workspace = true
+repository = "https://github.com/tracel-ai/tracel-llvm/tree/main/crates/tracel-mlir-rs"
 rust-version.workspace = true
-version.workspace      = true
+version.workspace = true
 
 [features]
 ods-dialects = []
@@ -17,8 +17,8 @@ ods-dialects = []
 helpers = ["ods-dialects"]
 
 [dependencies]
-tracel-mlir-rs-macros = { path = "../tracel-mlir-rs-macros", version = "20.1.4-7" }
-tracel-mlir-sys = { path = "../tracel-mlir-sys", version = "20.1.4-7" }
+tracel-mlir-rs-macros = { path = "../tracel-mlir-rs-macros", version = "22.1.4-8" }
+tracel-mlir-sys = { path = "../tracel-mlir-sys", version = "22.1.4-8" }
 
 [dev-dependencies]
 indoc = "2.0.6"

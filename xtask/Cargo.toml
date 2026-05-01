@@ -1,12 +1,14 @@
 [package]
+edition = "2024"
 name = "xtask"
 version = "4.9.0"
-edition = "2024"
 
 [dependencies]
-tracel-llvm-bundler = { path = "../crates/tracel-llvm-bundler", features = ["xtask"] }
-tracel-mlir-sys = { path = "../crates/tracel-mlir-sys", features = ["xtask"] }
 bindgen = { version = "0.72.1" }
+tracel-llvm-bundler = { path = "../crates/tracel-llvm-bundler", features = [
+    "xtask",
+] }
+tracel-mlir-sys = { path = "../crates/tracel-mlir-sys", features = ["xtask"] }
 
 chrono = "0.4.42"
 dirs = "6.0.0"

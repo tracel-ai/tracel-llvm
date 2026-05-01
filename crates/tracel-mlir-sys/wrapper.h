@@ -1,3 +1,4 @@
+#include <mlir-c/IR.h>
 // #include <mlir-c/AffineExpr.h>
 // #include <mlir-c/AffineMap.h>
 #include <mlir-c/BuiltinAttributes.h>
@@ -6,7 +7,7 @@
 // #include <mlir-c/Debug.h>
 #include <mlir-c/Diagnostics.h>
 // #include <mlir-c/Dialect/AMDGPU.h>
-// #include <mlir-c/Dialect/Arith.h>
+#include <mlir-c/Dialect/Arith.h>
 #include <mlir-c/Dialect/Async.h>
 #include <mlir-c/Dialect/ControlFlow.h>
 // #include <mlir-c/Dialect/EmitC.h>
@@ -17,7 +18,7 @@
 #include <mlir-c/Dialect/Linalg.h>
 // #include <mlir-c/Dialect/MLProgram.h>
 // #include <mlir-c/Dialect/Math.h>
-// #include <mlir-c/Dialect/MemRef.h>
+#include <mlir-c/Dialect/MemRef.h>
 #include <mlir-c/Dialect/NVGPU.h>
 // #include <mlir-c/Dialect/NVVM.h>
 // #include <mlir-c/Dialect/OpenMP.h>

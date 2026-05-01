@@ -12,6 +12,8 @@ pub(crate) struct CTableGenShimConfig {
     pub repo_root: PathBuf,
     pub bundle_install_dir: PathBuf,
     pub build_dir: PathBuf,
+    pub cxx_compiler: PathBuf,
+    pub cxx_archiver: PathBuf,
 }
 
 pub(crate) fn build_and_install_ctablegen_shim(cfg: CTableGenShimConfig) -> anyhow::Result<()> {
@@ -73,7 +75,17 @@ pub(crate) fn build_and_install_ctablegen_shim(cfg: CTableGenShimConfig) -> anyh
     // Include bundle headers too
     let bundle_include = cfg.bundle_install_dir.join("include");
 
-    if cfg!(windows) {
+    let is_msvc = is_msvc_style(&cfg.cxx_compiler);
+    let cxx = cfg.cxx_compiler.to_string_lossy();
+    let cxx_ar = cfg.cxx_archiver.to_string_lossy();
+
+    let lib_name = if cfg!(windows) {
+        "CTableGen.lib"
+    } else {
+        "libCTableGen.a"
+    };
+
+    if is_msvc {
         // MSVC
         for src in sources {
             let obj = cfg.build_dir.join(format!(
@@ -93,29 +105,26 @@ pub(crate) fn build_and_install_ctablegen_shim(cfg: CTableGenShimConfig) -> anyh
                 format!("/I{}", bundle_include.to_string_lossy()),
             ];
 
-            args.extend(split_flags_windows(&llvm_cppflags));
-            args.extend(split_flags_windows(&llvm_cxxflags));
+            args.extend(split_flags(&llvm_cppflags));
+            args.extend(split_flags(&llvm_cxxflags));
 
-            run_checked("cl.exe", &args, None)?;
+            run_checked(&cxx, &args, None)?;
             objs.push(obj);
         }
 
         // Archive -> CTableGen.lib
-        let out_lib = cfg.build_dir.join("CTableGen.lib");
+        let out_lib = cfg.build_dir.join(lib_name);
         let mut lib_args: Vec<String> = vec![
             "/nologo".into(),
             format!("/out:{}", out_lib.to_string_lossy()),
         ];
         lib_args.extend(objs.iter().map(|p| p.to_string_lossy().into_owned()));
-        run_checked("lib.exe", &lib_args, None)?;
+        run_checked(&cxx_ar, &lib_args, None)?;
 
         let install_lib = cfg.bundle_install_dir.join("lib");
         fs::create_dir_all(&install_lib)?;
-        fs::copy(&out_lib, install_lib.join("CTableGen.lib"))?;
+        fs::copy(&out_lib, install_lib.join(lib_name))?;
     } else {
-        // clang++
-        let cxx = std::env::var("CXX").unwrap_or_else(|_| "c++".into());
-
         for src in sources {
             let obj = cfg
                 .build_dir
@@ -127,31 +136,48 @@ pub(crate) fn build_and_install_ctablegen_shim(cfg: CTableGenShimConfig) -> anyh
                 "-o".into(),
                 obj.to_string_lossy().into_owned(),
                 "-O2".into(),
-                "-fPIC".into(),
                 "-std=c++17".into(),
                 "-I".into(),
                 shim_include.to_string_lossy().into_owned(),
                 "-I".into(),
                 bundle_include.to_string_lossy().into_owned(),
             ];
-            args.extend(split_flags_unix(&llvm_cppflags));
-            args.extend(split_flags_unix(&llvm_cxxflags));
 
-            run_checked(&cxx, &args, None)?;
+            if cfg!(windows) {
+                args.push("-fms-runtime-lib=dll".into()); // /MD on MSVC
+            } else {
+                args.push("-fPIC".into());
+            }
+
+            args.extend(split_flags(&llvm_cppflags));
+            args.extend(split_flags(&llvm_cxxflags));
+
+            run_checked(cxx.as_ref(), &args, None)?;
             objs.push(obj);
         }
 
-        let out_a = cfg.build_dir.join("libCTableGen.a");
+        let out_a = cfg.build_dir.join(lib_name);
         let mut ar_args: Vec<String> = vec!["rcs".into(), out_a.to_string_lossy().into_owned()];
         ar_args.extend(objs.iter().map(|p| p.to_string_lossy().into_owned()));
-        run_checked("ar", &ar_args, None)?;
+        run_checked(&cxx_ar, &ar_args, None)?;
 
         let install_lib = cfg.bundle_install_dir.join("lib");
         fs::create_dir_all(&install_lib)?;
-        fs::copy(&out_a, install_lib.join("libCTableGen.a"))?;
+        fs::copy(&out_a, install_lib.join(lib_name))?;
     }
 
     Ok(())
+}
+
+fn is_msvc_style(p: &Path) -> bool {
+    matches!(
+        p.file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_lowercase()
+            .as_str(),
+        "cl" | "clang-cl" | "icl"
+    )
 }
 
 fn run_capture(bin: &Path, args: &[&str]) -> anyhow::Result<String> {
@@ -173,10 +199,6 @@ fn run_capture_allow_fail(bin: &Path, args: &[&str]) -> anyhow::Result<String> {
     Ok(String::from_utf8(out.stdout)?.trim().to_string())
 }
 
-fn split_flags_unix(s: &str) -> Vec<String> {
-    s.split_whitespace().map(|x| x.to_string()).collect()
-}
-
-fn split_flags_windows(s: &str) -> Vec<String> {
+fn split_flags(s: &str) -> Vec<String> {
     s.split_whitespace().map(|x| x.to_string()).collect()
 }
