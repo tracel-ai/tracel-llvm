@@ -2,6 +2,12 @@ name: Publish
 
 on:
   workflow_dispatch:
+    inputs:
+      dry-run-only:
+        description: "Run xtask publish in dry-run mode (no publish)"
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   publish-tracel-llvm-bundler:
@@ -9,6 +15,7 @@ jobs:
     with:
       crate: tracel-llvm-bundler
       tag-validation: false
+      dry-run-only: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run-only || false }}
     secrets:
       CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
 
@@ -17,6 +24,7 @@ jobs:
     with:
       crate: tracel-mlir-sys
       tag-validation: false
+      dry-run-only: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run-only || false }}
     needs:
       - publish-tracel-llvm-bundler
     secrets:
@@ -27,6 +35,7 @@ jobs:
     with:
       crate: tracel-tblgen-rs
       tag-validation: false
+      dry-run-only: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run-only || false }}
     needs:
       - publish-tracel-llvm-bundler
     secrets:
@@ -37,6 +46,7 @@ jobs:
     with:
       crate: tracel-mlir-rs-macros
       tag-validation: false
+      dry-run-only: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run-only || false }}
     needs:
       - publish-tracel-llvm-bundler
       - publish-tracel-tblgen-rs
@@ -48,6 +58,7 @@ jobs:
     with:
       crate: tracel-mlir-rs
       tag-validation: false
+      dry-run-only: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run-only || false }}
     needs:
       - publish-tracel-mlir-rs-macros
       - publish-tracel-mlir-sys
@@ -59,6 +70,7 @@ jobs:
     with:
       crate: tracel-llvm
       tag-validation: false
+      dry-run-only: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run-only || false }}
     needs:
       - publish-tracel-mlir-rs
       - publish-tracel-mlir-sys
