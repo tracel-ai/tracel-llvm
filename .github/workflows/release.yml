@@ -57,16 +57,34 @@ jobs:
 
   llvm-linux:
     needs: create-release
+    strategy:
+      matrix:
+        arch: ["x86-64", "arm64"]
+        include:
+          - arch: "x86-64"
+            image_family: "ubuntu-2204-lts"
+            machine_type: "n2-standard-48"
+            gh_arch: "x64"
+            zones: "northamerica-northeast1-b"
+            suffix: "x64"
+          - arch: "arm64"
+            image_family: "ubuntu-2204-lts-arm64"
+            # always looks for actual zones where the wanted machine type exists
+            machine_type: "t2a-standard-48"
+            zones: "us-central1-b"
+            gh_arch: "arm64"
+            suffix: "AArch64"
     runs-on: [
-      '@id:llvm-linux-job-${{ github.run_id }}-${{ github.run_attempt }}',
+      '@id:llvm-linux-${{ matrix.arch }}-job-${{ github.run_id }}-${{ github.run_attempt }}',
       # Older Ubuntu to build with a more ancient libc to support more platforms
-      '@image-family:ubuntu-2204-lts',
+      '@image-family:${{ matrix.image_family }}',
       '@image-project:ubuntu-os-cloud',
       '@disk-size:100',
       '@keep-alive:false',
-      '@machine-type:n2-standard-48',
+      '@machine-type:${{ matrix.machine_type }}',
       '@os:linux',
-      '@zones:northamerica-northeast1-b'
+      '@architecture:${{ matrix.gh_arch }}',
+      '@zones:${{ matrix.zones }}'
       ]
     steps:
       - name: Checkout repository
@@ -81,7 +99,7 @@ jobs:
         uses: tracel-ai/github-actions/install-rust@v10
         with:
           rust-toolchain: stable
-          cache-key: stable-linux-x86
+          cache-key: stable-linux-${{ matrix.suffix }}
       # ----------------------------------------------------------------------
       - name: Build LLVM bunlde
         run: cargo xtask bundle build
@@ -95,8 +113,8 @@ jobs:
           name: ${{ needs.create-release.outputs.tag }}
           tag_name: ${{ needs.create-release.outputs.tag }}
           files: |
-            .llvm/linux-x64.tar.xz
-            .llvm/linux-x64.checksums.json
+            .llvm/linux-${{ matrix.suffix }}.tar.xz
+            .llvm/linux-${{ matrix.suffix }}.checksums.json
 
   llvm-macos:
     needs: create-release
