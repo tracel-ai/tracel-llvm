@@ -21,4 +21,4 @@ version.workspace = true
 xtask = ["tracel-llvm-bundler/xtask"]
 
 [build-dependencies]
-tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "22.1.4-8" }
+tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "22.1.4-1" }

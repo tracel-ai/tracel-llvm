@@ -12,7 +12,7 @@ const TRACEL_LLVM_CACHE_PREFIX: &str = "tracel-llvm";
 const TRACEL_LLVM_ARTIFACT_BASE_URL: &str =
     "https://github.com/tracel-ai/tracel-llvm/releases/download";
 pub const TRACEL_LLVM_VERSION: &str = "22.1.4";
-pub const TRACEL_LLVM_RELEASE_NUMBER: &str = "8";
+pub const TRACEL_LLVM_RELEASE_NUMBER: &str = "1";
 pub const TRACEL_LLVM_FULL_VERSION: &str =
     constcat::concat!(TRACEL_LLVM_VERSION, "-", TRACEL_LLVM_RELEASE_NUMBER);
 
