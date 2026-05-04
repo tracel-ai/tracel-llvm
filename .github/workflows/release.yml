@@ -96,13 +96,13 @@ jobs:
           bash scripts/install-prereqs.sh
       # ----------------------------------------------------------------------
       - name: Setup Rust
-        uses: tracel-ai/github-actions/install-rust@v10
+        uses: tracel-ai/github-actions/install-rust@v11
         with:
           rust-toolchain: stable
           cache-key: stable-linux-${{ matrix.suffix }}
       # ----------------------------------------------------------------------
       - name: Build LLVM bunlde
-        run: cargo xtask bundle build
+        run: xtask bundle build
       # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
@@ -128,13 +128,13 @@ jobs:
           bash scripts/install-prereqs.sh
       # ----------------------------------------------------------------------
       - name: Setup Rust
-        uses: tracel-ai/github-actions/install-rust@v10
+        uses: tracel-ai/github-actions/install-rust@v11
         with:
           rust-toolchain: stable
           cache-key: stable-macos
       # ----------------------------------------------------------------------
       - name: Build LLVM bunlde
-        run: cargo xtask bundle build
+        run: xtask bundle build
       # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
@@ -173,7 +173,7 @@ jobs:
         shell: pwsh
         run: |
           $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
-          cmd /v:on /c "`"$vsDevCmd`" -arch=x64 && where cl && where cmake && cargo xtask bundle build"
+          cmd /v:on /c "`"$vsDevCmd`" -arch=x64 && where cl && where cmake && xtask bundle build"
       # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
