@@ -4,5 +4,4 @@
 
 .envrc
 .direnv
-/Cargo.lock
 .llvm
