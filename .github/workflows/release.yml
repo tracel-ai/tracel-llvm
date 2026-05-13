@@ -169,6 +169,11 @@ jobs:
         run: |
           pwsh -ExecutionPolicy Bypass -File scripts/install-prereqs.ps1
       # ----------------------------------------------------------------------
+      - name: Install xtask CLI
+        shell: pwsh
+        run: |
+          cargo install tracel-xtask-cli
+      # ----------------------------------------------------------------------
       - name: Build LLVM bundle
         shell: pwsh
         run: |
