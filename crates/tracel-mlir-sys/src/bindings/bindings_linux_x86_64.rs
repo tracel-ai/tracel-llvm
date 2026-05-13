@@ -11,8 +11,7 @@ pub const _FEATURES_H: u32 = 1;
 pub const _ISOC95_SOURCE: u32 = 1;
 pub const _ISOC99_SOURCE: u32 = 1;
 pub const _ISOC11_SOURCE: u32 = 1;
-pub const _ISOC23_SOURCE: u32 = 1;
-pub const _ISOC2Y_SOURCE: u32 = 1;
+pub const _ISOC2X_SOURCE: u32 = 1;
 pub const _POSIX_SOURCE: u32 = 1;
 pub const _POSIX_C_SOURCE: u32 = 200809;
 pub const _XOPEN_SOURCE: u32 = 700;
@@ -21,8 +20,7 @@ pub const _LARGEFILE64_SOURCE: u32 = 1;
 pub const _DEFAULT_SOURCE: u32 = 1;
 pub const _ATFILE_SOURCE: u32 = 1;
 pub const _DYNAMIC_STACK_SIZE_SOURCE: u32 = 1;
-pub const __GLIBC_USE_ISOC2Y: u32 = 1;
-pub const __GLIBC_USE_ISOC23: u32 = 1;
+pub const __GLIBC_USE_ISOC2X: u32 = 1;
 pub const __USE_ISOC11: u32 = 1;
 pub const __USE_ISOC99: u32 = 1;
 pub const __USE_ISOC95: u32 = 1;
@@ -45,7 +43,6 @@ pub const __WORDSIZE: u32 = 64;
 pub const __WORDSIZE_TIME64_COMPAT32: u32 = 1;
 pub const __SYSCALL_WORDSIZE: u32 = 64;
 pub const __TIMESIZE: u32 = 64;
-pub const __USE_TIME_BITS64: u32 = 1;
 pub const __USE_MISC: u32 = 1;
 pub const __USE_ATFILE: u32 = 1;
 pub const __USE_DYNAMIC_STACK_SIZE: u32 = 1;
@@ -53,7 +50,7 @@ pub const __USE_GNU: u32 = 1;
 pub const __USE_FORTIFY_LEVEL: u32 = 0;
 pub const __GLIBC_USE_DEPRECATED_GETS: u32 = 0;
 pub const __GLIBC_USE_DEPRECATED_SCANF: u32 = 0;
-pub const __GLIBC_USE_C23_STRTOL: u32 = 1;
+pub const __GLIBC_USE_C2X_STRTOL: u32 = 1;
 pub const _STDC_PREDEF_H: u32 = 1;
 pub const __STDC_IEC_559__: u32 = 1;
 pub const __STDC_IEC_60559_BFP__: u32 = 201404;
@@ -62,17 +59,17 @@ pub const __STDC_IEC_60559_COMPLEX__: u32 = 201404;
 pub const __STDC_ISO_10646__: u32 = 201706;
 pub const __GNU_LIBRARY__: u32 = 6;
 pub const __GLIBC__: u32 = 2;
-pub const __GLIBC_MINOR__: u32 = 42;
+pub const __GLIBC_MINOR__: u32 = 39;
 pub const _SYS_CDEFS_H: u32 = 1;
 pub const __glibc_c99_flexarr_available: u32 = 1;
 pub const __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI: u32 = 0;
 pub const __HAVE_GENERIC_SELECTION: u32 = 0;
 pub const __GLIBC_USE_LIB_EXT2: u32 = 1;
 pub const __GLIBC_USE_IEC_60559_BFP_EXT: u32 = 1;
-pub const __GLIBC_USE_IEC_60559_BFP_EXT_C23: u32 = 1;
+pub const __GLIBC_USE_IEC_60559_BFP_EXT_C2X: u32 = 1;
 pub const __GLIBC_USE_IEC_60559_EXT: u32 = 1;
 pub const __GLIBC_USE_IEC_60559_FUNCS_EXT: u32 = 1;
-pub const __GLIBC_USE_IEC_60559_FUNCS_EXT_C23: u32 = 1;
+pub const __GLIBC_USE_IEC_60559_FUNCS_EXT_C2X: u32 = 1;
 pub const __GLIBC_USE_IEC_60559_TYPES_EXT: u32 = 1;
 pub const _BITS_TYPES_H: u32 = 1;
 pub const _BITS_TYPESIZES_H: u32 = 1;
@@ -681,6 +678,14 @@ unsafe extern "C" {
     pub fn mlirContextSetThreadPool(context: MlirContext, threadPool: MlirLlvmThreadPool);
 }
 unsafe extern "C" {
+    #[doc = " Gets the number of threads of the thread pool of the context when\n multithreading is enabled. Returns 1 if no multithreading."]
+    pub fn mlirContextGetNumThreads(context: MlirContext) -> ::std::os::raw::c_uint;
+}
+unsafe extern "C" {
+    #[doc = " Gets the thread pool of the context when enabled multithreading, otherwise\n an assertion is raised."]
+    pub fn mlirContextGetThreadPool(context: MlirContext) -> MlirLlvmThreadPool;
+}
+unsafe extern "C" {
     #[doc = " Returns the context that owns the dialect."]
     pub fn mlirDialectGetContext(dialect: MlirDialect) -> MlirContext;
 }
@@ -759,8 +764,58 @@ unsafe extern "C" {
     ) -> MlirLocation;
 }
 unsafe extern "C" {
+    #[doc = " Getter for filename of FileLineColRange."]
+    pub fn mlirLocationFileLineColRangeGetFilename(location: MlirLocation) -> MlirIdentifier;
+}
+unsafe extern "C" {
+    #[doc = " Getter for start_line of FileLineColRange."]
+    pub fn mlirLocationFileLineColRangeGetStartLine(
+        location: MlirLocation,
+    ) -> ::std::os::raw::c_int;
+}
+unsafe extern "C" {
+    #[doc = " Getter for start_column of FileLineColRange."]
+    pub fn mlirLocationFileLineColRangeGetStartColumn(
+        location: MlirLocation,
+    ) -> ::std::os::raw::c_int;
+}
+unsafe extern "C" {
+    #[doc = " Getter for end_line of FileLineColRange."]
+    pub fn mlirLocationFileLineColRangeGetEndLine(location: MlirLocation) -> ::std::os::raw::c_int;
+}
+unsafe extern "C" {
+    #[doc = " Getter for end_column of FileLineColRange."]
+    pub fn mlirLocationFileLineColRangeGetEndColumn(
+        location: MlirLocation,
+    ) -> ::std::os::raw::c_int;
+}
+unsafe extern "C" {
+    #[doc = " TypeID Getter for FileLineColRange."]
+    pub fn mlirLocationFileLineColRangeGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
+    #[doc = " Checks whether the given location is an FileLineColRange."]
+    pub fn mlirLocationIsAFileLineColRange(location: MlirLocation) -> bool;
+}
+unsafe extern "C" {
     #[doc = " Creates a call site location with a callee and a caller."]
     pub fn mlirLocationCallSiteGet(callee: MlirLocation, caller: MlirLocation) -> MlirLocation;
+}
+unsafe extern "C" {
+    #[doc = " Getter for callee of CallSite."]
+    pub fn mlirLocationCallSiteGetCallee(location: MlirLocation) -> MlirLocation;
+}
+unsafe extern "C" {
+    #[doc = " Getter for caller of CallSite."]
+    pub fn mlirLocationCallSiteGetCaller(location: MlirLocation) -> MlirLocation;
+}
+unsafe extern "C" {
+    #[doc = " TypeID Getter for CallSite."]
+    pub fn mlirLocationCallSiteGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
+    #[doc = " Checks whether the given location is an CallSite."]
+    pub fn mlirLocationIsACallSite(location: MlirLocation) -> bool;
 }
 unsafe extern "C" {
     #[doc = " Creates a fused location with an array of locations and metadata."]
@@ -772,12 +827,48 @@ unsafe extern "C" {
     ) -> MlirLocation;
 }
 unsafe extern "C" {
+    #[doc = " Getter for number of locations fused together."]
+    pub fn mlirLocationFusedGetNumLocations(location: MlirLocation) -> ::std::os::raw::c_uint;
+}
+unsafe extern "C" {
+    #[doc = " Getter for locations of Fused. Requires pre-allocated memory of\n #fusedLocations X sizeof(MlirLocation)."]
+    pub fn mlirLocationFusedGetLocations(location: MlirLocation, locationsCPtr: *mut MlirLocation);
+}
+unsafe extern "C" {
+    #[doc = " Getter for metadata of Fused."]
+    pub fn mlirLocationFusedGetMetadata(location: MlirLocation) -> MlirAttribute;
+}
+unsafe extern "C" {
+    #[doc = " TypeID Getter for Fused."]
+    pub fn mlirLocationFusedGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
+    #[doc = " Checks whether the given location is an Fused."]
+    pub fn mlirLocationIsAFused(location: MlirLocation) -> bool;
+}
+unsafe extern "C" {
     #[doc = " Creates a name location owned by the given context. Providing null location\n for childLoc is allowed and if childLoc is null location, then the behavior\n is the same as having unknown child location."]
     pub fn mlirLocationNameGet(
         context: MlirContext,
         name: MlirStringRef,
         childLoc: MlirLocation,
     ) -> MlirLocation;
+}
+unsafe extern "C" {
+    #[doc = " Getter for name of Name."]
+    pub fn mlirLocationNameGetName(location: MlirLocation) -> MlirIdentifier;
+}
+unsafe extern "C" {
+    #[doc = " Getter for childLoc of Name."]
+    pub fn mlirLocationNameGetChildLoc(location: MlirLocation) -> MlirLocation;
+}
+unsafe extern "C" {
+    #[doc = " TypeID Getter for Name."]
+    pub fn mlirLocationNameGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
+    #[doc = " Checks whether the given location is an Name."]
+    pub fn mlirLocationIsAName(location: MlirLocation) -> bool;
 }
 unsafe extern "C" {
     #[doc = " Creates a location with unknown position owned by the given context."]
@@ -808,6 +899,13 @@ unsafe extern "C" {
     pub fn mlirModuleCreateParse(context: MlirContext, module: MlirStringRef) -> MlirModule;
 }
 unsafe extern "C" {
+    #[doc = " Parses a module from file and transfers ownership to the caller."]
+    pub fn mlirModuleCreateParseFromFile(
+        context: MlirContext,
+        fileName: MlirStringRef,
+    ) -> MlirModule;
+}
+unsafe extern "C" {
     #[doc = " Gets the context that a module was created with."]
     pub fn mlirModuleGetContext(module: MlirModule) -> MlirContext;
 }
@@ -826,6 +924,14 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Views the generic operation as a module.\n The returned module is null when the input operation was not a ModuleOp."]
     pub fn mlirModuleFromOperation(op: MlirOperation) -> MlirModule;
+}
+unsafe extern "C" {
+    #[doc = " Checks if two modules are equal."]
+    pub fn mlirModuleEqual(lhs: MlirModule, rhs: MlirModule) -> bool;
+}
+unsafe extern "C" {
+    #[doc = " Compute a hash for the given module."]
+    pub fn mlirModuleHashValue(mod_: MlirModule) -> usize;
 }
 #[doc = " An auxiliary class for constructing operations.\n\n This class contains all the information necessary to construct the\n operation. It owns the MlirRegions it has pointers to and does not own\n anything else. By default, the state can be constructed from a name and\n location, the latter being also used to access the context, and has no other\n components. These components can be added progressively until the operation\n is constructed. Users are not expected to rely on the internals of this\n class and should use mlirOperationState* functions instead."]
 #[repr(C)]
@@ -949,6 +1055,10 @@ unsafe extern "C" {
     pub fn mlirOpPrintingFlagsPrintGenericOpForm(flags: MlirOpPrintingFlags);
 }
 unsafe extern "C" {
+    #[doc = " Print the name and location, if NamedLoc, as a prefix to the SSA ID."]
+    pub fn mlirOpPrintingFlagsPrintNameLocAsPrefix(flags: MlirOpPrintingFlags);
+}
+unsafe extern "C" {
     #[doc = " Use local scope when printing the operation. This allows for using the\n printer in a more localized and thread-safe setting, but may not\n necessarily be identical to what the IR will look like when dumping\n the full module."]
     pub fn mlirOpPrintingFlagsUseLocalScope(flags: MlirOpPrintingFlags);
 }
@@ -1004,12 +1114,20 @@ unsafe extern "C" {
     pub fn mlirOperationEqual(op: MlirOperation, other: MlirOperation) -> bool;
 }
 unsafe extern "C" {
+    #[doc = " Compute a hash for the given operation."]
+    pub fn mlirOperationHashValue(op: MlirOperation) -> usize;
+}
+unsafe extern "C" {
     #[doc = " Gets the context this operation is associated with"]
     pub fn mlirOperationGetContext(op: MlirOperation) -> MlirContext;
 }
 unsafe extern "C" {
     #[doc = " Gets the location of the operation."]
     pub fn mlirOperationGetLocation(op: MlirOperation) -> MlirLocation;
+}
+unsafe extern "C" {
+    #[doc = " Sets the location of the operation."]
+    pub fn mlirOperationSetLocation(op: MlirOperation, loc: MlirLocation);
 }
 unsafe extern "C" {
     #[doc = " Gets the type id of the operation.\n Returns null if the operation does not have a registered operation\n description."]
@@ -1215,6 +1333,10 @@ unsafe extern "C" {
     #[doc = " Moves the given operation immediately before the other operation in its\n parent block. The given operation may be owner by the caller or by its\n current block. The other operation must belong to a block. In any case, the\n ownership is transferred to the block of the other operation."]
     pub fn mlirOperationMoveBefore(op: MlirOperation, other: MlirOperation);
 }
+unsafe extern "C" {
+    #[doc = " Given an operation 'other' that is within the same parent block, return\n whether the current operation is before 'other' in the operation list\n of the parent block.\n Note: This function has an average complexity of O(1), but worst case may\n take O(N) where N is the number of operations within the parent block."]
+    pub fn mlirOperationIsBeforeInBlock(op: MlirOperation, other: MlirOperation) -> bool;
+}
 pub const MlirWalkResult_MlirWalkResultAdvance: MlirWalkResult = 0;
 pub const MlirWalkResult_MlirWalkResultInterrupt: MlirWalkResult = 1;
 pub const MlirWalkResult_MlirWalkResultSkip: MlirWalkResult = 2;
@@ -1239,6 +1361,10 @@ unsafe extern "C" {
         userData: *mut ::std::os::raw::c_void,
         walkOrder: MlirWalkOrder,
     );
+}
+unsafe extern "C" {
+    #[doc = " Replace uses of 'of' value with the 'with' value inside the 'op' operation."]
+    pub fn mlirOperationReplaceUsesOfWith(op: MlirOperation, of: MlirValue, with: MlirValue);
 }
 unsafe extern "C" {
     #[doc = " Creates a new empty region and transfers ownership to the caller."]
@@ -1390,6 +1516,22 @@ unsafe extern "C" {
     );
 }
 unsafe extern "C" {
+    #[doc = " Returns the number of successor blocks of the block."]
+    pub fn mlirBlockGetNumSuccessors(block: MlirBlock) -> isize;
+}
+unsafe extern "C" {
+    #[doc = " Returns `pos`-th successor of the block."]
+    pub fn mlirBlockGetSuccessor(block: MlirBlock, pos: isize) -> MlirBlock;
+}
+unsafe extern "C" {
+    #[doc = " Returns the number of predecessor blocks of the block."]
+    pub fn mlirBlockGetNumPredecessors(block: MlirBlock) -> isize;
+}
+unsafe extern "C" {
+    #[doc = " Returns `pos`-th predecessor of the block.\n\n WARNING: This getter is more expensive than the others here because\n the impl actually iterates the use-def chain (of block operands) anew for\n each indexed access."]
+    pub fn mlirBlockGetPredecessor(block: MlirBlock, pos: isize) -> MlirBlock;
+}
+unsafe extern "C" {
     #[doc = " Returns 1 if two values are equal, 0 otherwise."]
     pub fn mlirValueEqual(value1: MlirValue, value2: MlirValue) -> bool;
 }
@@ -1412,6 +1554,10 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Sets the type of the block argument to the given type."]
     pub fn mlirBlockArgumentSetType(value: MlirValue, type_: MlirType);
+}
+unsafe extern "C" {
+    #[doc = " Sets the location of the block argument to the given location."]
+    pub fn mlirBlockArgumentSetLocation(value: MlirValue, loc: MlirLocation);
 }
 unsafe extern "C" {
     #[doc = " Returns an operation that produced this value as its result. Asserts if the\n value is not an op result."]
@@ -1466,6 +1612,14 @@ unsafe extern "C" {
         numExceptions: isize,
         exceptions: *mut MlirOperation,
     );
+}
+unsafe extern "C" {
+    #[doc = " Gets the location of the value."]
+    pub fn mlirValueGetLocation(v: MlirValue) -> MlirLocation;
+}
+unsafe extern "C" {
+    #[doc = " Gets the context that a value was created with."]
+    pub fn mlirValueGetContext(v: MlirValue) -> MlirContext;
 }
 unsafe extern "C" {
     #[doc = " Returns whether the op operand is null."]
@@ -1691,6 +1845,32 @@ unsafe extern "C" {
     pub fn mlirAffineExprCompose(
         affineExpr: MlirAffineExpr,
         affineMap: MlirAffineMap,
+    ) -> MlirAffineExpr;
+}
+unsafe extern "C" {
+    #[doc = " Replace dims[offset ... numDims)\n by dims[offset + shift ... shift + numDims)."]
+    pub fn mlirAffineExprShiftDims(
+        affineExpr: MlirAffineExpr,
+        numDims: u32,
+        shift: u32,
+        offset: u32,
+    ) -> MlirAffineExpr;
+}
+unsafe extern "C" {
+    #[doc = " Replace symbols[offset ... numSymbols)\n by symbols[offset + shift ... shift + numSymbols)."]
+    pub fn mlirAffineExprShiftSymbols(
+        affineExpr: MlirAffineExpr,
+        numSymbols: u32,
+        shift: u32,
+        offset: u32,
+    ) -> MlirAffineExpr;
+}
+unsafe extern "C" {
+    #[doc = " Simplify an affine expression by flattening and some amount of simple\n analysis. This has complexity linear in the number of nodes in 'expr'.\n Returns the simplified expression, which is the same as the input expression\n if it can't be simplified. When `expr` is semi-affine, a simplified\n semi-affine expression is constructed in the sorted order of dimension and\n symbol positions."]
+    pub fn mlirSimplifyAffineExpr(
+        expr: MlirAffineExpr,
+        numDims: u32,
+        numSymbols: u32,
     ) -> MlirAffineExpr;
 }
 unsafe extern "C" {
@@ -2067,6 +2247,9 @@ unsafe extern "C" {
     pub fn mlirAffineMapAttrGet(map: MlirAffineMap) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirAffineMapAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the affine map wrapped in the given affine map attribute."]
     pub fn mlirAffineMapAttrGetValue(attr: MlirAttribute) -> MlirAffineMap;
 }
@@ -2085,6 +2268,9 @@ unsafe extern "C" {
         numElements: isize,
         elements: *const MlirAttribute,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirArrayAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the number of elements stored in the given array attribute."]
@@ -2111,6 +2297,9 @@ unsafe extern "C" {
     ) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirDictionaryAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the number of attributes contained in a dictionary attribute."]
     pub fn mlirDictionaryAttrGetNumElements(attr: MlirAttribute) -> isize;
 }
@@ -2132,6 +2321,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Checks whether the given attribute is a floating point attribute."]
     pub fn mlirAttributeIsAFloat(attr: MlirAttribute) -> bool;
+}
+unsafe extern "C" {
+    pub fn mlirFloatAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Creates a floating point attribute in the given context with the given\n double value and double-precision FP semantics."]
@@ -2160,6 +2352,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates an integer attribute of the given type with the given integer\n value."]
     pub fn mlirIntegerAttrGet(type_: MlirType, value: i64) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirIntegerAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the value stored in the given integer attribute, assuming the value\n is of signless type and fits into a signed 64-bit integer."]
@@ -2198,6 +2393,9 @@ unsafe extern "C" {
     pub fn mlirIntegerSetAttrGet(set: MlirIntegerSet) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirIntegerSetAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the integer set wrapped in the given integer set attribute."]
     pub fn mlirIntegerSetAttrGetValue(attr: MlirAttribute) -> MlirIntegerSet;
 }
@@ -2220,6 +2418,9 @@ unsafe extern "C" {
     ) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirOpaqueAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the namespace of the dialect with which the given opaque attribute\n is associated. The namespace string is owned by the context."]
     pub fn mlirOpaqueAttrGetDialectNamespace(attr: MlirAttribute) -> MlirStringRef;
 }
@@ -2238,6 +2439,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates a string attribute in the given context containing the given string."]
     pub fn mlirStringAttrGet(ctx: MlirContext, str_: MlirStringRef) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirStringAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Creates a string attribute in the given context containing the given string.\n Additionally, the attribute has the given type."]
@@ -2263,6 +2467,9 @@ unsafe extern "C" {
         numReferences: isize,
         references: *const MlirAttribute,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirSymbolRefAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the string reference to the root referenced symbol. The data remains\n live as long as the context in which the attribute lives."]
@@ -2297,6 +2504,9 @@ unsafe extern "C" {
     pub fn mlirFlatSymbolRefAttrGet(ctx: MlirContext, symbol: MlirStringRef) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirFlatSymbolRefAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the referenced symbol as a string reference. The data remains live\n as long as the context in which the attribute lives."]
     pub fn mlirFlatSymbolRefAttrGetValue(attr: MlirAttribute) -> MlirStringRef;
 }
@@ -2307,6 +2517,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates a type attribute wrapping the given type in the same context as the\n type."]
     pub fn mlirTypeAttrGet(type_: MlirType) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirTypeAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the type stored in the given type attribute."]
@@ -2323,6 +2536,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates a unit attribute in the given context."]
     pub fn mlirUnitAttrGet(ctx: MlirContext) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirUnitAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the typeID of a Unit attribute."]
@@ -2671,6 +2887,9 @@ unsafe extern "C" {
     pub fn mlirDenseElementsAttrGetUInt64Value(attr: MlirAttribute, pos: isize) -> u64;
 }
 unsafe extern "C" {
+    pub fn mlirDenseElementsAttrGetIndexValue(attr: MlirAttribute, pos: isize) -> u64;
+}
+unsafe extern "C" {
     pub fn mlirDenseElementsAttrGetFloatValue(attr: MlirAttribute, pos: isize) -> f32;
 }
 unsafe extern "C" {
@@ -2705,6 +2924,9 @@ unsafe extern "C" {
         >,
         userData: *mut ::std::os::raw::c_void,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirDenseResourceElementsAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     pub fn mlirUnmanagedDenseBoolResourceElementsAttrGet(
@@ -2864,6 +3086,9 @@ unsafe extern "C" {
     ) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirStridedLayoutAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     pub fn mlirStridedLayoutAttrGetOffset(attr: MlirAttribute) -> i64;
 }
 unsafe extern "C" {
@@ -2887,6 +3112,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates a signless integer type of the given bitwidth in the context. The\n type is owned by the context."]
     pub fn mlirIntegerTypeGet(ctx: MlirContext, bitwidth: ::std::os::raw::c_uint) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirIntegerTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Creates a signed integer type of the given bitwidth in the context. The type\n is owned by the context."]
@@ -2929,6 +3157,9 @@ unsafe extern "C" {
     pub fn mlirIndexTypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirIndexTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Checks whether the given type is a floating-point type."]
     pub fn mlirTypeIsAFloat(type_: MlirType) -> bool;
 }
@@ -2949,6 +3180,9 @@ unsafe extern "C" {
     pub fn mlirFloat4E2M1FNTypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirFloat4E2M1FNTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the typeID of an Float6E2M3FN type."]
     pub fn mlirFloat6E2M3FNTypeGetTypeID() -> MlirTypeID;
 }
@@ -2959,6 +3193,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates an f6E2M3FN type in the given context. The type is owned by the\n context."]
     pub fn mlirFloat6E2M3FNTypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirFloat6E2M3FNTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the typeID of an Float6E3M2FN type."]
@@ -2973,6 +3210,9 @@ unsafe extern "C" {
     pub fn mlirFloat6E3M2FNTypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirFloat6E3M2FNTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the typeID of an Float8E5M2 type."]
     pub fn mlirFloat8E5M2TypeGetTypeID() -> MlirTypeID;
 }
@@ -2983,6 +3223,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates an f8E5M2 type in the given context. The type is owned by the\n context."]
     pub fn mlirFloat8E5M2TypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirFloat8E5M2TypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the typeID of an Float8E4M3 type."]
@@ -2997,6 +3240,9 @@ unsafe extern "C" {
     pub fn mlirFloat8E4M3TypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirFloat8E4M3TypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the typeID of an Float8E4M3FN type."]
     pub fn mlirFloat8E4M3FNTypeGetTypeID() -> MlirTypeID;
 }
@@ -3007,6 +3253,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates an f8E4M3FN type in the given context. The type is owned by the\n context."]
     pub fn mlirFloat8E4M3FNTypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirFloat8E4M3FNTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the typeID of an Float8E5M2FNUZ type."]
@@ -3021,6 +3270,9 @@ unsafe extern "C" {
     pub fn mlirFloat8E5M2FNUZTypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirFloat8E5M2FNUZTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the typeID of an Float8E4M3FNUZ type."]
     pub fn mlirFloat8E4M3FNUZTypeGetTypeID() -> MlirTypeID;
 }
@@ -3031,6 +3283,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates an f8E4M3FNUZ type in the given context. The type is owned by the\n context."]
     pub fn mlirFloat8E4M3FNUZTypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirFloat8E4M3FNUZTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the typeID of an Float8E4M3B11FNUZ type."]
@@ -3045,6 +3300,9 @@ unsafe extern "C" {
     pub fn mlirFloat8E4M3B11FNUZTypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirFloat8E4M3B11FNUZTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the typeID of an Float8E3M4 type."]
     pub fn mlirFloat8E3M4TypeGetTypeID() -> MlirTypeID;
 }
@@ -3055,6 +3313,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates an f8E3M4 type in the given context. The type is owned by the\n context."]
     pub fn mlirFloat8E3M4TypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirFloat8E3M4TypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the typeID of an Float8E8M0FNU type."]
@@ -3069,6 +3330,9 @@ unsafe extern "C" {
     pub fn mlirFloat8E8M0FNUTypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirFloat8E8M0FNUTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the typeID of an BFloat16 type."]
     pub fn mlirBFloat16TypeGetTypeID() -> MlirTypeID;
 }
@@ -3079,6 +3343,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates a bf16 type in the given context. The type is owned by the\n context."]
     pub fn mlirBF16TypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirBF16TypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the typeID of an Float16 type."]
@@ -3093,6 +3360,9 @@ unsafe extern "C" {
     pub fn mlirF16TypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirF16TypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the typeID of an Float32 type."]
     pub fn mlirFloat32TypeGetTypeID() -> MlirTypeID;
 }
@@ -3103,6 +3373,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates an f32 type in the given context. The type is owned by the\n context."]
     pub fn mlirF32TypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirF32TypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the typeID of an Float64 type."]
@@ -3117,6 +3390,9 @@ unsafe extern "C" {
     pub fn mlirF64TypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirF64TypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the typeID of a TF32 type."]
     pub fn mlirFloatTF32TypeGetTypeID() -> MlirTypeID;
 }
@@ -3127,6 +3403,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates a TF32 type in the given context. The type is owned by the\n context."]
     pub fn mlirTF32TypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirTF32TypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the typeID of an None type."]
@@ -3141,6 +3420,9 @@ unsafe extern "C" {
     pub fn mlirNoneTypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirNoneTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the typeID of an Complex type."]
     pub fn mlirComplexTypeGetTypeID() -> MlirTypeID;
 }
@@ -3151,6 +3433,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates a complex type with the given element type in the same context as\n the element type. The type is owned by the context."]
     pub fn mlirComplexTypeGet(elementType: MlirType) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirComplexTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the element type of the given complex type."]
@@ -3177,8 +3462,12 @@ unsafe extern "C" {
     pub fn mlirShapedTypeHasStaticShape(type_: MlirType) -> bool;
 }
 unsafe extern "C" {
-    #[doc = " Checks wither the dim-th dimension of the given shaped type is dynamic."]
+    #[doc = " Checks whether the dim-th dimension of the given shaped type is dynamic."]
     pub fn mlirShapedTypeIsDynamicDim(type_: MlirType, dim: isize) -> bool;
+}
+unsafe extern "C" {
+    #[doc = " Checks whether the dim-th dimension of the given shaped type is static."]
+    pub fn mlirShapedTypeIsStaticDim(type_: MlirType, dim: isize) -> bool;
 }
 unsafe extern "C" {
     #[doc = " Returns the dim-th dimension of the given ranked shaped type."]
@@ -3189,7 +3478,11 @@ unsafe extern "C" {
     pub fn mlirShapedTypeIsDynamicSize(size: i64) -> bool;
 }
 unsafe extern "C" {
-    #[doc = " Returns the value indicating a dynamic size in a shaped type. Prefer\n mlirShapedTypeIsDynamicSize to direct comparisons with this value."]
+    #[doc = " Checks whether the given shaped type dimension value is statically-sized."]
+    pub fn mlirShapedTypeIsStaticSize(size: i64) -> bool;
+}
+unsafe extern "C" {
+    #[doc = " Returns the value indicating a dynamic size in a shaped type. Prefer\n mlirShapedTypeIsDynamicSize and mlirShapedTypeIsStaticSize to direct\n comparisons with this value."]
     pub fn mlirShapedTypeGetDynamicSize() -> i64;
 }
 unsafe extern "C" {
@@ -3197,7 +3490,11 @@ unsafe extern "C" {
     pub fn mlirShapedTypeIsDynamicStrideOrOffset(val: i64) -> bool;
 }
 unsafe extern "C" {
-    #[doc = " Returns the value indicating a dynamic stride or offset in a shaped type.\n Prefer mlirShapedTypeGetDynamicStrideOrOffset to direct comparisons with\n this value."]
+    #[doc = " Checks whether the given dimension value of a stride or an offset is\n statically-sized."]
+    pub fn mlirShapedTypeIsStaticStrideOrOffset(val: i64) -> bool;
+}
+unsafe extern "C" {
+    #[doc = " Returns the value indicating a dynamic stride or offset in a shaped type.\n Prefer mlirShapedTypeIsDynamicStrideOrOffset and\n mlirShapedTypeIsStaticStrideOrOffset to direct comparisons with this value."]
     pub fn mlirShapedTypeGetDynamicStrideOrOffset() -> i64;
 }
 unsafe extern "C" {
@@ -3211,6 +3508,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates a vector type of the shape identified by its rank and dimensions,\n with the given element type in the same context as the element type. The\n type is owned by the context."]
     pub fn mlirVectorTypeGet(rank: isize, shape: *const i64, elementType: MlirType) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirVectorTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Same as \"mlirVectorTypeGet\" but returns a nullptr wrapping MlirType on\n illegal arguments, emitting appropriate diagnostics."]
@@ -3278,6 +3578,9 @@ unsafe extern "C" {
     ) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirRankedTensorTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Same as \"mlirRankedTensorTypeGet\" but returns a nullptr wrapping MlirType on\n illegal arguments, emitting appropriate diagnostics."]
     pub fn mlirRankedTensorTypeGetChecked(
         loc: MlirLocation,
@@ -3294,6 +3597,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " Creates an unranked tensor type with the given element type in the same\n context as the element type. The type is owned by the context."]
     pub fn mlirUnrankedTensorTypeGet(elementType: MlirType) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirUnrankedTensorTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Same as \"mlirUnrankedTensorTypeGet\" but returns a nullptr wrapping MlirType\n on illegal arguments, emitting appropriate diagnostics."]
@@ -3324,6 +3630,9 @@ unsafe extern "C" {
         layout: MlirAttribute,
         memorySpace: MlirAttribute,
     ) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirMemRefTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Same as \"mlirMemRefTypeGet\" but returns a nullptr-wrapping MlirType o\n illegal arguments, emitting appropriate diagnostics."]
@@ -3359,6 +3668,9 @@ unsafe extern "C" {
     #[doc = " Creates an Unranked MemRef type with the given element type and in the given\n memory space. The type is owned by the context of element type."]
     pub fn mlirUnrankedMemRefTypeGet(elementType: MlirType, memorySpace: MlirAttribute)
     -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirUnrankedMemRefTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Same as \"mlirUnrankedMemRefTypeGet\" but returns a nullptr wrapping\n MlirType on illegal arguments, emitting appropriate diagnostics."]
@@ -3409,6 +3721,9 @@ unsafe extern "C" {
     ) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirTupleTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the number of types contained in a tuple."]
     pub fn mlirTupleTypeGetNumTypes(type_: MlirType) -> isize;
 }
@@ -3433,6 +3748,9 @@ unsafe extern "C" {
         numResults: isize,
         results: *const MlirType,
     ) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirFunctionTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the number of input types."]
@@ -3465,6 +3783,9 @@ unsafe extern "C" {
         dialectNamespace: MlirStringRef,
         typeData: MlirStringRef,
     ) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirOpaqueTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the namespace of the dialect with which the given opaque type\n is associated. The namespace string is owned by the context."]
@@ -3574,6 +3895,21 @@ unsafe extern "C" {
     pub fn mlirPassManagerEnableVerifier(passManager: MlirPassManager, enable: bool);
 }
 unsafe extern "C" {
+    #[doc = " Enable pass timing."]
+    pub fn mlirPassManagerEnableTiming(passManager: MlirPassManager);
+}
+pub const MlirPassDisplayMode_MLIR_PASS_DISPLAY_MODE_LIST: MlirPassDisplayMode = 0;
+pub const MlirPassDisplayMode_MLIR_PASS_DISPLAY_MODE_PIPELINE: MlirPassDisplayMode = 1;
+#[doc = " Enumerated type of pass display modes.\n Mainly used in mlirPassManagerEnableStatistics."]
+pub type MlirPassDisplayMode = ::std::os::raw::c_uint;
+unsafe extern "C" {
+    #[doc = " Enable pass statistics."]
+    pub fn mlirPassManagerEnableStatistics(
+        passManager: MlirPassManager,
+        displayMode: MlirPassDisplayMode,
+    );
+}
+unsafe extern "C" {
     #[doc = " Nest an OpPassManager under the top-level PassManager, the nested\n passmanager will only run on operations matching the provided name.\n The returned OpPassManager will be destroyed when the parent is destroyed.\n To further nest more OpPassManager under the newly returned one, see\n `mlirOpPassManagerNest` below."]
     pub fn mlirPassManagerGetNestedUnder(
         passManager: MlirPassManager,
@@ -3679,6 +4015,12 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionArithToAMDGPUConversionPass();
 }
 unsafe extern "C" {
+    pub fn mlirCreateConversionArithToAPFloatConversionPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterConversionArithToAPFloatConversionPass();
+}
+unsafe extern "C" {
     pub fn mlirCreateConversionArithToArmSMEConversionPass() -> MlirPass;
 }
 unsafe extern "C" {
@@ -3691,22 +4033,16 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionArithToLLVMConversionPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertAMDGPUToROCDL() -> MlirPass;
+    pub fn mlirCreateConversionConvertAMDGPUToROCDLPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertAMDGPUToROCDL();
+    pub fn mlirRegisterConversionConvertAMDGPUToROCDLPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertAffineForToGPU() -> MlirPass;
+    pub fn mlirCreateConversionConvertAffineForToGPUPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertAffineForToGPU();
-}
-unsafe extern "C" {
-    pub fn mlirCreateConversionConvertAffineToStandard() -> MlirPass;
-}
-unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertAffineToStandard();
+    pub fn mlirRegisterConversionConvertAffineForToGPUPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertArithToEmitC() -> MlirPass;
@@ -3715,16 +4051,16 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertArithToEmitC();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertArithToSPIRV() -> MlirPass;
+    pub fn mlirCreateConversionConvertArithToSPIRVPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertArithToSPIRV();
+    pub fn mlirRegisterConversionConvertArithToSPIRVPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertArmNeon2dToIntr() -> MlirPass;
+    pub fn mlirCreateConversionConvertArmNeon2dToIntrPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertArmNeon2dToIntr();
+    pub fn mlirRegisterConversionConvertArmNeon2dToIntrPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertArmSMEToLLVM() -> MlirPass;
@@ -3733,10 +4069,10 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertArmSMEToLLVM();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertArmSMEToSCF() -> MlirPass;
+    pub fn mlirCreateConversionConvertArmSMEToSCFPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertArmSMEToSCF();
+    pub fn mlirRegisterConversionConvertArmSMEToSCFPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertAsyncToLLVMPass() -> MlirPass;
@@ -3745,10 +4081,10 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertAsyncToLLVMPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertBufferizationToMemRef() -> MlirPass;
+    pub fn mlirCreateConversionConvertBufferizationToMemRefPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertBufferizationToMemRef();
+    pub fn mlirRegisterConversionConvertBufferizationToMemRefPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertComplexToLLVMPass() -> MlirPass;
@@ -3763,16 +4099,22 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertComplexToLibm();
 }
 unsafe extern "C" {
+    pub fn mlirCreateConversionConvertComplexToROCDLLibraryCalls() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterConversionConvertComplexToROCDLLibraryCalls();
+}
+unsafe extern "C" {
     pub fn mlirCreateConversionConvertComplexToSPIRVPass() -> MlirPass;
 }
 unsafe extern "C" {
     pub fn mlirRegisterConversionConvertComplexToSPIRVPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertComplexToStandard() -> MlirPass;
+    pub fn mlirCreateConversionConvertComplexToStandardPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertComplexToStandard();
+    pub fn mlirRegisterConversionConvertComplexToStandardPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertControlFlowToLLVMPass() -> MlirPass;
@@ -3781,10 +4123,10 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertControlFlowToLLVMPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertControlFlowToSPIRV() -> MlirPass;
+    pub fn mlirCreateConversionConvertControlFlowToSPIRVPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertControlFlowToSPIRV();
+    pub fn mlirRegisterConversionConvertControlFlowToSPIRVPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertFuncToEmitC() -> MlirPass;
@@ -3799,10 +4141,10 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertFuncToLLVMPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertFuncToSPIRV() -> MlirPass;
+    pub fn mlirCreateConversionConvertFuncToSPIRVPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertFuncToSPIRV();
+    pub fn mlirRegisterConversionConvertFuncToSPIRVPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertGPUToSPIRV() -> MlirPass;
@@ -3841,10 +4183,10 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertIndexToSPIRVPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertLinalgToStandard() -> MlirPass;
+    pub fn mlirCreateConversionConvertLinalgToStandardPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertLinalgToStandard();
+    pub fn mlirRegisterConversionConvertLinalgToStandardPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertMathToEmitC() -> MlirPass;
@@ -3865,10 +4207,10 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertMathToLLVMPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertMathToLibm() -> MlirPass;
+    pub fn mlirCreateConversionConvertMathToLibmPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertMathToLibm();
+    pub fn mlirRegisterConversionConvertMathToLibmPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertMathToROCDL() -> MlirPass;
@@ -3877,10 +4219,16 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertMathToROCDL();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertMathToSPIRV() -> MlirPass;
+    pub fn mlirCreateConversionConvertMathToSPIRVPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertMathToSPIRV();
+    pub fn mlirRegisterConversionConvertMathToSPIRVPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateConversionConvertMathToXeVM() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterConversionConvertMathToXeVM();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertMemRefToEmitC() -> MlirPass;
@@ -3889,16 +4237,10 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertMemRefToEmitC();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertMemRefToSPIRV() -> MlirPass;
+    pub fn mlirCreateConversionConvertMemRefToSPIRVPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertMemRefToSPIRV();
-}
-unsafe extern "C" {
-    pub fn mlirCreateConversionConvertMeshToMPIPass() -> MlirPass;
-}
-unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertMeshToMPIPass();
+    pub fn mlirRegisterConversionConvertMemRefToSPIRVPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertNVGPUToNVVMPass() -> MlirPass;
@@ -3913,10 +4255,10 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertNVVMToLLVMPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertOpenACCToSCF() -> MlirPass;
+    pub fn mlirCreateConversionConvertOpenACCToSCFPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertOpenACCToSCF();
+    pub fn mlirRegisterConversionConvertOpenACCToSCFPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertOpenMPToLLVMPass() -> MlirPass;
@@ -3925,16 +4267,16 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertOpenMPToLLVMPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertPDLToPDLInterp() -> MlirPass;
+    pub fn mlirCreateConversionConvertPDLToPDLInterpPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertPDLToPDLInterp();
+    pub fn mlirRegisterConversionConvertPDLToPDLInterpPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertParallelLoopToGpu() -> MlirPass;
+    pub fn mlirCreateConversionConvertParallelLoopToGpuPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertParallelLoopToGpu();
+    pub fn mlirRegisterConversionConvertParallelLoopToGpuPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertSCFToOpenMPPass() -> MlirPass;
@@ -3949,28 +4291,40 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertSPIRVToLLVMPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertShapeConstraints() -> MlirPass;
+    pub fn mlirCreateConversionConvertShapeConstraintsPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertShapeConstraints();
+    pub fn mlirRegisterConversionConvertShapeConstraintsPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertShapeToStandard() -> MlirPass;
+    pub fn mlirCreateConversionConvertShapeToStandardPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertShapeToStandard();
+    pub fn mlirRegisterConversionConvertShapeToStandardPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertTensorToLinalg() -> MlirPass;
+    pub fn mlirCreateConversionConvertShardToMPIPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertTensorToLinalg();
+    pub fn mlirRegisterConversionConvertShardToMPIPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertTensorToSPIRV() -> MlirPass;
+    pub fn mlirCreateConversionConvertTensorToLinalgPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertTensorToSPIRV();
+    pub fn mlirRegisterConversionConvertTensorToLinalgPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateConversionConvertTensorToSPIRVPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterConversionConvertTensorToSPIRVPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateConversionConvertToEmitC() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterConversionConvertToEmitC();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertToLLVMPass() -> MlirPass;
@@ -3979,16 +4333,16 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertToLLVMPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertToSPIRVPass() -> MlirPass;
+    pub fn mlirCreateConversionConvertVectorToAMX() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertToSPIRVPass();
+    pub fn mlirRegisterConversionConvertVectorToAMX();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertVectorToArmSME() -> MlirPass;
+    pub fn mlirCreateConversionConvertVectorToArmSMEPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertVectorToArmSME();
+    pub fn mlirRegisterConversionConvertVectorToArmSMEPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertVectorToGPU() -> MlirPass;
@@ -4009,16 +4363,28 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionConvertVectorToSCF();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionConvertVectorToSPIRV() -> MlirPass;
+    pub fn mlirCreateConversionConvertVectorToSPIRVPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionConvertVectorToSPIRV();
+    pub fn mlirRegisterConversionConvertVectorToSPIRVPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionConvertVectorToXeGPU() -> MlirPass;
 }
 unsafe extern "C" {
     pub fn mlirRegisterConversionConvertVectorToXeGPU();
+}
+unsafe extern "C" {
+    pub fn mlirCreateConversionConvertXeGPUToXeVMPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterConversionConvertXeGPUToXeVMPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateConversionConvertXeVMToLLVMPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterConversionConvertXeVMToLLVMPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionFinalizeMemRefToLLVMConversionPass() -> MlirPass;
@@ -4039,6 +4405,12 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionLiftControlFlowToSCFPass();
 }
 unsafe extern "C" {
+    pub fn mlirCreateConversionLowerAffinePass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterConversionLowerAffinePass();
+}
+unsafe extern "C" {
     pub fn mlirCreateConversionLowerHostCodeToLLVMPass() -> MlirPass;
 }
 unsafe extern "C" {
@@ -4051,16 +4423,22 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionMapMemRefStorageClass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionReconcileUnrealizedCasts() -> MlirPass;
+    pub fn mlirCreateConversionMathToAPFloatConversionPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionReconcileUnrealizedCasts();
+    pub fn mlirRegisterConversionMathToAPFloatConversionPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionSCFToControlFlow() -> MlirPass;
+    pub fn mlirCreateConversionReconcileUnrealizedCastsPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionSCFToControlFlow();
+    pub fn mlirRegisterConversionReconcileUnrealizedCastsPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateConversionSCFToControlFlowPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterConversionSCFToControlFlowPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionSCFToEmitC() -> MlirPass;
@@ -4081,10 +4459,10 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionSetLLVMModuleDataLayoutPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionTosaToArith() -> MlirPass;
+    pub fn mlirCreateConversionTosaToArithPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionTosaToArith();
+    pub fn mlirRegisterConversionTosaToArithPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionTosaToLinalg() -> MlirPass;
@@ -4105,16 +4483,16 @@ unsafe extern "C" {
     pub fn mlirRegisterConversionTosaToMLProgram();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionTosaToSCF() -> MlirPass;
+    pub fn mlirCreateConversionTosaToSCFPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionTosaToSCF();
+    pub fn mlirRegisterConversionTosaToSCFPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateConversionTosaToTensor() -> MlirPass;
+    pub fn mlirCreateConversionTosaToTensorPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterConversionTosaToTensor();
+    pub fn mlirRegisterConversionTosaToTensorPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateConversionUBToLLVMConversionPass() -> MlirPass;
@@ -4202,46 +4580,88 @@ unsafe extern "C" {
     pub fn mlirEmitError(location: MlirLocation, message: *const ::std::os::raw::c_char);
 }
 unsafe extern "C" {
+    pub fn mlirGetDialectHandle__arith__() -> MlirDialectHandle;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterArithPasses();
+}
+unsafe extern "C" {
+    pub fn mlirCreateArithArithEmulateUnsupportedFloats() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterArithArithEmulateUnsupportedFloats();
+}
+unsafe extern "C" {
+    pub fn mlirCreateArithArithEmulateWideInt() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterArithArithEmulateWideInt();
+}
+unsafe extern "C" {
+    pub fn mlirCreateArithArithExpandOpsPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterArithArithExpandOpsPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateArithArithIntRangeNarrowing() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterArithArithIntRangeNarrowing();
+}
+unsafe extern "C" {
+    pub fn mlirCreateArithArithIntRangeOpts() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterArithArithIntRangeOpts();
+}
+unsafe extern "C" {
+    pub fn mlirCreateArithArithUnsignedWhenEquivalentPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterArithArithUnsignedWhenEquivalentPass();
+}
+unsafe extern "C" {
     pub fn mlirGetDialectHandle__async__() -> MlirDialectHandle;
 }
 unsafe extern "C" {
     pub fn mlirRegisterAsyncPasses();
 }
 unsafe extern "C" {
-    pub fn mlirCreateAsyncAsyncFuncToAsyncRuntime() -> MlirPass;
+    pub fn mlirCreateAsyncAsyncFuncToAsyncRuntimePass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterAsyncAsyncFuncToAsyncRuntime();
+    pub fn mlirRegisterAsyncAsyncFuncToAsyncRuntimePass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateAsyncAsyncParallelFor() -> MlirPass;
+    pub fn mlirCreateAsyncAsyncParallelForPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterAsyncAsyncParallelFor();
+    pub fn mlirRegisterAsyncAsyncParallelForPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateAsyncAsyncRuntimePolicyBasedRefCounting() -> MlirPass;
+    pub fn mlirCreateAsyncAsyncRuntimePolicyBasedRefCountingPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterAsyncAsyncRuntimePolicyBasedRefCounting();
+    pub fn mlirRegisterAsyncAsyncRuntimePolicyBasedRefCountingPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateAsyncAsyncRuntimeRefCounting() -> MlirPass;
+    pub fn mlirCreateAsyncAsyncRuntimeRefCountingOptPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterAsyncAsyncRuntimeRefCounting();
+    pub fn mlirRegisterAsyncAsyncRuntimeRefCountingOptPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateAsyncAsyncRuntimeRefCountingOpt() -> MlirPass;
+    pub fn mlirCreateAsyncAsyncRuntimeRefCountingPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterAsyncAsyncRuntimeRefCountingOpt();
+    pub fn mlirRegisterAsyncAsyncRuntimeRefCountingPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateAsyncAsyncToAsyncRuntime() -> MlirPass;
+    pub fn mlirCreateAsyncAsyncToAsyncRuntimePass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterAsyncAsyncToAsyncRuntime();
+    pub fn mlirRegisterAsyncAsyncToAsyncRuntimePass();
 }
 unsafe extern "C" {
     pub fn mlirGetDialectHandle__cf__() -> MlirDialectHandle;
@@ -4259,6 +4679,23 @@ unsafe extern "C" {
     );
 }
 unsafe extern "C" {
+    pub fn mlirFuncSetResultAttr(
+        op: MlirOperation,
+        pos: isize,
+        name: MlirStringRef,
+        attr: MlirAttribute,
+    );
+}
+unsafe extern "C" {
+    pub fn mlirRegisterFuncPasses();
+}
+unsafe extern "C" {
+    pub fn mlirCreateFuncDuplicateFunctionEliminationPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterFuncDuplicateFunctionEliminationPass();
+}
+unsafe extern "C" {
     pub fn mlirGetDialectHandle__gpu__() -> MlirDialectHandle;
 }
 unsafe extern "C" {
@@ -4266,6 +4703,9 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn mlirGPUAsyncTokenTypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirGPUAsyncTokenTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     pub fn mlirAttributeIsAGPUObjectAttr(attr: MlirAttribute) -> bool;
@@ -4278,6 +4718,9 @@ unsafe extern "C" {
         objectStrRef: MlirStringRef,
         mlirObjectProps: MlirAttribute,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirGPUObjectAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     pub fn mlirGPUObjectAttrGetWithKernels(
@@ -4332,16 +4775,16 @@ unsafe extern "C" {
     pub fn mlirRegisterGPUGpuEliminateBarriers();
 }
 unsafe extern "C" {
-    pub fn mlirCreateGPUGpuKernelOutlining() -> MlirPass;
+    pub fn mlirCreateGPUGpuKernelOutliningPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterGPUGpuKernelOutlining();
+    pub fn mlirRegisterGPUGpuKernelOutliningPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateGPUGpuLaunchSinkIndexComputations() -> MlirPass;
+    pub fn mlirCreateGPUGpuLaunchSinkIndexComputationsPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterGPUGpuLaunchSinkIndexComputations();
+    pub fn mlirRegisterGPUGpuLaunchSinkIndexComputationsPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateGPUGpuMapParallelLoopsPass() -> MlirPass;
@@ -4374,11 +4817,33 @@ unsafe extern "C" {
     pub fn mlirRegisterGPUGpuSPIRVAttachTarget();
 }
 unsafe extern "C" {
+    pub fn mlirCreateGPUGpuXeVMAttachTarget() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterGPUGpuXeVMAttachTarget();
+}
+unsafe extern "C" {
     pub fn mlirGetDialectHandle__irdl__() -> MlirDialectHandle;
 }
 unsafe extern "C" {
     #[doc = " Loads all IRDL dialects in the provided module, registering the dialects in\n the module's associated context."]
     pub fn mlirLoadIRDLDialects(module: MlirModule) -> MlirLogicalResult;
+}
+unsafe extern "C" {
+    pub fn mlirIRDLVariadicityAttrGet(ctx: MlirContext, value: MlirStringRef) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirIRDLVariadicityAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
+    pub fn mlirIRDLVariadicityArrayAttrGet(
+        ctx: MlirContext,
+        nValues: isize,
+        values: *const MlirAttribute,
+    ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirIRDLVariadicityArrayAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     pub fn mlirGetDialectHandle__llvm__() -> MlirDialectHandle;
@@ -4389,6 +4854,12 @@ unsafe extern "C" {
         ctx: MlirContext,
         addressSpace: ::std::os::raw::c_uint,
     ) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMPointerTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMPointerTypeGetTypeID() -> MlirTypeID;
 }
 unsafe extern "C" {
     #[doc = " Returns `true` if the type is an LLVM dialect pointer type."]
@@ -4403,11 +4874,17 @@ unsafe extern "C" {
     pub fn mlirLLVMVoidTypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirLLVMVoidTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Creates an llvm.array type."]
     pub fn mlirLLVMArrayTypeGet(
         elementType: MlirType,
         numElements: ::std::os::raw::c_uint,
     ) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMArrayTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the element type of the llvm.array type."]
@@ -4423,6 +4900,9 @@ unsafe extern "C" {
     ) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirLLVMFunctionTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns the number of input types."]
     pub fn mlirLLVMFunctionTypeGetNumInputs(type_: MlirType) -> isize;
 }
@@ -4431,8 +4911,18 @@ unsafe extern "C" {
     pub fn mlirLLVMFunctionTypeGetInput(type_: MlirType, pos: isize) -> MlirType;
 }
 unsafe extern "C" {
+    #[doc = " Returns the return type of the function type."]
+    pub fn mlirLLVMFunctionTypeGetReturnType(type_: MlirType) -> MlirType;
+}
+unsafe extern "C" {
     #[doc = " Returns `true` if the type is an LLVM dialect struct type."]
     pub fn mlirTypeIsALLVMStructType(type_: MlirType) -> bool;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMStructTypeGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMStructTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns `true` if the type is a literal (unnamed) LLVM struct type."]
@@ -4554,6 +5044,9 @@ unsafe extern "C" {
     #[doc = " Creates a LLVM CConv attribute."]
     pub fn mlirLLVMCConvAttrGet(ctx: MlirContext, cconv: MlirLLVMCConv) -> MlirAttribute;
 }
+unsafe extern "C" {
+    pub fn mlirLLVMCConvAttrGetName() -> MlirStringRef;
+}
 pub const MlirLLVMComdat_MlirLLVMComdatAny: MlirLLVMComdat = 0;
 pub const MlirLLVMComdat_MlirLLVMComdatExactMatch: MlirLLVMComdat = 1;
 pub const MlirLLVMComdat_MlirLLVMComdatLargest: MlirLLVMComdat = 2;
@@ -4563,6 +5056,9 @@ pub type MlirLLVMComdat = ::std::os::raw::c_uint;
 unsafe extern "C" {
     #[doc = " Creates a LLVM Comdat attribute."]
     pub fn mlirLLVMComdatAttrGet(ctx: MlirContext, comdat: MlirLLVMComdat) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMComdatAttrGetName() -> MlirStringRef;
 }
 pub const MlirLLVMLinkage_MlirLLVMLinkageExternal: MlirLLVMLinkage = 0;
 pub const MlirLLVMLinkage_MlirLLVMLinkageAvailableExternally: MlirLLVMLinkage = 1;
@@ -4581,8 +5077,14 @@ unsafe extern "C" {
     pub fn mlirLLVMLinkageAttrGet(ctx: MlirContext, linkage: MlirLLVMLinkage) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirLLVMLinkageAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Creates a LLVM DINullType attribute."]
     pub fn mlirLLVMDINullTypeAttrGet(ctx: MlirContext) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMDINullTypeAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Creates a LLVM DIExpressionElem attribute."]
@@ -4594,12 +5096,18 @@ unsafe extern "C" {
     ) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirLLVMDIExpressionElemAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Creates a LLVM DIExpression attribute."]
     pub fn mlirLLVMDIExpressionAttrGet(
         ctx: MlirContext,
         nOperations: isize,
         operations: *const MlirAttribute,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMDIExpressionAttrGetName() -> MlirStringRef;
 }
 pub const MlirLLVMTypeEncoding_MlirLLVMTypeEncodingAddress: MlirLLVMTypeEncoding = 1;
 pub const MlirLLVMTypeEncoding_MlirLLVMTypeEncodingBoolean: MlirLLVMTypeEncoding = 2;
@@ -4633,6 +5141,9 @@ unsafe extern "C" {
     ) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirLLVMDIBasicTypeAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Creates a self-referencing LLVM DICompositeType attribute."]
     pub fn mlirLLVMDICompositeTypeAttrGetRecSelf(recId: MlirAttribute) -> MlirAttribute;
 }
@@ -4660,6 +5171,9 @@ unsafe extern "C" {
     ) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirLLVMDICompositeTypeAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Creates a LLVM DIDerivedType attribute.  Note that `dwarfAddressSpace` is an\n optional field, where `MLIR_CAPI_DWARF_ADDRESS_SPACE_NULL` indicates null\n and non-negative values indicate a value present."]
     pub fn mlirLLVMDIDerivedTypeAttrGet(
         ctx: MlirContext,
@@ -4672,6 +5186,9 @@ unsafe extern "C" {
         dwarfAddressSpace: i64,
         extraData: MlirAttribute,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMDIDerivedTypeAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     pub fn mlirLLVMDIStringTypeAttrGet(
@@ -4687,6 +5204,9 @@ unsafe extern "C" {
     ) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirLLVMDIStringTypeAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Gets the base type from a LLVM DIDerivedType attribute."]
     pub fn mlirLLVMDIDerivedTypeAttrGetBaseType(diDerivedType: MlirAttribute) -> MlirAttribute;
 }
@@ -4697,6 +5217,9 @@ unsafe extern "C" {
         name: MlirAttribute,
         directory: MlirAttribute,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMDIFileAttrGetName() -> MlirStringRef;
 }
 pub const MlirLLVMDIEmissionKind_MlirLLVMDIEmissionKindNone: MlirLLVMDIEmissionKind = 0;
 pub const MlirLLVMDIEmissionKind_MlirLLVMDIEmissionKindFull: MlirLLVMDIEmissionKind = 1;
@@ -4720,11 +5243,18 @@ unsafe extern "C" {
         isOptimized: bool,
         emissionKind: MlirLLVMDIEmissionKind,
         nameTableKind: MlirLLVMDINameTableKind,
+        splitDebugFilename: MlirAttribute,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMDICompileUnitAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Creates a LLVM DIFlags attribute."]
     pub fn mlirLLVMDIFlagsAttrGet(ctx: MlirContext, value: u64) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMDIFlagsAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Creates a LLVM DILexicalBlock attribute."]
@@ -4737,6 +5267,9 @@ unsafe extern "C" {
     ) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirLLVMDILexicalBlockAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Creates a LLVM DILexicalBlockFile attribute."]
     pub fn mlirLLVMDILexicalBlockFileAttrGet(
         ctx: MlirContext,
@@ -4744,6 +5277,9 @@ unsafe extern "C" {
         file: MlirAttribute,
         discriminator: ::std::os::raw::c_uint,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMDILexicalBlockFileAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Creates a LLVM DILocalVariableAttr attribute."]
@@ -4758,6 +5294,9 @@ unsafe extern "C" {
         diType: MlirAttribute,
         flags: i64,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMDILocalVariableAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Creates a self-referencing LLVM DISubprogramAttr attribute."]
@@ -4786,12 +5325,18 @@ unsafe extern "C" {
     ) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirLLVMDISubprogramAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Creates a LLVM DIAnnotation attribute."]
     pub fn mlirLLVMDIAnnotationAttrGet(
         ctx: MlirContext,
         name: MlirAttribute,
         value: MlirAttribute,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMDIAnnotationAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Gets the scope from this DISubprogramAttr."]
@@ -4829,6 +5374,9 @@ unsafe extern "C" {
     ) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirLLVMDISubroutineTypeAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Creates a LLVM DIModuleAttr attribute."]
     pub fn mlirLLVMDIModuleAttrGet(
         ctx: MlirContext,
@@ -4841,6 +5389,9 @@ unsafe extern "C" {
         line: ::std::os::raw::c_uint,
         isDecl: bool,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirLLVMDIModuleAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Creates a LLVM DIImportedEntityAttr attribute."]
@@ -4857,12 +5408,117 @@ unsafe extern "C" {
     ) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirLLVMDIImportedEntityAttrGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Gets the scope of this DIModuleAttr."]
     pub fn mlirLLVMDIModuleAttrGetScope(diModule: MlirAttribute) -> MlirAttribute;
 }
 unsafe extern "C" {
+    pub fn mlirRegisterLLVMPasses();
+}
+unsafe extern "C" {
+    pub fn mlirCreateLLVMDIScopeForLLVMFuncOpPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterLLVMDIScopeForLLVMFuncOpPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateLLVMLLVMAddComdats() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterLLVMLLVMAddComdats();
+}
+unsafe extern "C" {
+    pub fn mlirCreateLLVMLLVMLegalizeForExportPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterLLVMLLVMLegalizeForExportPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateLLVMLLVMRequestCWrappersPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterLLVMLLVMRequestCWrappersPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateLLVMLLVMUseDefaultVisibilityPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterLLVMLLVMUseDefaultVisibilityPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateLLVMNVVMOptimizeForTargetPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterLLVMNVVMOptimizeForTargetPass();
+}
+unsafe extern "C" {
     #[doc = " Apply the special region builder for the builtin named Linalg op.\n Assert that `mlirOp` is a builtin named Linalg op."]
     pub fn mlirLinalgFillBuiltinNamedOpRegion(mlirOp: MlirOperation);
+}
+unsafe extern "C" {
+    pub fn mlirLinalgIsAContractionOp(op: MlirOperation) -> bool;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct MlirLinalgContractionDimensions {
+    pub batch: MlirAttribute,
+    pub m: MlirAttribute,
+    pub n: MlirAttribute,
+    pub k: MlirAttribute,
+}
+impl Default for MlirLinalgContractionDimensions {
+    fn default() -> Self {
+        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    pub fn mlirLinalgInferContractionDimensions(
+        op: MlirOperation,
+    ) -> MlirLinalgContractionDimensions;
+}
+unsafe extern "C" {
+    pub fn mlirLinalgInferContractionDimensionsFromMaps(
+        indexingMaps: *const MlirAffineMap,
+        numMaps: usize,
+    ) -> MlirLinalgContractionDimensions;
+}
+unsafe extern "C" {
+    pub fn mlirLinalgIsAConvolutionOp(op: MlirOperation) -> bool;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct MlirLinalgConvolutionDimensions {
+    pub batch: MlirAttribute,
+    pub outputImage: MlirAttribute,
+    pub outputChannel: MlirAttribute,
+    pub filterLoop: MlirAttribute,
+    pub inputChannel: MlirAttribute,
+    pub depth: MlirAttribute,
+    pub strides: MlirAttribute,
+    pub dilations: MlirAttribute,
+}
+impl Default for MlirLinalgConvolutionDimensions {
+    fn default() -> Self {
+        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+unsafe extern "C" {
+    pub fn mlirLinalgInferConvolutionDimensions(
+        op: MlirOperation,
+    ) -> MlirLinalgConvolutionDimensions;
+}
+unsafe extern "C" {
+    pub fn mlirLinalgGetIndexingMapsAttribute(op: MlirOperation) -> MlirAttribute;
 }
 unsafe extern "C" {
     pub fn mlirGetDialectHandle__linalg__() -> MlirDialectHandle;
@@ -4913,6 +5569,12 @@ unsafe extern "C" {
     pub fn mlirRegisterLinalgLinalgElementwiseOpFusionPass();
 }
 unsafe extern "C" {
+    pub fn mlirCreateLinalgLinalgFoldIntoElementwisePass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterLinalgLinalgFoldIntoElementwisePass();
+}
+unsafe extern "C" {
     pub fn mlirCreateLinalgLinalgFoldUnitExtentDimsPass() -> MlirPass;
 }
 unsafe extern "C" {
@@ -4931,16 +5593,88 @@ unsafe extern "C" {
     pub fn mlirRegisterLinalgLinalgInlineScalarOperandsPass();
 }
 unsafe extern "C" {
-    pub fn mlirCreateLinalgLinalgNamedOpConversionPass() -> MlirPass;
+    pub fn mlirCreateLinalgLinalgMorphOpsPass() -> MlirPass;
 }
 unsafe extern "C" {
-    pub fn mlirRegisterLinalgLinalgNamedOpConversionPass();
+    pub fn mlirRegisterLinalgLinalgMorphOpsPass();
 }
 unsafe extern "C" {
     pub fn mlirCreateLinalgLinalgSpecializeGenericOpsPass() -> MlirPass;
 }
 unsafe extern "C" {
     pub fn mlirRegisterLinalgLinalgSpecializeGenericOpsPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateLinalgSimplifyDepthwiseConvPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterLinalgSimplifyDepthwiseConvPass();
+}
+unsafe extern "C" {
+    pub fn mlirGetDialectHandle__memref__() -> MlirDialectHandle;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterMemRefPasses();
+}
+unsafe extern "C" {
+    pub fn mlirCreateMemRefExpandOpsPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterMemRefExpandOpsPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateMemRefExpandReallocPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterMemRefExpandReallocPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateMemRefExpandStridedMetadataPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterMemRefExpandStridedMetadataPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateMemRefFlattenMemrefsPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterMemRefFlattenMemrefsPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateMemRefFoldMemRefAliasOpsPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterMemRefFoldMemRefAliasOpsPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateMemRefMemRefEmulateWideInt() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterMemRefMemRefEmulateWideInt();
+}
+unsafe extern "C" {
+    pub fn mlirCreateMemRefNormalizeMemRefsPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterMemRefNormalizeMemRefsPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateMemRefReifyResultShapesPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterMemRefReifyResultShapesPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateMemRefResolveRankedShapeTypeResultDimsPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterMemRefResolveRankedShapeTypeResultDimsPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateMemRefResolveShapedTypeResultDimsPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterMemRefResolveShapedTypeResultDimsPass();
 }
 unsafe extern "C" {
     pub fn mlirGetDialectHandle__nvgpu__() -> MlirDialectHandle;
@@ -4959,6 +5693,18 @@ unsafe extern "C" {
     ) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirNVGPUTensorMapDescriptorTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterNVGPUPasses();
+}
+unsafe extern "C" {
+    pub fn mlirCreateNVGPUOptimizeSharedMemory() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterNVGPUOptimizeSharedMemory();
+}
+unsafe extern "C" {
     pub fn mlirGetDialectHandle__pdl__() -> MlirDialectHandle;
 }
 unsafe extern "C" {
@@ -4968,19 +5714,37 @@ unsafe extern "C" {
     pub fn mlirTypeIsAPDLAttributeType(type_: MlirType) -> bool;
 }
 unsafe extern "C" {
+    pub fn mlirPDLAttributeTypeGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
     pub fn mlirPDLAttributeTypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirPDLAttributeTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     pub fn mlirTypeIsAPDLOperationType(type_: MlirType) -> bool;
 }
 unsafe extern "C" {
+    pub fn mlirPDLOperationTypeGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
     pub fn mlirPDLOperationTypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirPDLOperationTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     pub fn mlirTypeIsAPDLRangeType(type_: MlirType) -> bool;
 }
 unsafe extern "C" {
+    pub fn mlirPDLRangeTypeGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
     pub fn mlirPDLRangeTypeGet(elementType: MlirType) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirPDLRangeTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     pub fn mlirPDLRangeTypeGetElementType(type_: MlirType) -> MlirType;
@@ -4989,13 +5753,25 @@ unsafe extern "C" {
     pub fn mlirTypeIsAPDLTypeType(type_: MlirType) -> bool;
 }
 unsafe extern "C" {
+    pub fn mlirPDLTypeTypeGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
     pub fn mlirPDLTypeTypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirPDLTypeTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     pub fn mlirTypeIsAPDLValueType(type_: MlirType) -> bool;
 }
 unsafe extern "C" {
+    pub fn mlirPDLValueTypeGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
     pub fn mlirPDLValueTypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirPDLValueTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     pub fn mlirGetDialectHandle__quant__() -> MlirDialectHandle;
@@ -5088,6 +5864,9 @@ unsafe extern "C" {
     pub fn mlirTypeIsAAnyQuantizedType(type_: MlirType) -> bool;
 }
 unsafe extern "C" {
+    pub fn mlirAnyQuantizedTypeGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
     #[doc = " Creates an instance of AnyQuantizedType with the given parameters in the\n same context as `storageType` and returns it. The instance is owned by the\n context."]
     pub fn mlirAnyQuantizedTypeGet(
         flags: ::std::os::raw::c_uint,
@@ -5098,8 +5877,14 @@ unsafe extern "C" {
     ) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirAnyQuantizedTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     #[doc = " Returns `true` if the given type is a UniformQuantizedType."]
     pub fn mlirTypeIsAUniformQuantizedType(type_: MlirType) -> bool;
+}
+unsafe extern "C" {
+    pub fn mlirUniformQuantizedTypeGetTypeID() -> MlirTypeID;
 }
 unsafe extern "C" {
     #[doc = " Creates an instance of UniformQuantizedType with the given parameters in the\n same context as `storageType` and returns it. The instance is owned by the\n context."]
@@ -5112,6 +5897,9 @@ unsafe extern "C" {
         storageTypeMin: i64,
         storageTypeMax: i64,
     ) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirUniformQuantizedTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the scale of the given uniform quantized type."]
@@ -5130,6 +5918,9 @@ unsafe extern "C" {
     pub fn mlirTypeIsAUniformQuantizedPerAxisType(type_: MlirType) -> bool;
 }
 unsafe extern "C" {
+    pub fn mlirUniformQuantizedPerAxisTypeGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
     #[doc = " Creates an instance of UniformQuantizedPerAxisType with the given parameters\n in the same context as `storageType` and returns it. `scales` and\n `zeroPoints` point to `nDims` number of elements. The instance is owned\n by the context."]
     pub fn mlirUniformQuantizedPerAxisTypeGet(
         flags: ::std::os::raw::c_uint,
@@ -5142,6 +5933,9 @@ unsafe extern "C" {
         storageTypeMin: i64,
         storageTypeMax: i64,
     ) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirUniformQuantizedPerAxisTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the number of axes in the given quantized per-axis type."]
@@ -5164,12 +5958,66 @@ unsafe extern "C" {
     pub fn mlirUniformQuantizedPerAxisTypeIsFixedPoint(type_: MlirType) -> bool;
 }
 unsafe extern "C" {
+    #[doc = " Returns `true` if the given type is a UniformQuantizedSubChannel."]
+    pub fn mlirTypeIsAUniformQuantizedSubChannelType(type_: MlirType) -> bool;
+}
+unsafe extern "C" {
+    pub fn mlirUniformQuantizedSubChannelTypeGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
+    #[doc = " Creates a UniformQuantizedSubChannelType with the given parameters.\n\n The type is owned by the context. `scalesAttr` and `zeroPointsAttr` must be\n DenseElementsAttrs.  `quantizedDimensions` and `blockSizes`\n point to `blockSizeInfoLength` number of elements, describing respectively\n the quantization axis and corresponding block size."]
+    pub fn mlirUniformQuantizedSubChannelTypeGet(
+        flags: ::std::os::raw::c_uint,
+        storageType: MlirType,
+        expressedType: MlirType,
+        scalesAttr: MlirAttribute,
+        zeroPointsAttr: MlirAttribute,
+        blockSizeInfoLength: isize,
+        quantizedDimensions: *mut i32,
+        blockSizes: *mut i64,
+        storageTypeMin: i64,
+        storageTypeMax: i64,
+    ) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirUniformQuantizedSubChannelTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
+    #[doc = " Returns the number of block sizes provided in type."]
+    pub fn mlirUniformQuantizedSubChannelTypeGetNumBlockSizes(type_: MlirType) -> isize;
+}
+unsafe extern "C" {
+    #[doc = " Returns the quantized dimension at the given position."]
+    pub fn mlirUniformQuantizedSubChannelTypeGetQuantizedDimension(
+        type_: MlirType,
+        pos: isize,
+    ) -> i32;
+}
+unsafe extern "C" {
+    #[doc = " Returns the block size at the given position."]
+    pub fn mlirUniformQuantizedSubChannelTypeGetBlockSize(type_: MlirType, pos: isize) -> i64;
+}
+unsafe extern "C" {
+    #[doc = " Returns the scales of the quantized type."]
+    pub fn mlirUniformQuantizedSubChannelTypeGetScales(type_: MlirType) -> MlirAttribute;
+}
+unsafe extern "C" {
+    #[doc = " Returns the zero-points of the quantized type."]
+    pub fn mlirUniformQuantizedSubChannelTypeGetZeroPoints(type_: MlirType) -> MlirAttribute;
+}
+unsafe extern "C" {
     #[doc = " Returns `true` if the given type is a CalibratedQuantizedType."]
     pub fn mlirTypeIsACalibratedQuantizedType(type_: MlirType) -> bool;
 }
 unsafe extern "C" {
+    pub fn mlirCalibratedQuantizedTypeGetTypeID() -> MlirTypeID;
+}
+unsafe extern "C" {
     #[doc = " Creates an instance of CalibratedQuantizedType with the given parameters\n in the same context as `expressedType` and returns it. The instance is owned\n by the context."]
     pub fn mlirCalibratedQuantizedTypeGet(expressedType: MlirType, min: f64, max: f64) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirCalibratedQuantizedTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the min value of the given calibrated quantized type."]
@@ -5183,7 +6031,103 @@ unsafe extern "C" {
     pub fn mlirGetDialectHandle__scf__() -> MlirDialectHandle;
 }
 unsafe extern "C" {
+    pub fn mlirRegisterSCFPasses();
+}
+unsafe extern "C" {
+    pub fn mlirCreateSCFSCFForLoopCanonicalization() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterSCFSCFForLoopCanonicalization();
+}
+unsafe extern "C" {
+    pub fn mlirCreateSCFSCFForLoopPeeling() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterSCFSCFForLoopPeeling();
+}
+unsafe extern "C" {
+    pub fn mlirCreateSCFSCFForLoopRangeFolding() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterSCFSCFForLoopRangeFolding();
+}
+unsafe extern "C" {
+    pub fn mlirCreateSCFSCFForLoopSpecialization() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterSCFSCFForLoopSpecialization();
+}
+unsafe extern "C" {
+    pub fn mlirCreateSCFSCFForToWhileLoop() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterSCFSCFForToWhileLoop();
+}
+unsafe extern "C" {
+    pub fn mlirCreateSCFSCFForallToForLoop() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterSCFSCFForallToForLoop();
+}
+unsafe extern "C" {
+    pub fn mlirCreateSCFSCFForallToParallelLoop() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterSCFSCFForallToParallelLoop();
+}
+unsafe extern "C" {
+    pub fn mlirCreateSCFSCFParallelForToNestedFors() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterSCFSCFParallelForToNestedFors();
+}
+unsafe extern "C" {
+    pub fn mlirCreateSCFSCFParallelLoopFusion() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterSCFSCFParallelLoopFusion();
+}
+unsafe extern "C" {
+    pub fn mlirCreateSCFSCFParallelLoopSpecialization() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterSCFSCFParallelLoopSpecialization();
+}
+unsafe extern "C" {
+    pub fn mlirCreateSCFSCFParallelLoopTiling() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterSCFSCFParallelLoopTiling();
+}
+unsafe extern "C" {
+    pub fn mlirCreateSCFTestSCFParallelLoopCollapsing() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterSCFTestSCFParallelLoopCollapsing();
+}
+unsafe extern "C" {
     pub fn mlirGetDialectHandle__shape__() -> MlirDialectHandle;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterShapePasses();
+}
+unsafe extern "C" {
+    pub fn mlirCreateShapeOutlineShapeComputationPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterShapeOutlineShapeComputationPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateShapeRemoveShapeConstraintsPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterShapeRemoveShapeConstraintsPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateShapeShapeToShapeLoweringPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterShapeShapeToShapeLoweringPass();
 }
 unsafe extern "C" {
     pub fn mlirGetDialectHandle__sparse_tensor__() -> MlirDialectHandle;
@@ -5227,6 +6171,9 @@ unsafe extern "C" {
         explicitVal: MlirAttribute,
         implicitVal: MlirAttribute,
     ) -> MlirAttribute;
+}
+unsafe extern "C" {
+    pub fn mlirSparseTensorEncodingAttrGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     #[doc = " Returns the level-rank of the `sparse_tensor.encoding` attribute."]
@@ -5392,6 +6339,15 @@ unsafe extern "C" {
     pub fn mlirGetDialectHandle__tensor__() -> MlirDialectHandle;
 }
 unsafe extern "C" {
+    pub fn mlirRegisterTensorPasses();
+}
+unsafe extern "C" {
+    pub fn mlirCreateTensorFoldTensorSubsetOpsPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterTensorFoldTensorSubsetOpsPass();
+}
+unsafe extern "C" {
     pub fn mlirGetDialectHandle__transform__() -> MlirDialectHandle;
 }
 unsafe extern "C" {
@@ -5404,6 +6360,9 @@ unsafe extern "C" {
     pub fn mlirTransformAnyOpTypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirTransformAnyOpTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     pub fn mlirTypeIsATransformAnyParamType(type_: MlirType) -> bool;
 }
 unsafe extern "C" {
@@ -5413,6 +6372,9 @@ unsafe extern "C" {
     pub fn mlirTransformAnyParamTypeGet(ctx: MlirContext) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirTransformAnyParamTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     pub fn mlirTypeIsATransformAnyValueType(type_: MlirType) -> bool;
 }
 unsafe extern "C" {
@@ -5420,6 +6382,9 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn mlirTransformAnyValueTypeGet(ctx: MlirContext) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirTransformAnyValueTypeGetName() -> MlirStringRef;
 }
 unsafe extern "C" {
     pub fn mlirTypeIsATransformOperationType(type_: MlirType) -> bool;
@@ -5434,6 +6399,9 @@ unsafe extern "C" {
     ) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirTransformOperationTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     pub fn mlirTransformOperationTypeGetOperationName(type_: MlirType) -> MlirStringRef;
 }
 unsafe extern "C" {
@@ -5446,7 +6414,37 @@ unsafe extern "C" {
     pub fn mlirTransformParamTypeGet(ctx: MlirContext, type_: MlirType) -> MlirType;
 }
 unsafe extern "C" {
+    pub fn mlirTransformParamTypeGetName() -> MlirStringRef;
+}
+unsafe extern "C" {
     pub fn mlirTransformParamTypeGetType(type_: MlirType) -> MlirType;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterTransformPasses();
+}
+unsafe extern "C" {
+    pub fn mlirCreateTransformCheckUsesPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterTransformCheckUsesPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateTransformInferEffectsPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterTransformInferEffectsPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateTransformInterpreterPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterTransformInterpreterPass();
+}
+unsafe extern "C" {
+    pub fn mlirCreateTransformPreloadLibraryPass() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterTransformPreloadLibraryPass();
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -5463,14 +6461,19 @@ impl Default for MlirExecutionEngine {
     }
 }
 unsafe extern "C" {
-    #[doc = " Creates an ExecutionEngine for the provided ModuleOp. The ModuleOp is\n expected to be \"translatable\" to LLVM IR (only contains operations in\n dialects that implement the `LLVMTranslationDialectInterface`). The module\n ownership stays with the client and can be destroyed as soon as the call\n returns. `optLevel` is the optimization level to be used for transformation\n and code generation. LLVM passes at `optLevel` are run before code\n generation. The number and array of paths corresponding to shared libraries\n that will be loaded are specified via `numPaths` and `sharedLibPaths`\n respectively.\n TODO: figure out other options."]
+    #[doc = " Creates an ExecutionEngine for the provided ModuleOp. The ModuleOp is\n expected to be \"translatable\" to LLVM IR (only contains operations in\n dialects that implement the `LLVMTranslationDialectInterface`). The module\n ownership stays with the client and can be destroyed as soon as the call\n returns. `optLevel` is the optimization level to be used for transformation\n and code generation. LLVM passes at `optLevel` are run before code\n generation. The number and array of paths corresponding to shared libraries\n that will be loaded are specified via `numPaths` and `sharedLibPaths`\n respectively.\n The `enablePIC` arguments controls the relocation model, when true the\n generated code is emitted as \"position independent\", making it possible to\n save it and reload it as a shared object in another process.\n TODO: figure out other options."]
     pub fn mlirExecutionEngineCreate(
         op: MlirModule,
         optLevel: ::std::os::raw::c_int,
         numPaths: ::std::os::raw::c_int,
         sharedLibPaths: *const MlirStringRef,
         enableObjectDump: bool,
+        enablePIC: bool,
     ) -> MlirExecutionEngine;
+}
+unsafe extern "C" {
+    #[doc = " Initialize the ExecutionEngine. Global constructors specified by\n `llvm.mlir.global_ctors` will be run. One common scenario is that kernel\n binary compiled from `gpu.module` gets loaded during initialization. Make\n sure all symbols are resolvable before initialization by calling\n `mlirExecutionEngineRegisterSymbol` or including shared libraries."]
+    pub fn mlirExecutionEngineInitialize(jit: MlirExecutionEngine);
 }
 unsafe extern "C" {
     #[doc = " Destroy an ExecutionEngine instance."]
@@ -5524,6 +6527,12 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn mlirRegisterTransformsPasses();
+}
+unsafe extern "C" {
+    pub fn mlirCreateTransformsBubbleDownMemorySpaceCasts() -> MlirPass;
+}
+unsafe extern "C" {
+    pub fn mlirRegisterTransformsBubbleDownMemorySpaceCasts();
 }
 unsafe extern "C" {
     pub fn mlirCreateTransformsCSE() -> MlirPass;
