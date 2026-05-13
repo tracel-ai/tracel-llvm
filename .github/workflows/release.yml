@@ -176,9 +176,10 @@ jobs:
       # ----------------------------------------------------------------------
       - name: Build LLVM bundle
         shell: pwsh
+        working-directory: ${{ github.workspace }}
         run: |
           $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
-          cmd /v:on /c "`"$vsDevCmd`" -arch=x64 && where cl && where cmake && xtask bundle build"
+          cmd /v:on /c "`"$vsDevCmd`" -arch=x64 && cd /d `"$env:GITHUB_WORKSPACE`" && where cl && where cmake && where xtask && git rev-parse --show-toplevel && xtask bundle build"
       # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
