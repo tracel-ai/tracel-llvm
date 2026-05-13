@@ -169,6 +169,9 @@ jobs:
         run: |
           pwsh -ExecutionPolicy Bypass -File scripts/install-prereqs.ps1
       # ----------------------------------------------------------------------
+      - name: Checkout repository again after Git is installed
+        uses: actions/checkout@v6
+      # ----------------------------------------------------------------------
       - name: Install xtask CLI
         shell: pwsh
         run: |
