@@ -161,6 +161,7 @@ mod tests {
 
         assert_eq!(pass_manager.run(&mut module), Ok(()));
 
-        ExecutionEngine::new(&module, 2, &[], true, false).dump_to_object_file("/tmp/mlir-rs/test.o");
+        ExecutionEngine::new(&module, 2, &[], true, false)
+            .dump_to_object_file("/tmp/mlir-rs/test.o");
     }
 }
