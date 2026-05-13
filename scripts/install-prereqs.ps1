@@ -79,6 +79,18 @@ function Ensure-Rust {
   }
 }
 
+function Add-Path-Entry([string]$path) {
+  if ($path -and (Test-Path $path)) {
+    if (($env:Path -split ';') -notcontains $path) {
+      $env:Path = "$path;$env:Path"
+    }
+
+    if ($env:GITHUB_ACTIONS -eq "true") {
+      $path | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+    }
+  }
+}
+
 # ---------------- main ----------------
 
 Ensure-Choco
@@ -89,9 +101,17 @@ Ensure-VSBuildTools
 # Make newly installed tools visible in this process
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
 [System.Environment]::GetEnvironmentVariable("Path","User")
+
+Add-Path-Entry "C:\Windows\system32\config\systemprofile\.cargo\bin"
+Add-Path-Entry "$env:USERPROFILE\.cargo\bin"
+
 if ($env:GITHUB_ACTIONS -eq "true") {
-    $env:Path.Split(';') | Where-Object { $_ -and (Test-Path $_) } | Select-Object -Unique |
-      ForEach-Object { $_ | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append }
+  $env:Path.Split(';') |
+    Where-Object { $_ -and (Test-Path $_) } |
+    Select-Object -Unique |
+    ForEach-Object {
+      $_ | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+    }
 }
 
 Write-Host "Windows prerequisites installed." -ForegroundColor Green
