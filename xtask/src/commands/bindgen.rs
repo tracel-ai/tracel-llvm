@@ -5,12 +5,12 @@ use std::{
 
 use tracel_xtask::{
     prelude::{anyhow::Context as _, *},
-    utils::workspace::{WorkspaceMember, WorkspaceMemberType, get_workspace_members},
+    utils::workspace::{get_workspace_members, WorkspaceMember, WorkspaceMemberType},
 };
 
 use crate::commands::bundle::{BundleBuildArgs, BundleCmdArgs, BundleSubCmd};
 
-use super::{BundleWorkspace, generators};
+use super::{generators, BundleWorkspace};
 
 const FEATURE_GATED_REGION_BEGIN: &str = "// BEGIN AUTO-GENERATED FEATURE GATED REGION";
 const FEATURE_GATED_REGION_END: &str = "// END AUTO-GENERATED FEATURE GATED BINDINGS";
@@ -64,11 +64,16 @@ pub(crate) fn handle_command(args: BindgenCmdArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub(crate) fn get_bindings_file_path(member: &WorkspaceMember) -> anyhow::Result<String> {
-    let out_path = get_output_path(member)?;
-    let platform = platform_suffix_for_feature();
-    let filename = format!("bindings_{}.rs", platform);
-    let path = out_path.join(filename);
+pub(crate) fn get_bindings_file_path(
+    member: &WorkspaceMember,
+    ws: &BundleWorkspace,
+) -> anyhow::Result<String> {
+    let platform = ws.platform.archive_stem();
+    let crate_name = sanitize_for_filename(&member.name);
+
+    let filename = format!("{platform}.{crate_name}.bindings.rs");
+    let path = ws.workspace_dir.join(filename);
+
     Ok(path.to_string_lossy().into_owned())
 }
 
@@ -224,8 +229,16 @@ fn get_input_path(member: &WorkspaceMember) -> anyhow::Result<PathBuf> {
     }
 }
 
-fn platform_suffix_for_feature() -> String {
-    format!("{}_{}", std::env::consts::OS, std::env::consts::ARCH)
+fn sanitize_for_filename(s: &str) -> String {
+    s.chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.') {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect()
 }
 
 fn sanitize_for_ident(s: &str) -> String {

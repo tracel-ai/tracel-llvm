@@ -104,6 +104,9 @@ jobs:
       - name: Build LLVM bunlde
         run: xtask bundle build
       # ----------------------------------------------------------------------
+      - name: Build Rust bindings
+        run: xtask bindgen
+      # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
         uses: softprops/action-gh-release@v2.4.2
@@ -135,6 +138,9 @@ jobs:
       # ----------------------------------------------------------------------
       - name: Build LLVM bunlde
         run: xtask bundle build
+      # ----------------------------------------------------------------------
+      - name: Build Rust bindings
+        run: xtask bindgen
       # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
@@ -183,6 +189,13 @@ jobs:
         run: |
           $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
           cmd /v:on /c "`"$vsDevCmd`" -arch=x64 && cd /d `"$env:GITHUB_WORKSPACE`" && where cl && where cmake && where xtask && git rev-parse --show-toplevel && xtask bundle build"
+      # ----------------------------------------------------------------------
+      - name: Build Rust bindings
+        shell: pwsh
+        working-directory: ${{ github.workspace }}
+        run: |
+          $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
+          cmd /v:on /c "`"$vsDevCmd`" -arch=x64 && cd /d `"$env:GITHUB_WORKSPACE`" && where cl && where cmake && where xtask && git rev-parse --show-toplevel && xtask bindgen"
       # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709

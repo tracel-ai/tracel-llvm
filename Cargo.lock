@@ -1626,6 +1626,7 @@ dependencies = [
 name = "tracel-mlir-sys"
 version = "22.1.4-2"
 dependencies = [
+ "reqwest",
  "tracel-llvm-bundler",
 ]
 
@@ -1636,6 +1637,7 @@ dependencies = [
  "bindgen",
  "cc",
  "paste",
+ "reqwest",
  "thiserror",
  "tracel-llvm-bundler",
 ]

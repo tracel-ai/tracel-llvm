@@ -30,7 +30,7 @@ pub(crate) fn bindgen(member: &WorkspaceMember, ws: &BundleWorkspace) -> anyhow:
 
     group_info!("Generate bindings: {}", member.name);
     let header_path = get_wrapper_file_path(member)?;
-    let bindings_path = get_bindings_file_path(member)?;
+    let bindings_path = get_bindings_file_path(member, ws)?;
 
     bindgen::Builder::default()
         .header(header_path)
