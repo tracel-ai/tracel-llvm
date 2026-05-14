@@ -5,5 +5,4 @@
 #![allow(non_upper_case_globals)]
 #![allow(dead_code)]
 
-include!(concat!(env!("OUT_DIR"), "/bindings_linux_x86_64.rs"));
 include!(concat!(env!("OUT_DIR"), "/bindings_windows_x86_64.rs"));
