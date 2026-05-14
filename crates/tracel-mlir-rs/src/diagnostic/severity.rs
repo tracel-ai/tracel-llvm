@@ -1,3 +1,8 @@
+#![allow(
+    clippy::unnecessary_cast,
+    reason = "Normalize bindgen constants to u32; bindgen may emit i32 on some targets."
+)]
+
 use crate::Error;
 use tracel_mlir_sys::{
     MlirDiagnosticSeverity_MlirDiagnosticError, MlirDiagnosticSeverity_MlirDiagnosticNote,
