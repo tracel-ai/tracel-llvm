@@ -101,7 +101,7 @@ jobs:
           rust-toolchain: stable
           cache-key: stable-linux-${{ matrix.suffix }}
       # ----------------------------------------------------------------------
-      - name: Build LLVM bunlde
+      - name: Build LLVM bundle
         run: xtask bundle build
       # ----------------------------------------------------------------------
       - name: Build Rust bindings
@@ -118,6 +118,7 @@ jobs:
           files: |
             .llvm/linux-${{ matrix.suffix }}.tar.xz
             .llvm/linux-${{ matrix.suffix }}.checksums.json
+            .llvm/*.bindings.rs
 
   llvm-macos:
     needs: create-release
@@ -136,7 +137,7 @@ jobs:
           rust-toolchain: stable
           cache-key: stable-macos
       # ----------------------------------------------------------------------
-      - name: Build LLVM bunlde
+      - name: Build LLVM bundle
         run: xtask bundle build
       # ----------------------------------------------------------------------
       - name: Build Rust bindings
@@ -153,6 +154,7 @@ jobs:
           files: |
             .llvm/macos-AArch64.tar.xz
             .llvm/macos-AArch64.checksums.json
+            .llvm/*.bindings.rs
 
   llvm-windows:
     needs: create-release
@@ -208,6 +210,7 @@ jobs:
           files: |
             .llvm/windows-x64.tar.xz
             .llvm/windows-x64.checksums.json
+            .llvm/*.bindings.rs
 
   publish-release:
     # needs: [create-release, llvm-linux, llvm-macos, llvm-windows]

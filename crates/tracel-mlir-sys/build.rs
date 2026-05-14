@@ -109,7 +109,7 @@ fn bindings_release_url(crate_name: &str, target_os: &str, target_arch: &str) ->
     let release_number = tracel_llvm_bundler::config::TRACEL_LLVM_RELEASE_NUMBER;
 
     let tag = format!("v{version}-{release_number}");
-    let platform_stem = format!("tracel-llvm-{target_os}-{target_arch}");
+    let platform_stem = format!("{target_os}-{target_arch}");
     let artifact_name = format!("{platform_stem}.{crate_name}.bindings.rs");
 
     format!("https://github.com/{GITHUB_REPOSITORY}/releases/download/{tag}/{artifact_name}")
