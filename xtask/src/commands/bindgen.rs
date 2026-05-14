@@ -51,9 +51,16 @@ pub(crate) fn handle_command(args: BindgenCmdArgs) -> anyhow::Result<()> {
         if !crates.contains(&member.name) {
             continue;
         }
+
         match member.name.as_str() {
-            "tracel-mlir-sys" => generators::mlir_sys::bindgen(&member, &ws)?,
-            "tracel-tblgen-rs" => generators::tblgen_sys::bindgen(&member, &ws)?,
+            "tracel-mlir-sys" => {
+                generators::mlir_sys::bindgen(&member, &ws)?;
+                strip_generated_bindings_for_include(&member, &ws)?;
+            }
+            "tracel-tblgen-rs" => {
+                generators::tblgen_sys::bindgen(&member, &ws)?;
+                strip_generated_bindings_for_include(&member, &ws)?;
+            }
             other => {
                 group_info!("Skip '{other}' (no bindgen recipe configured)");
                 endgroup!();
@@ -245,6 +252,40 @@ fn sanitize_for_ident(s: &str) -> String {
     s.chars()
         .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
         .collect()
+}
+
+fn strip_generated_bindings_for_include(
+    member: &WorkspaceMember,
+    ws: &BundleWorkspace,
+) -> anyhow::Result<()> {
+    let bindings_file = get_bindings_file_path(member, ws)?;
+    strip_bindgen_inner_allow_attributes(Path::new(&bindings_file))
+}
+
+pub(crate) fn strip_bindgen_inner_allow_attributes(path: &Path) -> anyhow::Result<()> {
+    let content = fs::read_to_string(path)
+        .with_context(|| format!("Should read generated bindings file '{}'", path.display()))?;
+
+    let mut changed = false;
+    let mut output = String::with_capacity(content.len());
+
+    for line in content.lines() {
+        if line.trim_start().starts_with("#![allow(") {
+            changed = true;
+            continue;
+        }
+
+        output.push_str(line);
+        output.push('\n');
+    }
+
+    if changed {
+        fs::write(path, output).with_context(|| {
+            format!("Should update generated bindings file '{}'", path.display())
+        })?;
+    }
+
+    Ok(())
 }
 
 fn get_selector_file_path(member: &WorkspaceMember) -> anyhow::Result<PathBuf> {
