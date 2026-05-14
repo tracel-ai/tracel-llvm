@@ -21,15 +21,15 @@ proc-macro2 = "1"
 quote = "1"
 regex = "1.11.2"
 syn = { version = "2", features = ["full"] }
-tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "22.1.4-2" }
-tracel-tblgen-rs = { path = "../tracel-tblgen-rs", version = "22.1.4-2" }
+tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "22.1.4-3" }
+tracel-tblgen-rs = { path = "../tracel-tblgen-rs", version = "22.1.4-3" }
 unindent = "0.2.4"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
 # crates.io verifier wants to take into account dev-dependencies no matter what
 # this is not possible here because this introduces a cyclic dependency with tracel-mlir-rs
-# tracel-mlir-rs = { path = "../tracel-mlir-rs", version = "22.1.4-2", features = ["ods-dialects"] }
+# tracel-mlir-rs = { path = "../tracel-mlir-rs", version = "22.1.4-3", features = ["ods-dialects"] }
 
 [build-dependencies]
-tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "22.1.4-2" }
+tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "22.1.4-3" }
