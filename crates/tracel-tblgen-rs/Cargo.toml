@@ -27,4 +27,4 @@ thiserror = "2.0.16"
 [build-dependencies]
 bindgen = "0.71.1"
 cc = "1.2.37"
-tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "22.1.4-1" }
+tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "22.1.4-2" }

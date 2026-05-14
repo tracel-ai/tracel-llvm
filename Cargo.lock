@@ -1571,7 +1571,7 @@ checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
 
 [[package]]
 name = "tracel-llvm"
-version = "22.1.4-1"
+version = "22.1.4-2"
 dependencies = [
  "tracel-mlir-rs",
  "tracel-mlir-sys",
@@ -1579,7 +1579,7 @@ dependencies = [
 
 [[package]]
 name = "tracel-llvm-bundler"
-version = "22.1.4-1"
+version = "22.1.4-2"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1597,7 +1597,7 @@ dependencies = [
 
 [[package]]
 name = "tracel-mlir-rs"
-version = "22.1.4-1"
+version = "22.1.4-2"
 dependencies = [
  "indoc",
  "insta",
@@ -1608,7 +1608,7 @@ dependencies = [
 
 [[package]]
 name = "tracel-mlir-rs-macros"
-version = "22.1.4-1"
+version = "22.1.4-2"
 dependencies = [
  "comrak",
  "convert_case",
@@ -1624,14 +1624,14 @@ dependencies = [
 
 [[package]]
 name = "tracel-mlir-sys"
-version = "22.1.4-1"
+version = "22.1.4-2"
 dependencies = [
  "tracel-llvm-bundler",
 ]
 
 [[package]]
 name = "tracel-tblgen-rs"
-version = "22.1.4-1"
+version = "22.1.4-2"
 dependencies = [
  "bindgen",
  "cc",
