@@ -1,4 +1,4 @@
-name: Release
+name: Prepare Release
 
 on:
   workflow_dispatch:
@@ -11,35 +11,16 @@ jobs:
   create-release:
     runs-on: ubuntu-22.04
     outputs:
-      llvm_version: ${{ steps.read_config.outputs.llvm_version }}
-      release_number: ${{ steps.read_config.outputs.release_number }}
-      tag: ${{ steps.compute_tag.outputs.tag }}
+      llvm_version: ${{ steps.versions.outputs.llvm_version }}
+      release_number: ${{ steps.versions.outputs.release_number }}
+      tag: ${{ steps.versions.outputs.tag }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v6
       # ----------------------------------------------------------------------
-      - name: Read LLVM version from config.rs
-        id: read_config
-        shell: bash
-        run: |
-          CONFIG_FILE="crates/tracel-llvm-bundler/src/config.rs"
-
-          llvm_version=$(sed -n 's/.*TRACEL_LLVM_VERSION: &str = "\(.*\)";/\1/p' "$CONFIG_FILE")
-          release_number=$(sed -n 's/.*TRACEL_LLVM_RELEASE_NUMBER: &str = "\(.*\)";/\1/p' "$CONFIG_FILE")
-
-          if [[ -z "$llvm_version" || -z "$release_number" ]]; then
-            echo "Failed to extract LLVM version or release number from config.rs"
-            exit 1
-          fi
-
-          echo "llvm_version=$llvm_version" >> "$GITHUB_OUTPUT"
-          echo "release_number=$release_number" >> "$GITHUB_OUTPUT"
-      # ----------------------------------------------------------------------
-      - name: Compute tag
-        id: compute_tag
-        shell: bash
-        run: |
-          echo "tag=v${{ steps.read_config.outputs.llvm_version }}-${{ steps.read_config.outputs.release_number }}" >> "$GITHUB_OUTPUT"
+      - name: Read LLVM release config
+        id: versions
+        uses: ./.github/actions/versions
       # ----------------------------------------------------------------------
       - name: Create Release
         id: create_release
@@ -48,8 +29,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: ${{ steps.compute_tag.outputs.tag }}
-          tag_name: ${{ steps.compute_tag.outputs.tag }}
+          name: ${{ steps.versions.outputs.tag }}
+          tag_name: ${{ steps.versions.outputs.tag }}
           draft: true
           prerelease: false
           generate_release_notes: false
@@ -211,25 +192,3 @@ jobs:
             .llvm/windows-x64.tar.xz
             .llvm/windows-x64.checksums.json
             .llvm/*.bindings.rs
-
-  publish-release:
-    # needs: [create-release, llvm-linux, llvm-macos, llvm-windows]
-    needs: [create-release, llvm-linux, llvm-windows]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v6
-      # ----------------------------------------------------------------------
-      - name: Make Release the latest one
-        id: create_release
-        # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
-        uses: softprops/action-gh-release@v2.4.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          name: ${{ needs.create-release.outputs.tag }}
-          tag_name: ${{ needs.create-release.outputs.tag }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-          make_latest: false
-          append_body: false
