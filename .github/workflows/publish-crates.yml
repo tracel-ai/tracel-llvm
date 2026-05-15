@@ -1,4 +1,4 @@
-name: Publish Release
+name: Publish Crates
 
 on:
   workflow_dispatch:
@@ -10,18 +10,6 @@ on:
         default: false
 
 jobs:
-  versions:
-    runs-on: ubuntu-22.04
-    outputs:
-      llvm_version: ${{ steps.read_config.outputs.llvm_version }}
-      release_number: ${{ steps.read_config.outputs.release_number }}
-      tag: ${{ steps.read_config.outputs.tag }}
-    steps:
-      - uses: actions/checkout@v6
-      - name: Read LLVM release config
-        id: read_config
-        uses: ./.github/actions/versions
-
   publish-tracel-llvm-bundler:
     uses: tracel-ai/github-actions/.github/workflows/publish-crate.yml@v11
     with:
@@ -88,27 +76,3 @@ jobs:
       - publish-tracel-mlir-sys
     secrets:
       CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
-
-  publish-release:
-    needs:
-      - versions
-      - publish-tracel-llvm
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v6
-      # ----------------------------------------------------------------------
-      - name: Make Release public
-        id: create_release
-        # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
-        uses: softprops/action-gh-release@v2.4.2
-        if: ${{ !inputs.dry-run-only }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          name: ${{ needs.versions.outputs.tag }}
-          tag_name: ${{ needs.versions.outputs.tag }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-          make_latest: false
-          append_body: false

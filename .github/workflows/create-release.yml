@@ -1,4 +1,4 @@
-name: Prepare Release
+name: Create Release
 
 on:
   workflow_dispatch:
@@ -192,3 +192,26 @@ jobs:
             .llvm/windows-x64.tar.xz
             .llvm/windows-x64.checksums.json
             .llvm/*.bindings.rs
+
+  publish-release:
+    needs:
+      - versions
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+      # ----------------------------------------------------------------------
+      - name: Make Release public
+        id: create_release
+        # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
+        uses: softprops/action-gh-release@v2.4.2
+        if: ${{ !inputs.dry-run-only }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: ${{ needs.versions.outputs.tag }}
+          tag_name: ${{ needs.versions.outputs.tag }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          make_latest: false
+          append_body: false
