@@ -35,6 +35,8 @@ pub enum BindingsSubCmd {
     Copy(BindingsCopyArgs),
     /// Download all supported bindings from the GitHub release, then copy them into the matching crates.
     CopyAll(BindingsCopyAllArgs),
+    /// Commit generated bindings, push main, then force-update and push the version tag.
+    GitUpdate(BindingsGitUpdateArgs),
 }
 
 #[derive(clap::Args)]
@@ -68,6 +70,16 @@ pub struct BindingsCopyAllArgs {
     /// Bundle workspace directory.
     #[arg(long, default_value = ".llvm")]
     workspace_dir: String,
+}
+
+#[derive(clap::Args)]
+pub struct BindingsGitUpdateArgs {
+    /// Name of the crates for which we need to commit bindings.
+    #[arg(short, long, value_delimiter = ',', default_value = DEFAULT_BINDINGS_CRATES)]
+    crates: Vec<String>,
+    /// Skip confirmation prompt.
+    #[arg(short = 'y', long)]
+    yes: bool,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -112,6 +124,7 @@ pub(crate) fn handle_command(args: BindingsCmdArgs, env: Environment) -> anyhow:
         BindingsSubCmd::Generate(args) => generate_bindings(args, &env),
         BindingsSubCmd::Copy(args) => copy_bindings(args),
         BindingsSubCmd::CopyAll(args) => copy_all_bindings(args, &env),
+        BindingsSubCmd::GitUpdate(args) => git_update_bindings(args),
     }
 }
 
@@ -192,8 +205,6 @@ fn copy_all_bindings(args: BindingsCopyAllArgs, env: &Environment) -> anyhow::Re
 
     copy_bindings_for_platforms(crates, &ws, SUPPORTED_PLATFORMS)?;
     run_fix_lint_and_format(env)?;
-    commit_bindings_update(crates)?;
-    force_update_and_push_version_tag()?;
 
     Ok(())
 }
@@ -259,6 +270,31 @@ fn copy_bindings_for_platform(
     })?;
 
     println!("Copied bindings: {} -> {}", src.display(), dst.display());
+
+    Ok(())
+}
+
+fn git_update_bindings(args: BindingsGitUpdateArgs) -> anyhow::Result<()> {
+    let tag = version_tag();
+
+    if !args.yes {
+        let confirmed = prompt_yes_no(
+            &format!(
+                "This will commit generated bindings, push the commit to origin/main, \
+                 then force-update and push tag '{tag}'. Continue?"
+            ),
+            false,
+        )?;
+
+        if !confirmed {
+            println!("Aborted.");
+            return Ok(());
+        }
+    }
+
+    commit_bindings_update(&args.crates)?;
+    push_main()?;
+    force_update_and_push_version_tag()?;
 
     Ok(())
 }
@@ -770,4 +806,16 @@ fn version_tag() -> String {
     let release_number = tracel_llvm_bundler::config::TRACEL_LLVM_RELEASE_NUMBER;
 
     format!("v{version}-{release_number}")
+}
+
+fn push_main() -> anyhow::Result<()> {
+    run_process(
+        "git",
+        &["push", "origin", "HEAD:main"],
+        None,
+        None,
+        "Should push generated bindings commit to origin/main",
+    )?;
+
+    Ok(())
 }
