@@ -2275,7 +2275,6 @@ dependencies = [
 name = "tracel-mlir-sys"
 version = "22.1.4-3"
 dependencies = [
- "reqwest",
  "tracel-llvm-bundler",
 ]
 
@@ -2892,6 +2891,7 @@ dependencies = [
  "dirs",
  "fs2",
  "log",
+ "reqwest",
  "strum",
  "tracel-llvm-bundler",
  "tracel-mlir-sys",

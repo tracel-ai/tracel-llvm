@@ -1,44 +1,124 @@
 use std::{
     fs,
     path::{Path, PathBuf},
+    time::Duration,
 };
 
 use tracel_xtask::{
     prelude::{anyhow::Context as _, *},
-    utils::workspace::{get_workspace_members, WorkspaceMember, WorkspaceMemberType},
+    utils::workspace::{WorkspaceMember, WorkspaceMemberType, get_workspace_members},
 };
 
 use crate::commands::bundle::{BundleBuildArgs, BundleCmdArgs, BundleSubCmd};
 
-use super::{generators, BundleWorkspace};
+use super::{BundleWorkspace, generators};
 
 const FEATURE_GATED_REGION_BEGIN: &str = "// BEGIN AUTO-GENERATED FEATURE GATED REGION";
 const FEATURE_GATED_REGION_END: &str = "// END AUTO-GENERATED FEATURE GATED BINDINGS";
 const FEATURE_GATE: &str = "xtask";
 
-#[derive(clap::Args)]
-pub struct BindgenCmdArgs {
-    /// Name of the crates for which we need to generate bindings.
-    #[arg(
-        short,
-        long,
-        value_delimiter = ',',
-        default_value = "tracel-mlir-sys,tracel-tblgen-rs"
-    )]
-    crates: Vec<String>,
+const GITHUB_REPOSITORY: &str = "tracel-ai/tracel-llvm";
 
+const DEFAULT_BINDINGS_CRATES: &str = "tracel-mlir-sys,tracel-tblgen-rs";
+
+#[derive(clap::Args)]
+pub struct BindingsCmdArgs {
+    #[command(subcommand)]
+    pub cmd: BindingsSubCmd,
+}
+
+#[derive(clap::Subcommand)]
+pub enum BindingsSubCmd {
+    /// Generate Rust bindings for the current platform into the bundle workspace.
+    Generate(BindingsGenerateArgs),
+    /// Copy generated bindings from the bundle workspace into the matching crates.
+    Copy(BindingsCopyArgs),
+    /// Download all supported bindings from the GitHub release, then copy them into the matching crates.
+    CopyAll(BindingsCopyAllArgs),
+}
+
+#[derive(clap::Args)]
+pub struct BindingsGenerateArgs {
+    /// Name of the crates for which we need to generate bindings.
+    #[arg(short, long, value_delimiter = ',', default_value = DEFAULT_BINDINGS_CRATES)]
+    crates: Vec<String>,
     /// Bundle workspace directory.
     #[arg(long, default_value = ".llvm")]
     workspace_dir: String,
-
-    /// If set then rebuild the workspace from scratch
+    /// If set then rebuild the bindgen clang workspace from scratch.
     #[arg(long)]
     rebuild: bool,
 }
 
-pub(crate) fn handle_command(args: BindgenCmdArgs) -> anyhow::Result<()> {
+#[derive(clap::Args)]
+pub struct BindingsCopyArgs {
+    /// Name of the crates for which we need to copy bindings.
+    #[arg(short, long, value_delimiter = ',', default_value = DEFAULT_BINDINGS_CRATES)]
+    crates: Vec<String>,
+    /// Bundle workspace directory.
+    #[arg(long, default_value = ".llvm")]
+    workspace_dir: String,
+}
+
+#[derive(clap::Args)]
+pub struct BindingsCopyAllArgs {
+    /// Name of the crates for which we need to download and copy bindings.
+    #[arg(short, long, value_delimiter = ',', default_value = DEFAULT_BINDINGS_CRATES)]
+    crates: Vec<String>,
+    /// Bundle workspace directory.
+    #[arg(long, default_value = ".llvm")]
+    workspace_dir: String,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct SupportedPlatform {
+    /// Release asset platform stem, matching PlatformTriple::archive_stem().
+    ///
+    /// Examples:
+    /// - linux-x64
+    /// - linux-AArch64
+    asset_stem: &'static str,
+    /// Rust cfg target_os value.
+    target_os: &'static str,
+    /// Rust cfg target_arch value.
+    target_arch: &'static str,
+}
+
+const SUPPORTED_PLATFORMS: &[SupportedPlatform] = &[
+    SupportedPlatform {
+        asset_stem: "linux-x64",
+        target_os: "linux",
+        target_arch: "x86_64",
+    },
+    SupportedPlatform {
+        asset_stem: "linux-AArch64",
+        target_os: "linux",
+        target_arch: "aarch64",
+    },
+    SupportedPlatform {
+        asset_stem: "macos-AArch64",
+        target_os: "macos",
+        target_arch: "aarch64",
+    },
+    SupportedPlatform {
+        asset_stem: "windows-x64",
+        target_os: "windows",
+        target_arch: "x86_64",
+    },
+];
+
+pub(crate) fn handle_command(args: BindingsCmdArgs, env: Environment) -> anyhow::Result<()> {
+    match args.cmd {
+        BindingsSubCmd::Generate(args) => generate_bindings(args, &env),
+        BindingsSubCmd::Copy(args) => copy_bindings(args),
+        BindingsSubCmd::CopyAll(args) => copy_all_bindings(args),
+    }
+}
+
+fn generate_bindings(args: BindingsGenerateArgs, env: &Environment) -> anyhow::Result<()> {
     let crates = &args.crates;
     let ws = BundleWorkspace::new(Path::new(&args.workspace_dir))?;
+
     ensure_bundle_is_built(&ws)?;
     ws.build_clang_for_bindgen(args.rebuild)?;
 
@@ -55,11 +135,9 @@ pub(crate) fn handle_command(args: BindgenCmdArgs) -> anyhow::Result<()> {
         match member.name.as_str() {
             "tracel-mlir-sys" => {
                 generators::mlir_sys::bindgen(&member, &ws)?;
-                strip_generated_bindings_for_include(&member, &ws)?;
             }
             "tracel-tblgen-rs" => {
                 generators::tblgen_sys::bindgen(&member, &ws)?;
-                strip_generated_bindings_for_include(&member, &ws)?;
             }
             other => {
                 group_info!("Skip '{other}' (no bindgen recipe configured)");
@@ -67,6 +145,113 @@ pub(crate) fn handle_command(args: BindgenCmdArgs) -> anyhow::Result<()> {
             }
         }
     }
+
+    if should_copy_after_generate(env) {
+        group_info!("Bindings: development environment detected, copying generated bindings");
+        copy_current_platform_bindings(crates, &ws)?;
+        endgroup!();
+    }
+
+    Ok(())
+}
+
+fn copy_bindings(args: BindingsCopyArgs) -> anyhow::Result<()> {
+    let crates = &args.crates;
+    let ws = BundleWorkspace::new(Path::new(&args.workspace_dir))?;
+
+    copy_current_platform_bindings(crates, &ws)
+}
+
+fn copy_all_bindings(args: BindingsCopyAllArgs) -> anyhow::Result<()> {
+    let crates = &args.crates;
+    let ws = BundleWorkspace::new(Path::new(&args.workspace_dir))?;
+
+    fs::create_dir_all(&ws.workspace_dir).with_context(|| {
+        format!(
+            "Should create workspace dir '{}'",
+            ws.workspace_dir.display()
+        )
+    })?;
+
+    for crate_name in crates {
+        for platform in SUPPORTED_PLATFORMS {
+            let asset_name = bindings_asset_name(platform.asset_stem, crate_name);
+            let asset_path = ws.workspace_dir.join(&asset_name);
+
+            if asset_path.exists() {
+                continue;
+            }
+
+            let url = bindings_release_url(&asset_name);
+            download_to_path(&url, &asset_path)
+                .with_context(|| format!("Should download bindings asset from {url}"))?;
+        }
+    }
+
+    copy_bindings_for_platforms(crates, &ws, SUPPORTED_PLATFORMS)
+}
+
+fn copy_bindings_for_platforms(
+    crates: &[String],
+    ws: &BundleWorkspace,
+    platforms: &[SupportedPlatform],
+) -> anyhow::Result<()> {
+    let members = get_workspace_members(WorkspaceMemberType::Crate);
+
+    for member in members {
+        if !crates.contains(&member.name) {
+            continue;
+        }
+
+        match member.name.as_str() {
+            "tracel-mlir-sys" | "tracel-tblgen-rs" => {
+                for platform in platforms {
+                    copy_bindings_for_platform(&member, ws, *platform)?;
+                }
+
+                update_feature_gated_region(&member)?;
+            }
+            other => {
+                group_info!("Skip '{other}' (no bindings copy recipe configured)");
+                endgroup!();
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn copy_bindings_for_platform(
+    member: &WorkspaceMember,
+    ws: &BundleWorkspace,
+    platform: SupportedPlatform,
+) -> anyhow::Result<()> {
+    let crate_name = sanitize_for_filename(&member.name);
+
+    let src_name = bindings_asset_name(platform.asset_stem, &crate_name);
+    let src = ws.workspace_dir.join(&src_name);
+
+    if !src.is_file() {
+        return Err(anyhow::anyhow!(
+            "Cannot find generated bindings asset '{}'.\nMissing: {}",
+            src_name,
+            src.display()
+        ));
+    }
+
+    let dst_dir = ensure_bindings_dir(member)?;
+    let dst_name = bindings_module_file_name(platform.target_os, platform.target_arch);
+    let dst = dst_dir.join(dst_name);
+
+    fs::copy(&src, &dst).with_context(|| {
+        format!(
+            "Should copy generated bindings from '{}' to '{}'",
+            src.display(),
+            dst.display()
+        )
+    })?;
+
+    println!("Copied bindings: {} -> {}", src.display(), dst.display());
 
     Ok(())
 }
@@ -78,7 +263,7 @@ pub(crate) fn get_bindings_file_path(
     let platform = ws.platform.archive_stem();
     let crate_name = sanitize_for_filename(&member.name);
 
-    let filename = format!("{platform}.{crate_name}.bindings.rs");
+    let filename = bindings_asset_name(&platform, &crate_name);
     let path = ws.workspace_dir.join(filename);
 
     Ok(path.to_string_lossy().into_owned())
@@ -139,7 +324,7 @@ pub(crate) fn update_feature_gated_region(member: &WorkspaceMember) -> anyhow::R
         // Module name: "bindings_<os>_<arch>.rs"
         let stem = &name["bindings_".len()..name.len() - ".rs".len()];
 
-        // Retrieve OS and arch
+        // Retrieve OS and arch.
         let (os, arch) = match stem.split_once('_') {
             Some((os, arch)) => (os.to_string(), arch.to_string()),
             None => continue,
@@ -153,11 +338,12 @@ pub(crate) fn update_feature_gated_region(member: &WorkspaceMember) -> anyhow::R
 
     let mut generated = String::new();
     let mut base_conditions: Vec<String> = Vec::new();
+
     for (module, os, arch) in &entries {
         let base_cond = format!("all(target_os = \"{os}\", target_arch = \"{arch}\")");
         base_conditions.push(base_cond.clone());
 
-        // only include pregenerated bindings when we are not in xtask mode
+        // Only include pregenerated bindings when we are not in xtask mode.
         let cfg_expr = format!("all(not(feature = \"{FEATURE_GATE}\"), {base_cond})");
         generated.push_str(&format!("#[cfg({cfg_expr})]\n"));
         generated.push_str(&format!("mod {module};\n\n"));
@@ -171,6 +357,7 @@ pub(crate) fn update_feature_gated_region(member: &WorkspaceMember) -> anyhow::R
             .map(|c| format!("        {c},"))
             .collect::<Vec<_>>()
             .join("\n");
+
         generated.push_str("#[cfg(all(\n");
         generated.push_str(&format!("    not(feature = \"{FEATURE_GATE}\"),\n"));
         generated.push_str("    not(any(\n");
@@ -236,6 +423,22 @@ fn get_input_path(member: &WorkspaceMember) -> anyhow::Result<PathBuf> {
     }
 }
 
+fn bindings_asset_name(platform_stem: &str, crate_name: &str) -> String {
+    format!("{platform_stem}.{crate_name}.bindings.rs")
+}
+
+fn bindings_module_file_name(target_os: &str, target_arch: &str) -> String {
+    format!("bindings_{target_os}_{target_arch}.rs")
+}
+
+fn bindings_release_url(asset_name: &str) -> String {
+    let version = tracel_llvm_bundler::config::TRACEL_LLVM_VERSION;
+    let release_number = tracel_llvm_bundler::config::TRACEL_LLVM_RELEASE_NUMBER;
+    let tag = format!("v{version}-{release_number}");
+
+    format!("https://github.com/{GITHUB_REPOSITORY}/releases/download/{tag}/{asset_name}")
+}
+
 fn sanitize_for_filename(s: &str) -> String {
     s.chars()
         .map(|c| {
@@ -254,40 +457,6 @@ fn sanitize_for_ident(s: &str) -> String {
         .collect()
 }
 
-fn strip_generated_bindings_for_include(
-    member: &WorkspaceMember,
-    ws: &BundleWorkspace,
-) -> anyhow::Result<()> {
-    let bindings_file = get_bindings_file_path(member, ws)?;
-    strip_bindgen_inner_allow_attributes(Path::new(&bindings_file))
-}
-
-pub(crate) fn strip_bindgen_inner_allow_attributes(path: &Path) -> anyhow::Result<()> {
-    let content = fs::read_to_string(path)
-        .with_context(|| format!("Should read generated bindings file '{}'", path.display()))?;
-
-    let mut changed = false;
-    let mut output = String::with_capacity(content.len());
-
-    for line in content.lines() {
-        if line.trim_start().starts_with("#![allow(") {
-            changed = true;
-            continue;
-        }
-
-        output.push_str(line);
-        output.push('\n');
-    }
-
-    if changed {
-        fs::write(path, output).with_context(|| {
-            format!("Should update generated bindings file '{}'", path.display())
-        })?;
-    }
-
-    Ok(())
-}
-
 fn get_selector_file_path(member: &WorkspaceMember) -> anyhow::Result<PathBuf> {
     let out_path = get_output_path(member)?;
     Ok(out_path.join("mod.rs"))
@@ -303,6 +472,23 @@ fn ensure_bindings_dir(member: &WorkspaceMember) -> anyhow::Result<PathBuf> {
         fs::create_dir_all(&dir).expect("Should create bindings dir");
     }
     Ok(dir)
+}
+
+fn should_copy_after_generate(env: &Environment) -> bool {
+    env.name == EnvironmentName::Development
+}
+
+fn copy_current_platform_bindings(crates: &[String], ws: &BundleWorkspace) -> anyhow::Result<()> {
+    let platform = current_supported_platform(ws);
+    copy_bindings_for_platforms(crates, ws, &[platform])
+}
+
+fn current_supported_platform(ws: &BundleWorkspace) -> SupportedPlatform {
+    SupportedPlatform {
+        asset_stem: Box::leak(ws.platform.archive_stem().into_boxed_str()),
+        target_os: Box::leak(ws.platform.os.clone().into_boxed_str()),
+        target_arch: Box::leak(ws.platform.arch.clone().into_boxed_str()),
+    }
 }
 
 fn ensure_selector_file(member: &WorkspaceMember) -> anyhow::Result<PathBuf> {
@@ -373,7 +559,7 @@ fn ensure_bundle_is_built(ws: &BundleWorkspace) -> anyhow::Result<()> {
 
     if !do_build {
         return Err(anyhow::anyhow!(
-            "Bundle is required for bindgen.\n\
+            "Bundle is required for bindings generation.\n\
              Missing: {}",
             ws.bundle_install_dir.display()
         ));
@@ -389,5 +575,33 @@ fn ensure_bundle_is_built(ws: &BundleWorkspace) -> anyhow::Result<()> {
             workspace_dir: ws.workspace_dir.to_string_lossy().to_string(),
         }),
     })?;
+
+    Ok(())
+}
+
+fn download_to_path(url: &str, dest: &Path) -> anyhow::Result<()> {
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(60 * 5))
+        .build()
+        .with_context(|| "Should create HTTP client")?;
+
+    let mut resp = client
+        .get(url)
+        .send()
+        .with_context(|| format!("Should send GET request to {url}"))?
+        .error_for_status()
+        .with_context(|| format!("GET {url} should return a successful status"))?;
+
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("Should create parent directory '{}'", parent.display()))?;
+    }
+
+    let mut file = fs::File::create(dest)
+        .with_context(|| format!("Should create destination file '{}'", dest.display()))?;
+
+    std::io::copy(&mut resp, &mut file)
+        .with_context(|| format!("Should write response body to '{}'", dest.display()))?;
+
     Ok(())
 }

@@ -1,4 +1,4 @@
-pub(crate) mod bindgen;
+pub(crate) mod bindings;
 pub(crate) mod bundle;
 pub(crate) mod generators;
 pub(crate) mod setup;

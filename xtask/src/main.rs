@@ -10,7 +10,7 @@ use tracel_xtask::prelude::*;
 #[macros::base_commands(Publish)]
 enum Command {
     /// Generate Rust bindings.
-    Bindgen(commands::bindgen::BindgenCmdArgs),
+    Bindings(commands::bindings::BindingsCmdArgs),
     /// Generat LLVM bundle.
     Bundle(commands::bundle::BundleCmdArgs),
     #[doc = r"Run checks like formatting, linting etc... This command only reports issues, use the 'fix' command to auto-fix issues."]
@@ -25,7 +25,7 @@ fn main() -> anyhow::Result<()> {
     let start = Instant::now();
     let (args, environment) = init_xtask::<Command>(parse_args::<Command>()?)?;
     match args.command {
-        Command::Bindgen(cmd_args) => commands::bindgen::handle_command(cmd_args),
+        Command::Bindings(cmd_args) => commands::bindings::handle_command(cmd_args, environment),
         Command::Bundle(cmd_args) => commands::bundle::handle_command(cmd_args),
         Command::Check(mut cmd_args) => {
             // override the target to avoid using the workspace

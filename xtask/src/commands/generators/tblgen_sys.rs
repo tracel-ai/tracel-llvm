@@ -3,7 +3,7 @@ use tracel_xtask::{prelude::*, utils::workspace::WorkspaceMember};
 
 use crate::commands::{
     BundleWorkspace,
-    bindgen::{
+    bindings::{
         get_bindings_file_path, get_wrapper_file_path, llvm_major_version,
         update_feature_gated_region,
     },

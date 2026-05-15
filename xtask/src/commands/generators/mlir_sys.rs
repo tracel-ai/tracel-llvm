@@ -2,11 +2,11 @@ use tracel_xtask::{prelude::*, utils::workspace::WorkspaceMember};
 
 use crate::commands::{
     BundleWorkspace,
-    bindgen::{get_bindings_file_path, get_wrapper_file_path, update_feature_gated_region},
+    bindings::{get_bindings_file_path, get_wrapper_file_path, update_feature_gated_region},
 };
 
 pub(crate) fn bindgen(member: &WorkspaceMember, ws: &BundleWorkspace) -> anyhow::Result<()> {
-    let major = crate::commands::bindgen::llvm_major_version()?;
+    let major = crate::commands::bindings::llvm_major_version()?;
     let prefix_os = std::env::var_os(format!("MLIR_SYS_{major}0_PREFIX"));
     let version = tracel_llvm_bundler::config::get_version(prefix_os.as_ref())?;
     if !version.starts_with(&format!("{major}.")) {
