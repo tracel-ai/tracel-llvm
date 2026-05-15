@@ -3,18 +3,21 @@ The purpose of this repository is to provide an interface to MLIR from Rust for 
 
 ## Publish a new release
 
-1) Update the LLVM version and release number in file [`config.rs`](./crates/tracel-llvm-bundler/src/config.rs).
+1) Update the LLVM version and release number in file [`config.rs`](./crates/tracel-llvm-bundler/src/config.rs). Update as well all the occurences of the last version in the `Cargo.toml` files. Commit the changes and push the changes to `main`.
 
-2) Create and commit the bindings with `cargo xtask bindgen` for Linux, MacOS and Windows. Additional instructions for new platforms may be found in [docs/gen-bindings.md](docs/gen-bindings.md).
+2) Run the workflow `Create Release` which whill create a new release with the bundles and new bindings files attached as assets.
 
-3) Dispatch the workflow `Release` manually.
+3) Run the command `xtask bindings copy-all` to import the generated bindings for each platform. The command will also lint and format the files.
 
-4) The workflow will create a new release named `v{LLVM_TAG}-{RELEASE_NUMBER}`.
+4) Verify that everything builds correctly.
 
-**Note:** Currently the workflow does not build the MacOS archive. It must be built manually by executing `cargo xtask bundle build`
-at the root of the repository. It will create an archive at `.llvm/macos-AArch64.tar.xz`. Edit the GitHub release and upload this archive to it manually.
+5) Run the command `xtask bindings git-update` to push the imported bindings files and move the release tag to porperly align with the new commit.
 
-5) Then trigger the workflow `Publish` to publish the crates on [crates.io](https://crates.io).
+6) At last, run the workflow `Publish` to publish the crates on [crates.io](https://crates.io).
+
+## Add a new platform
+
+See dedicated documentation at [docs/gen-bindings.md](docs/gen-bindings.md).
 
 ## Third-Party Acknowledgments
 

@@ -4,7 +4,13 @@ These are notes on how to generate bindings for a new platform using the `xtask`
 
 ## Prerequisites
 
-In addition to the Rust toolchain, a `cargo xtask` sub-command installs the tools needed to generate the bindings. Install it with:
+Install Tracel xtask CLI:
+
+```sh
+cargo install tracel-xtask-cli
+```
+
+Then install the dependencies with:
 
 ```sh
 cargo xtask setup
@@ -13,8 +19,8 @@ cargo xtask setup
 It will install tools such as `cmake`, `ninja`, `git`, etc., necessary for the build process.
 
 ## Creating LLVM Toolchain Archive
- 
-A custom build of LLVM is used to create the platform-specific bindings. Pre-built versions are published as a part of a [GitHub release](https://github.com/tracel-ai/tracel-llvm/releases).  If your platform is not yet supported, build it for your platform and create an archive with `cargo xtask bundle`. The build process will take a while. 
+
+A custom build of LLVM is used to create the platform-specific bindings. Pre-built versions are published as a part of a [GitHub release](https://github.com/tracel-ai/tracel-llvm/releases).  If your platform is not yet supported, build it for your platform and create an archive with `cargo xtask bundle`. The build process will take a while.
 
 The resulting bundle is placed in `.llvm/{os}-{arch}.tar.xz` (e.g. `.llvm/linux-AArch64.tar.xz`) along with a checksum sidecar file (`.llvm/{os}-{arch}.checksums.json`).
 
@@ -25,7 +31,7 @@ That said, the  [bindings generation process](#bindings) will run this step auto
 With the LLVM tooling available, generate the bindings for your platform:
 
 ```sh
-cargo xtask bindgen
+cargo xtask bindings generate
 ```
 ## Testing
 
@@ -36,7 +42,7 @@ Before publishing the bindings and LLVM toolchain, test them against CubeCL. The
 
    ```toml
    tracel-llvm = { path = "../tracel-llvm/crates/tracel-llvm", features = ["mlir-helpers"] }
-   ``` 
+   ```
 3. In `cubecl/crates/cubecl-cpu/Cargo.toml`, point `tracel-llvm-bundler` to the local path of the `tracel-llvm-bundler` crate:
 
    ```toml
@@ -55,4 +61,3 @@ Before publishing the bindings and LLVM toolchain, test them against CubeCL. The
 6. In `tracel-llvm` run `cargo xtask check` and fix any reported issues.
 
 7. When everything is in order, submit a PR to `tracel-llvm` with the new bindings. Coordinate with the maintainers to upload the LLVM toolchain archive to the GitHub release. Note: the changes to `cubecl` for testing are temporary and should not be committed.
-
