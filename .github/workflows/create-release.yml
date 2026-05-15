@@ -194,22 +194,22 @@ jobs:
             .llvm/*.bindings.rs
 
   publish-release:
-    needs:
-      - versions
+    # macos runner is not always available
+    # needs: [create-release, llvm-linux, llvm-macos, llvm-windows]
+    needs: [create-release, llvm-linux, llvm-windows]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
       # ----------------------------------------------------------------------
-      - name: Make Release public
+      - name: Make Release the latest one
         id: create_release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
         uses: softprops/action-gh-release@v2.4.2
-        if: ${{ !inputs.dry-run-only }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: ${{ needs.versions.outputs.tag }}
-          tag_name: ${{ needs.versions.outputs.tag }}
+          name: ${{ needs.create-release.outputs.tag }}
+          tag_name: ${{ needs.create-release.outputs.tag }}
           draft: false
           prerelease: false
           generate_release_notes: true
