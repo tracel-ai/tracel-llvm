@@ -86,7 +86,7 @@ jobs:
         run: xtask bundle build
       # ----------------------------------------------------------------------
       - name: Build Rust bindings
-        run: xtask bindgen
+        run: xtask -e prod bindings generate
       # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
@@ -122,7 +122,7 @@ jobs:
         run: xtask bundle build
       # ----------------------------------------------------------------------
       - name: Build Rust bindings
-        run: xtask bindgen
+        run: xtask -e prod bindings generate
       # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
@@ -178,7 +178,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
-          cmd /v:on /c "`"$vsDevCmd`" -arch=x64 && cd /d `"$env:GITHUB_WORKSPACE`" && where cl && where cmake && where xtask && git rev-parse --show-toplevel && xtask bindgen"
+          cmd /v:on /c "`"$vsDevCmd`" -arch=x64 && cd /d `"$env:GITHUB_WORKSPACE`" && where cl && where cmake && where xtask && git rev-parse --show-toplevel && xtask -e prod bindings generate"
       # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
