@@ -25,4 +25,4 @@ paste = "1.0.15"
 thiserror = "2.0.16"
 
 [build-dependencies]
-tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "22.1.4-3" }
+tracel-llvm-bundler = { path = "../tracel-llvm-bundler", version = "22.1.4-4" }
