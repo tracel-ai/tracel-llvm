@@ -111,7 +111,7 @@ pub(crate) fn handle_command(args: BindingsCmdArgs, env: Environment) -> anyhow:
     match args.cmd {
         BindingsSubCmd::Generate(args) => generate_bindings(args, &env),
         BindingsSubCmd::Copy(args) => copy_bindings(args),
-        BindingsSubCmd::CopyAll(args) => copy_all_bindings(args),
+        BindingsSubCmd::CopyAll(args) => copy_all_bindings(args, &env),
     }
 }
 
@@ -162,7 +162,9 @@ fn copy_bindings(args: BindingsCopyArgs) -> anyhow::Result<()> {
     copy_current_platform_bindings(crates, &ws)
 }
 
-fn copy_all_bindings(args: BindingsCopyAllArgs) -> anyhow::Result<()> {
+fn copy_all_bindings(args: BindingsCopyAllArgs, env: &Environment) -> anyhow::Result<()> {
+    ensure_git_worktree_is_clean()?;
+
     let crates = &args.crates;
     let ws = BundleWorkspace::new(Path::new(&args.workspace_dir))?;
 
@@ -188,7 +190,12 @@ fn copy_all_bindings(args: BindingsCopyAllArgs) -> anyhow::Result<()> {
         }
     }
 
-    copy_bindings_for_platforms(crates, &ws, SUPPORTED_PLATFORMS)
+    copy_bindings_for_platforms(crates, &ws, SUPPORTED_PLATFORMS)?;
+    run_fix_lint_and_format(env)?;
+    commit_bindings_update(crates)?;
+    force_update_and_push_version_tag()?;
+
+    Ok(())
 }
 
 fn copy_bindings_for_platforms(
@@ -604,4 +611,163 @@ fn download_to_path(url: &str, dest: &Path) -> anyhow::Result<()> {
         .with_context(|| format!("Should write response body to '{}'", dest.display()))?;
 
     Ok(())
+}
+fn ensure_git_worktree_is_clean() -> anyhow::Result<()> {
+    let output = std::process::Command::new("git")
+        .args(["status", "--porcelain"])
+        .output()
+        .with_context(|| "`git status --porcelain` should execute")?;
+
+    if !output.status.success() {
+        return Err(anyhow::anyhow!(
+            "`git status --porcelain` should succeed.\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
+            output.status,
+            String::from_utf8_lossy(&output.stdout).trim_end(),
+            String::from_utf8_lossy(&output.stderr).trim_end()
+        ));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    if !stdout.trim().is_empty() {
+        return Err(anyhow::anyhow!(
+            "Git worktree should be clean before running `bindings copy-all`.\n\
+             Refusing to mix generated bindings with existing local changes.\n\n\
+             Dirty files:\n{}",
+            stdout.trim_end()
+        ));
+    }
+
+    Ok(())
+}
+
+fn run_fix_lint_and_format(env: &Environment) -> anyhow::Result<()> {
+    let ctx = Context::Std;
+
+    group_info!("Bindings: run fix lint");
+    base_commands::fix::handle_command(
+        FixCmdArgs {
+            command: Some(FixSubCommand::Lint),
+            target: Target::Workspace,
+            exclude: vec![],
+            only: vec![],
+            features: vec![],
+            no_default_features: false,
+            yes: true,
+        },
+        env.clone(),
+        ctx.clone(),
+        Some(true),
+    )?;
+    endgroup!();
+
+    group_info!("Bindings: run fix format");
+    base_commands::fix::handle_command(
+        FixCmdArgs {
+            command: Some(FixSubCommand::Format),
+            target: Target::Workspace,
+            exclude: vec![],
+            only: vec![],
+            features: vec![],
+            no_default_features: false,
+            yes: true,
+        },
+        env.clone(),
+        ctx,
+        Some(true),
+    )?;
+    endgroup!();
+
+    Ok(())
+}
+
+fn commit_bindings_update(crates: &[String]) -> anyhow::Result<()> {
+    let members = get_workspace_members(WorkspaceMemberType::Crate);
+
+    let mut staged_anything = false;
+
+    for member in members {
+        if !crates.contains(&member.name) {
+            continue;
+        }
+
+        match member.name.as_str() {
+            "tracel-mlir-sys" | "tracel-tblgen-rs" => {
+                let bindings_dir = bindings_output_dir(&member);
+                let bindings_dir = bindings_dir.to_string_lossy().to_string();
+
+                run_process(
+                    "git",
+                    &["add", "--", &bindings_dir],
+                    None,
+                    None,
+                    "Should stage generated bindings",
+                )?;
+
+                staged_anything = true;
+            }
+            _ => {}
+        }
+    }
+
+    if !staged_anything {
+        return Err(anyhow::anyhow!(
+            "No supported binding crate was selected; nothing was staged."
+        ));
+    }
+
+    let diff_status = std::process::Command::new("git")
+        .args(["diff", "--cached", "--quiet"])
+        .status()
+        .with_context(|| "`git diff --cached --quiet` should execute")?;
+
+    if diff_status.success() {
+        return Err(anyhow::anyhow!(
+            "No generated binding changes were staged; refusing to create an empty commit."
+        ));
+    }
+
+    let tag = version_tag();
+
+    run_process(
+        "git",
+        &[
+            "commit",
+            "-m",
+            &format!("Update generated bindings for {tag}"),
+        ],
+        None,
+        None,
+        "Should commit generated bindings",
+    )?;
+
+    Ok(())
+}
+
+fn force_update_and_push_version_tag() -> anyhow::Result<()> {
+    let tag = version_tag();
+
+    run_process(
+        "git",
+        &["tag", "-f", &tag, "HEAD"],
+        None,
+        None,
+        "Should force-update version tag locally",
+    )?;
+
+    run_process(
+        "git",
+        &["push", "origin", &format!("refs/tags/{tag}"), "--force"],
+        None,
+        None,
+        "Should force-push version tag",
+    )?;
+
+    Ok(())
+}
+
+fn version_tag() -> String {
+    let version = tracel_llvm_bundler::config::TRACEL_LLVM_VERSION;
+    let release_number = tracel_llvm_bundler::config::TRACEL_LLVM_RELEASE_NUMBER;
+
+    format!("v{version}-{release_number}")
 }
