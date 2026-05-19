@@ -202,12 +202,13 @@ tracel_mlir_rs_macros::dialect! {
 
 #[cfg(test)]
 mod tests {
+    use super::{arith as ods_arith, llvm as ods_llvm};
     use crate::{
         dialect::{arith, func},
         ir::{
-            attribute::{StringAttribute, TypeAttribute},
+            attribute::{IntegerAttribute, StringAttribute, TypeAttribute},
             operation::OperationLike,
-            r#type::FunctionType,
+            r#type::{FunctionType, IntegerType},
             Block, BlockLike, Location, Module, Region, RegionLike, Type,
         },
         pass::{self, PassManager},
@@ -290,69 +291,63 @@ mod tests {
 
     #[test]
     fn compile_arith_addf_builder_with_reverse_order() {
-        todo!("Fix this function");
-        // let context = create_test_context();
-        // let location = Location::unknown(&context);
-        // let r#type = Type::float32(&context);
+        let context = create_test_context();
+        let location = Location::unknown(&context);
+        let r#type = Type::float32(&context);
 
-        // test_operation("addf_builder", &context, &[r#type, r#type], |block| {
-        //     block.append_operation(
-        //         arith::AddFOperationBuilder::new(&context, location)
-        //             .lhs(block.argument(0).unwrap().into())
-        //             .rhs(block.argument(1).unwrap().into())
-        //             .build()
-        //             .into(),
-        //     );
+        test_operation("addf_builder", &context, &[r#type, r#type], |block| {
+            block.append_operation(
+                ods_arith::AddFOperationBuilder::new(&context, location)
+                    .lhs(block.argument(0).unwrap().into())
+                    .rhs(block.argument(1).unwrap().into())
+                    .build(),
+            );
 
-        //     block.append_operation(func::r#return(&context, &[], location).into());
-        // });
+            block.append_operation(func::r#return(&[], location));
+        });
     }
 
     #[test]
     fn compile_llvm_alloca() {
-        todo!("Fix this test");
-        // let context = create_test_context();
-        // let location = Location::unknown(&context);
-        // let integer_type = IntegerType::new(&context, 64).into();
+        let context = create_test_context();
+        let location = Location::unknown(&context);
+        let integer_type = IntegerType::new(&context, 64).into();
 
-        // test_operation("alloc", &context, &[integer_type], |block| {
-        //     let alloca_size = block.argument(0).unwrap().into();
+        test_operation("alloc", &context, &[integer_type], |block| {
+            let alloca_size = block.argument(0).unwrap().into();
 
-        //     block.append_operation(
-        //         llvm::AllocaOperation::builder(&context, location)
-        //             .array_size(alloca_size)
-        //             .elem_type(TypeAttribute::new(integer_type))
-        //             .res(dialect::llvm::r#type::pointer(&context, 0))
-        //             .build()
-        //             .into(),
-        //     );
+            block.append_operation(
+                ods_llvm::AllocaOperation::builder(&context, location)
+                    .array_size(alloca_size)
+                    .elem_type(TypeAttribute::new(integer_type))
+                    .res(crate::dialect::llvm::r#type::pointer(&context, 0))
+                    .build(),
+            );
 
-        //     block.append_operation(func::r#return(&context, &[], location).into());
-        // });
+            block.append_operation(func::r#return(&[], location));
+        });
     }
 
     #[test]
     fn compile_llvm_alloca_builder() {
-        todo!("Fix this test");
-        // let context = create_test_context();
-        // let location = Location::unknown(&context);
-        // let integer_type = IntegerType::new(&context, 64).into();
-        // let ptr_type = dialect::llvm::r#type::pointer(&context, 0);
+        let context = create_test_context();
+        let location = Location::unknown(&context);
+        let integer_type = IntegerType::new(&context, 64).into();
+        let ptr_type = crate::dialect::llvm::r#type::pointer(&context, 0);
 
-        // test_operation("alloc_builder", &context, &[integer_type], |block| {
-        //     let alloca_size = block.argument(0).unwrap().into();
+        test_operation("alloc_builder", &context, &[integer_type], |block| {
+            let alloca_size = block.argument(0).unwrap().into();
 
-        //     block.append_operation(
-        //         llvm::AllocaOperationBuilder::new(&context, location)
-        //             .alignment(IntegerAttribute::new(integer_type, 8))
-        //             .elem_type(TypeAttribute::new(integer_type))
-        //             .array_size(alloca_size)
-        //             .res(ptr_type)
-        //             .build()
-        //             .into(),
-        //     );
+            block.append_operation(
+                ods_llvm::AllocaOperationBuilder::new(&context, location)
+                    .alignment(IntegerAttribute::new(integer_type, 8))
+                    .elem_type(TypeAttribute::new(integer_type))
+                    .array_size(alloca_size)
+                    .res(ptr_type)
+                    .build(),
+            );
 
-        //     block.append_operation(func::r#return(&context, &[], location).into());
-        // });
+            block.append_operation(func::r#return(&[], location));
+        });
     }
 }
