@@ -131,6 +131,58 @@ pub fn zero<'c>(r#type: Type<'c>, location: Location<'c>) -> Operation<'c> {
         .expect("valid operation")
 }
 
+/// Creates a `llvm.mlir.constant` operation.
+pub fn mlir_constant<'c>(
+    context: &'c Context,
+    result_type: Type<'c>,
+    value: Attribute<'c>,
+    location: Location<'c>,
+) -> Operation<'c> {
+    OperationBuilder::new("llvm.mlir.constant", location)
+        .add_attributes(&[(Identifier::new(context, "value"), value)])
+        .add_results(&[result_type])
+        .build()
+        .expect("valid operation")
+}
+
+/// Creates a `llvm.mlir.addressof` operation.
+pub fn mlir_addressof<'c>(
+    context: &'c Context,
+    result_type: Type<'c>,
+    global_name: FlatSymbolRefAttribute<'c>,
+    location: Location<'c>,
+) -> Operation<'c> {
+    OperationBuilder::new("llvm.mlir.addressof", location)
+        .add_attributes(&[(Identifier::new(context, "global_name"), global_name.into())])
+        .add_results(&[result_type])
+        .build()
+        .expect("valid operation")
+}
+
+/// Creates a `llvm.mlir.global` operation with an initializer region.
+pub fn mlir_global<'c>(
+    context: &'c Context,
+    region: Region<'c>,
+    global_type: TypeAttribute<'c>,
+    sym_name: StringAttribute<'c>,
+    linkage: Attribute<'c>,
+    location: Location<'c>,
+) -> Operation<'c> {
+    OperationBuilder::new("llvm.mlir.global", location)
+        .add_attributes(&[
+            (Identifier::new(context, "global_type"), global_type.into()),
+            (Identifier::new(context, "sym_name"), sym_name.into()),
+            (Identifier::new(context, "linkage"), linkage),
+            (
+                Identifier::new(context, "addr_space"),
+                IntegerAttribute::new(IntegerType::new(context, 32).into(), 0).into(),
+            ),
+        ])
+        .add_regions([region])
+        .build()
+        .expect("valid operation")
+}
+
 /// Creates a null pointer.
 #[deprecated]
 pub fn nullptr<'c>(ptr_type: Type<'c>, location: Location<'c>) -> Operation<'c> {
@@ -413,7 +465,6 @@ mod tests {
                 attributes::{linkage, Linkage},
                 r#type::function,
             },
-            ods::llvm::{mlir_addressof, mlir_constant, mlir_global},
         },
         ir::{
             attribute::{IntegerAttribute, StringAttribute, TypeAttribute},
