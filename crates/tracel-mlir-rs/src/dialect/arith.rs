@@ -68,6 +68,26 @@ pub enum CmpiPredicate {
     Uge,
 }
 
+/// `arith.atomic_rmw` kind.
+pub enum AtomicRMWKind {
+    AddF,
+    AddI,
+    AndI,
+    Assign,
+    MaximumF,
+    MaxNumF,
+    MaxS,
+    MaxU,
+    MinimumF,
+    MinNumF,
+    MinS,
+    MinU,
+    MulF,
+    MulI,
+    OrI,
+    XOrI,
+}
+
 /// Creates an `arith.cmpi` operation.
 pub fn cmpi<'c>(
     context: &'c Context,

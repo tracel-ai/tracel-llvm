@@ -1,12 +1,14 @@
 //! `memref` dialect.
 
 use crate::{
+    dialect::arith::AtomicRMWKind,
     ir::{
         attribute::{
             DenseI32ArrayAttribute, DenseI64ArrayAttribute, FlatSymbolRefAttribute,
             IntegerAttribute, StringAttribute, TypeAttribute,
         },
         operation::OperationBuilder,
+        r#type::IntegerType,
         r#type::MemRefType,
         Attribute, Identifier, Location, Operation, Value,
     },
@@ -91,6 +93,27 @@ pub fn cast<'c>(
     OperationBuilder::new("memref.cast", location)
         .add_operands(&[value])
         .add_results(&[r#type.into()])
+        .build()
+        .expect("valid operation")
+}
+
+/// Create a `memref.atomic_rmw` operation.
+pub fn atomic_rmw<'c>(
+    context: &'c Context,
+    kind: AtomicRMWKind,
+    value: Value<'c, '_>,
+    memref: Value<'c, '_>,
+    indices: &[Value<'c, '_>],
+    location: Location<'c>,
+) -> Operation<'c> {
+    OperationBuilder::new("memref.atomic_rmw", location)
+        .add_attributes(&[(
+            Identifier::new(context, "kind"),
+            IntegerAttribute::new(IntegerType::new(context, 64).into(), kind as i64).into(),
+        )])
+        .add_operands(&[value, memref])
+        .add_operands(indices)
+        .enable_result_type_inference()
         .build()
         .expect("valid operation")
 }
@@ -333,9 +356,9 @@ pub fn realloc<'c>(
 mod tests {
     use super::*;
     use crate::{
-        dialect::{func, index},
+        dialect::{arith, func, index},
         ir::{
-            attribute::{DenseElementsAttribute, StringAttribute, TypeAttribute},
+            attribute::{DenseElementsAttribute, FloatAttribute, StringAttribute, TypeAttribute},
             block::BlockLike,
             operation::OperationLike,
             r#type::{FunctionType, IntegerType, RankedTensorType},
@@ -453,6 +476,44 @@ mod tests {
                     .unwrap()
                     .try_into()
                     .unwrap(),
+                location,
+            ));
+        })
+    }
+
+    #[test]
+    fn compile_atomic_rmw() {
+        let context = create_test_context();
+        let location = Location::unknown(&context);
+
+        compile_operation("atomic_rmw", &context, |block| {
+            let memref = block.append_operation(alloca(
+                &context,
+                MemRefType::new(Type::float32(&context), &[10], None, None),
+                &[],
+                &[],
+                None,
+                location,
+            ));
+
+            let value = block.append_operation(arith::constant(
+                &context,
+                FloatAttribute::new(&context, Type::float32(&context), 1.0).into(),
+                location,
+            ));
+
+            let index = block.append_operation(index::constant(
+                &context,
+                IntegerAttribute::new(Type::index(&context), 0),
+                location,
+            ));
+
+            block.append_operation(atomic_rmw(
+                &context,
+                AtomicRMWKind::AddF,
+                value.result(0).unwrap().into(),
+                memref.result(0).unwrap().into(),
+                &[index.result(0).unwrap().into()],
                 location,
             ));
         })
