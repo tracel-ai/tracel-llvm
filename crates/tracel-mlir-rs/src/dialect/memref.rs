@@ -301,6 +301,18 @@ pub fn rank<'c>(value: Value<'c, '_>, location: Location<'c>) -> Operation<'c> {
         .expect("valid operation")
 }
 
+/// Create a `memref.extract_aligned_pointer_as_index` operation.
+pub fn extract_aligned_pointer_as_index<'c>(
+    source: Value<'c, '_>,
+    location: Location<'c>,
+) -> Operation<'c> {
+    OperationBuilder::new("memref.extract_aligned_pointer_as_index", location)
+        .add_operands(&[source])
+        .enable_result_type_inference()
+        .build()
+        .expect("valid operation")
+}
+
 /// Create a `memref.store` operation.
 pub fn store<'c>(
     value: Value<'c, '_>,
@@ -703,6 +715,28 @@ mod tests {
                 location,
             ));
             block.append_operation(rank(memref.result(0).unwrap().into(), location));
+        })
+    }
+
+    #[test]
+    fn compile_extract_aligned_pointer_as_index() {
+        let context = create_test_context();
+        let location = Location::unknown(&context);
+
+        compile_operation("extract_aligned_pointer_as_index", &context, |block| {
+            let memref = block.append_operation(alloca(
+                &context,
+                MemRefType::new(Type::index(&context), &[1], None, None),
+                &[],
+                &[],
+                None,
+                location,
+            ));
+
+            block.append_operation(extract_aligned_pointer_as_index(
+                memref.result(0).unwrap().into(),
+                location,
+            ));
         })
     }
 
