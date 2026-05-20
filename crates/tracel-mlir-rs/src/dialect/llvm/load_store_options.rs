@@ -1,4 +1,5 @@
 use crate::{
+    dialect::llvm::attributes::{atomic_ordering, AtomicOrdering},
     ir::{
         attribute::{ArrayAttribute, IntegerAttribute},
         Attribute, Identifier,
@@ -6,7 +7,7 @@ use crate::{
     Context,
 };
 
-const ATTRIBUTE_COUNT: usize = 7;
+const ATTRIBUTE_COUNT: usize = 8;
 
 // spell-checker: disable
 
@@ -16,6 +17,7 @@ pub struct LoadStoreOptions<'c> {
     align: Option<IntegerAttribute<'c>>,
     volatile: bool,
     nontemporal: bool,
+    ordering: Option<AtomicOrdering>,
     access_groups: Option<ArrayAttribute<'c>>,
     alias_scopes: Option<ArrayAttribute<'c>>,
     noalias_scopes: Option<ArrayAttribute<'c>>,
@@ -43,6 +45,12 @@ impl<'c> LoadStoreOptions<'c> {
     /// Sets a nontemporal flag.
     pub fn nontemporal(mut self, nontemporal: bool) -> Self {
         self.nontemporal = nontemporal;
+        self
+    }
+
+    /// Sets an atomic ordering.
+    pub const fn atomic(mut self, ordering: AtomicOrdering) -> Self {
+        self.ordering = Some(ordering);
         self
     }
 
@@ -91,6 +99,13 @@ impl<'c> LoadStoreOptions<'c> {
             attributes.push((
                 Identifier::new(context, "nontemporal"),
                 Attribute::unit(context),
+            ));
+        }
+
+        if let Some(ordering) = self.ordering {
+            attributes.push((
+                Identifier::new(context, "ordering"),
+                atomic_ordering(context, ordering),
             ));
         }
 

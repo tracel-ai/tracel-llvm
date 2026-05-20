@@ -462,7 +462,7 @@ mod tests {
         dialect::{
             arith, func,
             llvm::{
-                attributes::{linkage, Linkage},
+                attributes::{linkage, AtomicOrdering, Linkage},
                 r#type::function,
             },
         },
@@ -962,6 +962,90 @@ mod tests {
                         .align(Some(IntegerAttribute::new(integer_type, 4)))
                         .volatile(true)
                         .nontemporal(true),
+                ));
+
+                block.append_operation(func::r#return(&[], location));
+
+                let region = Region::new();
+                region.append_block(block);
+                region
+            },
+            &[],
+            location,
+        ));
+
+        convert_module(&context, &mut module);
+
+        assert!(module.as_operation().verify());
+        insta::assert_snapshot!(module.as_operation());
+    }
+
+    #[test]
+    fn compile_load_atomic() {
+        let context = create_test_context();
+
+        let location = Location::unknown(&context);
+        let mut module = Module::new(location);
+        let integer_type = IntegerType::new(&context, 64).into();
+        let ptr_type = r#type::pointer(&context, 0);
+
+        module.body().append_operation(func::func(
+            &context,
+            StringAttribute::new(&context, "foo"),
+            TypeAttribute::new(FunctionType::new(&context, &[ptr_type], &[]).into()),
+            {
+                let block = Block::new(&[(ptr_type, location)]);
+
+                block.append_operation(load(
+                    &context,
+                    block.argument(0).unwrap().into(),
+                    integer_type,
+                    location,
+                    LoadStoreOptions::new()
+                        .align(Some(IntegerAttribute::new(integer_type, 8)))
+                        .atomic(AtomicOrdering::Monotonic),
+                ));
+
+                block.append_operation(func::r#return(&[], location));
+
+                let region = Region::new();
+                region.append_block(block);
+                region
+            },
+            &[],
+            location,
+        ));
+
+        convert_module(&context, &mut module);
+
+        assert!(module.as_operation().verify());
+        insta::assert_snapshot!(module.as_operation());
+    }
+
+    #[test]
+    fn compile_store_atomic() {
+        let context = create_test_context();
+
+        let location = Location::unknown(&context);
+        let mut module = Module::new(location);
+        let integer_type = IntegerType::new(&context, 64).into();
+        let ptr_type = r#type::pointer(&context, 0);
+
+        module.body().append_operation(func::func(
+            &context,
+            StringAttribute::new(&context, "foo"),
+            TypeAttribute::new(FunctionType::new(&context, &[ptr_type, integer_type], &[]).into()),
+            {
+                let block = Block::new(&[(ptr_type, location), (integer_type, location)]);
+
+                block.append_operation(store(
+                    &context,
+                    block.argument(1).unwrap().into(),
+                    block.argument(0).unwrap().into(),
+                    location,
+                    LoadStoreOptions::new()
+                        .align(Some(IntegerAttribute::new(integer_type, 8)))
+                        .atomic(AtomicOrdering::Monotonic),
                 ));
 
                 block.append_operation(func::r#return(&[], location));
