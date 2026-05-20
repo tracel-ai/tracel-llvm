@@ -8,17 +8,20 @@ use crate::{
         },
         operation::OperationBuilder,
         r#type::IntegerType,
-        Attribute, Identifier, Location, Operation, Region, Type, Value,
+        Attribute, Identifier, Location, Operation, Region, Type, Value, ValueLike,
     },
     Context,
 };
 pub use alloca_options::*;
+pub use cmpxchg_options::*;
 pub use load_store_options::*;
 
 mod alloca_options;
 pub mod attributes;
+mod cmpxchg_options;
 mod load_store_options;
 pub mod r#type;
+use attributes::AtomicOrdering;
 
 // spell-checker: disable
 
@@ -252,6 +255,31 @@ pub fn load<'c>(
         .add_operands(&[addr])
         .add_attributes(&extra_options.into_attributes(context))
         .add_results(&[r#type])
+        .build()
+        .expect("valid operation")
+}
+
+/// Creates a `llvm.cmpxchg` operation.
+pub fn cmpxchg<'c>(
+    context: &'c Context,
+    ptr: Value<'c, '_>,
+    cmp: Value<'c, '_>,
+    val: Value<'c, '_>,
+    success_ordering: AtomicOrdering,
+    failure_ordering: AtomicOrdering,
+    location: Location<'c>,
+    extra_options: CmpXchgOptions<'c>,
+) -> Operation<'c> {
+    let result_type = r#type::r#struct(
+        context,
+        &[val.r#type(), IntegerType::new(context, 1).into()],
+        false,
+    );
+
+    OperationBuilder::new("llvm.cmpxchg", location)
+        .add_operands(&[ptr, cmp, val])
+        .add_attributes(&extra_options.into_attributes(context, success_ordering, failure_ordering))
+        .add_results(&[result_type])
         .build()
         .expect("valid operation")
 }
@@ -1046,6 +1074,57 @@ mod tests {
                     LoadStoreOptions::new()
                         .align(Some(IntegerAttribute::new(integer_type, 8)))
                         .atomic(AtomicOrdering::Monotonic),
+                ));
+
+                block.append_operation(func::r#return(&[], location));
+
+                let region = Region::new();
+                region.append_block(block);
+                region
+            },
+            &[],
+            location,
+        ));
+
+        convert_module(&context, &mut module);
+
+        assert!(module.as_operation().verify());
+        insta::assert_snapshot!(module.as_operation());
+    }
+
+    #[test]
+    fn compile_cmpxchg() {
+        let context = create_test_context();
+
+        let location = Location::unknown(&context);
+        let mut module = Module::new(location);
+        let integer_type = IntegerType::new(&context, 64).into();
+        let ptr_type = r#type::pointer(&context, 0);
+
+        module.body().append_operation(func::func(
+            &context,
+            StringAttribute::new(&context, "foo"),
+            TypeAttribute::new(
+                FunctionType::new(&context, &[ptr_type, integer_type, integer_type], &[]).into(),
+            ),
+            {
+                let block = Block::new(&[
+                    (ptr_type, location),
+                    (integer_type, location),
+                    (integer_type, location),
+                ]);
+
+                block.append_operation(cmpxchg(
+                    &context,
+                    block.argument(0).unwrap().into(),
+                    block.argument(1).unwrap().into(),
+                    block.argument(2).unwrap().into(),
+                    AtomicOrdering::Monotonic,
+                    AtomicOrdering::Monotonic,
+                    location,
+                    CmpXchgOptions::new()
+                        .align(Some(IntegerAttribute::new(integer_type, 8)))
+                        .weak(true),
                 ));
 
                 block.append_operation(func::r#return(&[], location));
