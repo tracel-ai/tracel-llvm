@@ -21,7 +21,7 @@ pub mod attributes;
 mod cmpxchg_options;
 mod load_store_options;
 pub mod r#type;
-use attributes::AtomicOrdering;
+use attributes::{atomic_ordering, AtomicOrdering};
 
 // spell-checker: disable
 
@@ -280,6 +280,28 @@ pub fn cmpxchg<'c>(
         .add_operands(&[ptr, cmp, val])
         .add_attributes(&extra_options.into_attributes(context, success_ordering, failure_ordering))
         .add_results(&[result_type])
+        .build()
+        .expect("valid operation")
+}
+
+/// Creates a `llvm.fence` operation.
+pub fn fence<'c>(
+    context: &'c Context,
+    ordering: AtomicOrdering,
+    syncscope: Option<StringAttribute<'c>>,
+    location: Location<'c>,
+) -> Operation<'c> {
+    let mut attributes = vec![(
+        Identifier::new(context, "ordering"),
+        atomic_ordering(context, ordering),
+    )];
+
+    if let Some(syncscope) = syncscope {
+        attributes.push((Identifier::new(context, "syncscope"), syncscope.into()));
+    }
+
+    OperationBuilder::new("llvm.fence", location)
+        .add_attributes(&attributes)
         .build()
         .expect("valid operation")
 }
@@ -1125,6 +1147,43 @@ mod tests {
                     CmpXchgOptions::new()
                         .align(Some(IntegerAttribute::new(integer_type, 8)))
                         .weak(true),
+                ));
+
+                block.append_operation(func::r#return(&[], location));
+
+                let region = Region::new();
+                region.append_block(block);
+                region
+            },
+            &[],
+            location,
+        ));
+
+        convert_module(&context, &mut module);
+
+        assert!(module.as_operation().verify());
+        insta::assert_snapshot!(module.as_operation());
+    }
+
+    #[test]
+    fn compile_fence() {
+        let context = create_test_context();
+
+        let location = Location::unknown(&context);
+        let mut module = Module::new(location);
+
+        module.body().append_operation(func::func(
+            &context,
+            StringAttribute::new(&context, "foo"),
+            TypeAttribute::new(FunctionType::new(&context, &[], &[]).into()),
+            {
+                let block = Block::new(&[]);
+
+                block.append_operation(fence(
+                    &context,
+                    AtomicOrdering::Acquire,
+                    Some(StringAttribute::new(&context, "singlethread")),
+                    location,
                 ));
 
                 block.append_operation(func::r#return(&[], location));
