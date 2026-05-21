@@ -97,7 +97,7 @@ unsafe extern "C" fn callback_clone<'a, T: RunExternalPass<'a>>(pass: *mut T) ->
 /// The following example pass dumps operations.
 ///
 /// ```
-/// use mlir_rs::{
+/// use tracel_mlir_rs::{
 ///     ir::{operation::OperationLike, OperationRef},
 ///     pass::{ExternalPass, RunExternalPass},
 ///     ContextRef,
@@ -140,7 +140,7 @@ impl<'c, F: FnMut(OperationRef<'c, '_>, ExternalPass<'_>) + Clone> RunExternalPa
 /// # Examples
 ///
 /// ```
-/// use mlir_rs::{
+/// use tracel_mlir_rs::{
 ///     ir::{operation::OperationLike, r#type::TypeId, OperationRef},
 ///     pass::{create_external, ExternalPass},
 ///     Context,

@@ -8,17 +8,20 @@ use crate::{
         },
         operation::OperationBuilder,
         r#type::IntegerType,
-        Attribute, Identifier, Location, Operation, Region, Type, Value,
+        Attribute, Identifier, Location, Operation, Region, Type, Value, ValueLike,
     },
     Context,
 };
 pub use alloca_options::*;
+pub use cmpxchg_options::*;
 pub use load_store_options::*;
 
 mod alloca_options;
 pub mod attributes;
+mod cmpxchg_options;
 mod load_store_options;
 pub mod r#type;
+use attributes::{atomic_ordering, AtomicOrdering};
 
 // spell-checker: disable
 
@@ -131,6 +134,58 @@ pub fn zero<'c>(r#type: Type<'c>, location: Location<'c>) -> Operation<'c> {
         .expect("valid operation")
 }
 
+/// Creates a `llvm.mlir.constant` operation.
+pub fn mlir_constant<'c>(
+    context: &'c Context,
+    result_type: Type<'c>,
+    value: Attribute<'c>,
+    location: Location<'c>,
+) -> Operation<'c> {
+    OperationBuilder::new("llvm.mlir.constant", location)
+        .add_attributes(&[(Identifier::new(context, "value"), value)])
+        .add_results(&[result_type])
+        .build()
+        .expect("valid operation")
+}
+
+/// Creates a `llvm.mlir.addressof` operation.
+pub fn mlir_addressof<'c>(
+    context: &'c Context,
+    result_type: Type<'c>,
+    global_name: FlatSymbolRefAttribute<'c>,
+    location: Location<'c>,
+) -> Operation<'c> {
+    OperationBuilder::new("llvm.mlir.addressof", location)
+        .add_attributes(&[(Identifier::new(context, "global_name"), global_name.into())])
+        .add_results(&[result_type])
+        .build()
+        .expect("valid operation")
+}
+
+/// Creates a `llvm.mlir.global` operation with an initializer region.
+pub fn mlir_global<'c>(
+    context: &'c Context,
+    region: Region<'c>,
+    global_type: TypeAttribute<'c>,
+    sym_name: StringAttribute<'c>,
+    linkage: Attribute<'c>,
+    location: Location<'c>,
+) -> Operation<'c> {
+    OperationBuilder::new("llvm.mlir.global", location)
+        .add_attributes(&[
+            (Identifier::new(context, "global_type"), global_type.into()),
+            (Identifier::new(context, "sym_name"), sym_name.into()),
+            (Identifier::new(context, "linkage"), linkage),
+            (
+                Identifier::new(context, "addr_space"),
+                IntegerAttribute::new(IntegerType::new(context, 32).into(), 0).into(),
+            ),
+        ])
+        .add_regions([region])
+        .build()
+        .expect("valid operation")
+}
+
 /// Creates a null pointer.
 #[deprecated]
 pub fn nullptr<'c>(ptr_type: Type<'c>, location: Location<'c>) -> Operation<'c> {
@@ -151,6 +206,19 @@ pub fn bitcast<'c>(
     location: Location<'c>,
 ) -> Operation<'c> {
     OperationBuilder::new("llvm.bitcast", location)
+        .add_operands(&[argument])
+        .add_results(&[result])
+        .build()
+        .expect("valid operation")
+}
+
+/// Creates a `llvm.inttoptr` operation.
+pub fn inttoptr<'c>(
+    argument: Value<'c, '_>,
+    result: Type<'c>,
+    location: Location<'c>,
+) -> Operation<'c> {
+    OperationBuilder::new("llvm.inttoptr", location)
         .add_operands(&[argument])
         .add_results(&[result])
         .build()
@@ -200,6 +268,53 @@ pub fn load<'c>(
         .add_operands(&[addr])
         .add_attributes(&extra_options.into_attributes(context))
         .add_results(&[r#type])
+        .build()
+        .expect("valid operation")
+}
+
+/// Creates a `llvm.cmpxchg` operation.
+pub fn cmpxchg<'c>(
+    context: &'c Context,
+    ptr: Value<'c, '_>,
+    cmp: Value<'c, '_>,
+    val: Value<'c, '_>,
+    success_ordering: AtomicOrdering,
+    failure_ordering: AtomicOrdering,
+    location: Location<'c>,
+    extra_options: CmpXchgOptions<'c>,
+) -> Operation<'c> {
+    let result_type = r#type::r#struct(
+        context,
+        &[val.r#type(), IntegerType::new(context, 1).into()],
+        false,
+    );
+
+    OperationBuilder::new("llvm.cmpxchg", location)
+        .add_operands(&[ptr, cmp, val])
+        .add_attributes(&extra_options.into_attributes(context, success_ordering, failure_ordering))
+        .add_results(&[result_type])
+        .build()
+        .expect("valid operation")
+}
+
+/// Creates a `llvm.fence` operation.
+pub fn fence<'c>(
+    context: &'c Context,
+    ordering: AtomicOrdering,
+    syncscope: Option<StringAttribute<'c>>,
+    location: Location<'c>,
+) -> Operation<'c> {
+    let mut attributes = vec![(
+        Identifier::new(context, "ordering"),
+        atomic_ordering(context, ordering),
+    )];
+
+    if let Some(syncscope) = syncscope {
+        attributes.push((Identifier::new(context, "syncscope"), syncscope.into()));
+    }
+
+    OperationBuilder::new("llvm.fence", location)
+        .add_attributes(&attributes)
         .build()
         .expect("valid operation")
 }
@@ -410,10 +525,9 @@ mod tests {
         dialect::{
             arith, func,
             llvm::{
-                attributes::{linkage, Linkage},
+                attributes::{linkage, AtomicOrdering, Linkage},
                 r#type::function,
             },
-            ods::llvm::{mlir_addressof, mlir_constant, mlir_global},
         },
         ir::{
             attribute::{IntegerAttribute, StringAttribute, TypeAttribute},
@@ -930,6 +1044,178 @@ mod tests {
     }
 
     #[test]
+    fn compile_load_atomic() {
+        let context = create_test_context();
+
+        let location = Location::unknown(&context);
+        let mut module = Module::new(location);
+        let integer_type = IntegerType::new(&context, 64).into();
+        let ptr_type = r#type::pointer(&context, 0);
+
+        module.body().append_operation(func::func(
+            &context,
+            StringAttribute::new(&context, "foo"),
+            TypeAttribute::new(FunctionType::new(&context, &[ptr_type], &[]).into()),
+            {
+                let block = Block::new(&[(ptr_type, location)]);
+
+                block.append_operation(load(
+                    &context,
+                    block.argument(0).unwrap().into(),
+                    integer_type,
+                    location,
+                    LoadStoreOptions::new()
+                        .align(Some(IntegerAttribute::new(integer_type, 8)))
+                        .atomic(AtomicOrdering::Monotonic),
+                ));
+
+                block.append_operation(func::r#return(&[], location));
+
+                let region = Region::new();
+                region.append_block(block);
+                region
+            },
+            &[],
+            location,
+        ));
+
+        convert_module(&context, &mut module);
+
+        assert!(module.as_operation().verify());
+        insta::assert_snapshot!(module.as_operation());
+    }
+
+    #[test]
+    fn compile_store_atomic() {
+        let context = create_test_context();
+
+        let location = Location::unknown(&context);
+        let mut module = Module::new(location);
+        let integer_type = IntegerType::new(&context, 64).into();
+        let ptr_type = r#type::pointer(&context, 0);
+
+        module.body().append_operation(func::func(
+            &context,
+            StringAttribute::new(&context, "foo"),
+            TypeAttribute::new(FunctionType::new(&context, &[ptr_type, integer_type], &[]).into()),
+            {
+                let block = Block::new(&[(ptr_type, location), (integer_type, location)]);
+
+                block.append_operation(store(
+                    &context,
+                    block.argument(1).unwrap().into(),
+                    block.argument(0).unwrap().into(),
+                    location,
+                    LoadStoreOptions::new()
+                        .align(Some(IntegerAttribute::new(integer_type, 8)))
+                        .atomic(AtomicOrdering::Monotonic),
+                ));
+
+                block.append_operation(func::r#return(&[], location));
+
+                let region = Region::new();
+                region.append_block(block);
+                region
+            },
+            &[],
+            location,
+        ));
+
+        convert_module(&context, &mut module);
+
+        assert!(module.as_operation().verify());
+        insta::assert_snapshot!(module.as_operation());
+    }
+
+    #[test]
+    fn compile_cmpxchg() {
+        let context = create_test_context();
+
+        let location = Location::unknown(&context);
+        let mut module = Module::new(location);
+        let integer_type = IntegerType::new(&context, 64).into();
+        let ptr_type = r#type::pointer(&context, 0);
+
+        module.body().append_operation(func::func(
+            &context,
+            StringAttribute::new(&context, "foo"),
+            TypeAttribute::new(
+                FunctionType::new(&context, &[ptr_type, integer_type, integer_type], &[]).into(),
+            ),
+            {
+                let block = Block::new(&[
+                    (ptr_type, location),
+                    (integer_type, location),
+                    (integer_type, location),
+                ]);
+
+                block.append_operation(cmpxchg(
+                    &context,
+                    block.argument(0).unwrap().into(),
+                    block.argument(1).unwrap().into(),
+                    block.argument(2).unwrap().into(),
+                    AtomicOrdering::Monotonic,
+                    AtomicOrdering::Monotonic,
+                    location,
+                    CmpXchgOptions::new()
+                        .align(Some(IntegerAttribute::new(integer_type, 8)))
+                        .weak(true),
+                ));
+
+                block.append_operation(func::r#return(&[], location));
+
+                let region = Region::new();
+                region.append_block(block);
+                region
+            },
+            &[],
+            location,
+        ));
+
+        convert_module(&context, &mut module);
+
+        assert!(module.as_operation().verify());
+        insta::assert_snapshot!(module.as_operation());
+    }
+
+    #[test]
+    fn compile_fence() {
+        let context = create_test_context();
+
+        let location = Location::unknown(&context);
+        let mut module = Module::new(location);
+
+        module.body().append_operation(func::func(
+            &context,
+            StringAttribute::new(&context, "foo"),
+            TypeAttribute::new(FunctionType::new(&context, &[], &[]).into()),
+            {
+                let block = Block::new(&[]);
+
+                block.append_operation(fence(
+                    &context,
+                    AtomicOrdering::Acquire,
+                    Some(StringAttribute::new(&context, "singlethread")),
+                    location,
+                ));
+
+                block.append_operation(func::r#return(&[], location));
+
+                let region = Region::new();
+                region.append_block(block);
+                region
+            },
+            &[],
+            location,
+        ));
+
+        convert_module(&context, &mut module);
+
+        assert!(module.as_operation().verify());
+        insta::assert_snapshot!(module.as_operation());
+    }
+
+    #[test]
     fn compile_func() {
         let context = create_test_context();
 
@@ -1320,6 +1606,48 @@ mod tests {
                         block.argument(0).unwrap().into(),
                         true,
                         integer_type,
+                        location,
+                    ))
+                    .result(0)
+                    .unwrap()
+                    .into();
+
+                block.append_operation(func::r#return(&[res], location));
+
+                let region = Region::new();
+                region.append_block(block);
+                region
+            },
+            &[],
+            location,
+        ));
+
+        convert_module(&context, &mut module);
+
+        assert!(module.as_operation().verify());
+        insta::assert_snapshot!(module.as_operation());
+    }
+
+    #[test]
+    fn compile_inttoptr() {
+        let context = create_test_context();
+
+        let location = Location::unknown(&context);
+        let mut module = Module::new(location);
+        let integer_type = IntegerType::new(&context, 64).into();
+        let ptr_type = pointer(&context, 0);
+
+        module.body().append_operation(func::func(
+            &context,
+            StringAttribute::new(&context, "foo"),
+            TypeAttribute::new(FunctionType::new(&context, &[integer_type], &[ptr_type]).into()),
+            {
+                let block = Block::new(&[(integer_type, location)]);
+
+                let res = block
+                    .append_operation(inttoptr(
+                        block.argument(0).unwrap().into(),
+                        ptr_type,
                         location,
                     ))
                     .result(0)

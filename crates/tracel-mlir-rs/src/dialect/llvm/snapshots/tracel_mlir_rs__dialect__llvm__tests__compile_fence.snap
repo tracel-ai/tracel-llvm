@@ -1,0 +1,10 @@
+---
+source: crates/tracel-mlir-rs/src/dialect/llvm/mod.rs
+expression: module.as_operation()
+---
+module {
+  llvm.func @foo() {
+    llvm.fence syncscope("singlethread") acquire
+    llvm.return
+  }
+}

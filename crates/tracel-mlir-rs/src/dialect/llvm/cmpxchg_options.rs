@@ -1,31 +1,29 @@
 use crate::{
     dialect::llvm::attributes::{atomic_ordering, AtomicOrdering},
     ir::{
-        attribute::{ArrayAttribute, IntegerAttribute},
+        attribute::{ArrayAttribute, IntegerAttribute, StringAttribute},
         Attribute, Identifier,
     },
     Context,
 };
 
-const ATTRIBUTE_COUNT: usize = 8;
+const ATTRIBUTE_COUNT: usize = 10;
 
-// spell-checker: disable
-
-/// Load/store options.
+/// Compare-exchange options.
 #[derive(Debug, Default, Clone, Copy)]
-pub struct LoadStoreOptions<'c> {
+pub struct CmpXchgOptions<'c> {
     align: Option<IntegerAttribute<'c>>,
     volatile: bool,
-    nontemporal: bool,
-    ordering: Option<AtomicOrdering>,
+    weak: bool,
+    syncscope: Option<StringAttribute<'c>>,
     access_groups: Option<ArrayAttribute<'c>>,
     alias_scopes: Option<ArrayAttribute<'c>>,
     noalias_scopes: Option<ArrayAttribute<'c>>,
     tbaa: Option<ArrayAttribute<'c>>,
 }
 
-impl<'c> LoadStoreOptions<'c> {
-    /// Creates load/store options.
+impl<'c> CmpXchgOptions<'c> {
+    /// Creates compare-exchange options.
     pub fn new() -> Self {
         Self::default()
     }
@@ -42,15 +40,15 @@ impl<'c> LoadStoreOptions<'c> {
         self
     }
 
-    /// Sets a nontemporal flag.
-    pub fn nontemporal(mut self, nontemporal: bool) -> Self {
-        self.nontemporal = nontemporal;
+    /// Sets a weak flag.
+    pub fn weak(mut self, weak: bool) -> Self {
+        self.weak = weak;
         self
     }
 
-    /// Sets an atomic ordering.
-    pub const fn atomic(mut self, ordering: AtomicOrdering) -> Self {
-        self.ordering = Some(ordering);
+    /// Sets a synchronization scope.
+    pub fn syncscope(mut self, syncscope: Option<StringAttribute<'c>>) -> Self {
+        self.syncscope = syncscope;
         self
     }
 
@@ -67,7 +65,7 @@ impl<'c> LoadStoreOptions<'c> {
     }
 
     /// Sets noalias scopes.
-    pub fn nonalias_scopes(mut self, noalias_scopes: Option<ArrayAttribute<'c>>) -> Self {
+    pub fn noalias_scopes(mut self, noalias_scopes: Option<ArrayAttribute<'c>>) -> Self {
         self.noalias_scopes = noalias_scopes;
         self
     }
@@ -81,31 +79,36 @@ impl<'c> LoadStoreOptions<'c> {
     pub(super) fn into_attributes(
         self,
         context: &'c Context,
+        success_ordering: AtomicOrdering,
+        failure_ordering: AtomicOrdering,
     ) -> Vec<(Identifier<'c>, Attribute<'c>)> {
         let mut attributes = Vec::with_capacity(ATTRIBUTE_COUNT);
 
+        attributes.push((
+            Identifier::new(context, "success_ordering"),
+            atomic_ordering(context, success_ordering),
+        ));
+        attributes.push((
+            Identifier::new(context, "failure_ordering"),
+            atomic_ordering(context, failure_ordering),
+        ));
+
+        if let Some(syncscope) = self.syncscope {
+            attributes.push((Identifier::new(context, "syncscope"), syncscope.into()));
+        }
+
         if let Some(align) = self.align {
             attributes.push((Identifier::new(context, "alignment"), align.into()));
+        }
+
+        if self.weak {
+            attributes.push((Identifier::new(context, "weak"), Attribute::unit(context)));
         }
 
         if self.volatile {
             attributes.push((
                 Identifier::new(context, "volatile_"),
                 Attribute::unit(context),
-            ));
-        }
-
-        if self.nontemporal {
-            attributes.push((
-                Identifier::new(context, "nontemporal"),
-                Attribute::unit(context),
-            ));
-        }
-
-        if let Some(ordering) = self.ordering {
-            attributes.push((
-                Identifier::new(context, "ordering"),
-                atomic_ordering(context, ordering),
             ));
         }
 
