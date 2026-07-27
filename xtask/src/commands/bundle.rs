@@ -9,7 +9,7 @@ use clap::{Args, Subcommand};
 use tracel_llvm_bundler::build_support::checksums::{sha256_file_hex, sha256_tree_content_hex};
 use tracel_xtask::prelude::{anyhow::Context as _, *};
 
-use crate::utils::tblgen_shim::{CTableGenShimConfig, build_and_install_ctablegen_shim};
+use crate::utils::tblgen_shim::{build_and_install_ctablegen_shim, CTableGenShimConfig};
 
 use super::BundleWorkspace;
 
