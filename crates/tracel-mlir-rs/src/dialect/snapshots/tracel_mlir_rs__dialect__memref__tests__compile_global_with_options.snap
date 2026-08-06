@@ -1,7 +1,0 @@
----
-source: crates/tracel-mlir-rs/src/dialect/memref.rs
-expression: module.as_operation()
----
-module {
-  memref.global "private" constant @foo : memref<i64> = dense<42> {alignment = 8 : i64}
-}

@@ -16,6 +16,7 @@ xtask = []
 
 [dependencies]
 anyhow = "1.0.99"
+cc = "1.2"
 constcat = "0.6.1"
 dirs = { version = "6.0" }
 liblzma = { version = "0.4.4", features = ["static", "parallel"] }
