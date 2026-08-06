@@ -6,7 +6,6 @@ use std::{
     process::Command,
 };
 
-const LLVM_MAJOR_VERSION: usize = 22;
 const TRACEL_LLVM_CACHE_DIRECTORY_NAME: &str = "tracel";
 const TRACEL_LLVM_CACHE_PREFIX: &str = "tracel-llvm";
 const TRACEL_LLVM_ARTIFACT_BASE_URL: &str =
@@ -175,21 +174,6 @@ impl From<std::str::Utf8Error> for ConfigError {
     fn from(value: std::str::Utf8Error) -> Self {
         ConfigError::Utf8(value)
     }
-}
-
-/// Should be called only in build.rs files
-/// Returns the LLVM major version
-pub fn init() -> ConfigResult<usize> {
-    let llvm_path = llvm_path()?;
-    let libclang_path = llvm_path.join("lib");
-    let include_path = llvm_path.join("include");
-    unsafe {
-        std::env::set_var("TABLEGEN_220_PREFIX", &llvm_path);
-        std::env::set_var("MLIR_SYS_220_PREFIX", &llvm_path);
-        std::env::set_var("LIBCLANG_PATH", &libclang_path);
-        std::env::set_var("LLVM_INCLUDE_DIRECTORY", &include_path);
-    }
-    Ok(LLVM_MAJOR_VERSION)
 }
 
 pub fn llvm_version() -> String {

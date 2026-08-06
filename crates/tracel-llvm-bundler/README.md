@@ -1,36 +1,46 @@
-# llvm-bundler-rs
+# tracel-llvm-bundler
 
-`llvm-bundler-rs` is a Rust crate designed to automatically bundle LLVM and statically link MLIR into your project. By downloading prebuilt LLVM artifacts and configuring the necessary environment variables, it simplifies the setup process for projects that rely on LLVM and MLIR tooling.
+`tracel-llvm-bundler` downloads a prebuilt, self-contained LLVM toolchain and emits the link
+configuration for it, so that a project can link LLVM statically without a system installation.
 
 ## Features
 
-- **Automatic LLVM Bundling**: Downloads and decompresses prebuilt LLVM artifacts (currently using Linux x64 tarballs) from a GitHub release.
-- **Static Linking for MLIR**: Configures environment variables to link LLVM and MLIR libraries properly with the correct order by parsing the CMake with a Regex and doing a topological sort.
+- **Automatic LLVM bundling**: downloads, verifies and decompresses a prebuilt LLVM release for the
+  host platform, cached under the user data directory.
+- **Link configuration**: emits the library search path, the LLVM libraries in dependency order, the
+  system libraries and the target initialization wrappers.
 
-## Installation
+## Usage
 
-Add `llvm-bundler-rs` to your project's `Cargo.toml` and use it in your `build.rs` to compile in the right order:
+Add it as a build dependency; the bundle is downloaded when the crate itself is compiled, before
+your `build.rs` runs:
 
 ```toml
-[dev-dependencies]
-llvm-bundler-rs = "0.1.0"
+[build-dependencies]
+tracel-llvm-bundler = "22.1.4-4"
 ```
 
-To set the env variable and download if missing:
-```rust
-tracel_llvm_bundler::bundler::bundle_cache()?;
+Build `llvm-sys` with `no-llvm-linking` and `disable-alltargets-init` so that it does not look for
+`llvm-config` on its own:
+
+```toml
+[dependencies]
+llvm-sys = { version = "221", features = ["no-llvm-linking", "disable-alltargets-init"] }
 ```
 
-To get the compile order of MLIR .a:
-```rust
-use tracel_llvm_bundler::{dependency_graph::DependencyGraph, topological_sort::TopologicalSort};
+Then emit the link configuration from `build.rs`:
 
-let prefix =
-    Path::new(&env::var(format!("MLIR_SYS_{LLVM_MAJOR_VERSION}0_PREFIX")).unwrap_or_default())
-        .join("lib")
-        .join("cmake")
-        .join("mlir")
-        .join("MLIRTargets.cmake");
-let path = DependencyGraph::from_cmake(prefix)?;
-let mlirlib = TopologicalSort::get_ordered_list(&path);
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracel_llvm_bundler::llvm_sys::link()?;
+    Ok(())
+}
+```
+
+Individual `llvm-config` queries are also available from `tracel_llvm_bundler::config`, taking the
+install prefix returned by `llvm_path()`:
+
+```rust
+let prefix = tracel_llvm_bundler::config::llvm_path()?.into_os_string();
+let libdir = tracel_llvm_bundler::config::get_libdir(Some(&prefix))?;
 ```
