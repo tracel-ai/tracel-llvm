@@ -2259,6 +2259,7 @@ version = "22.1.4-4"
 dependencies = [
  "anyhow",
  "bytes",
+ "cc",
  "constcat",
  "dirs",
  "liblzma",
@@ -2269,13 +2270,6 @@ dependencies = [
  "sha2",
  "tar",
  "walkdir",
-]
-
-[[package]]
-name = "tracel-mlir-sys"
-version = "22.1.4-4"
-dependencies = [
- "tracel-llvm-bundler",
 ]
 
 [[package]]
@@ -2894,7 +2888,6 @@ dependencies = [
  "reqwest",
  "strum",
  "tracel-llvm-bundler",
- "tracel-mlir-sys",
  "tracel-xtask",
  "which",
 ]

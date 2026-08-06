@@ -19,7 +19,7 @@ const FEATURE_GATE: &str = "xtask";
 
 const GITHUB_REPOSITORY: &str = "tracel-ai/tracel-llvm";
 
-const DEFAULT_BINDINGS_CRATES: &str = "tracel-mlir-sys,tracel-tblgen-rs";
+const DEFAULT_BINDINGS_CRATES: &str = "tracel-tblgen-rs";
 
 #[derive(clap::Args)]
 pub struct BindingsCmdArgs {
@@ -146,9 +146,6 @@ fn generate_bindings(args: BindingsGenerateArgs, env: &Environment) -> anyhow::R
         }
 
         match member.name.as_str() {
-            "tracel-mlir-sys" => {
-                generators::mlir_sys::bindgen(&member, &ws)?;
-            }
             "tracel-tblgen-rs" => {
                 generators::tblgen_sys::bindgen(&member, &ws)?;
             }
@@ -222,7 +219,7 @@ fn copy_bindings_for_platforms(
         }
 
         match member.name.as_str() {
-            "tracel-mlir-sys" | "tracel-tblgen-rs" => {
+            "tracel-tblgen-rs" => {
                 for platform in platforms {
                     copy_bindings_for_platform(&member, ws, *platform)?;
                 }
@@ -320,14 +317,13 @@ pub(crate) fn get_wrapper_file_path(member: &WorkspaceMember) -> anyhow::Result<
 
 /// Applies environment variables expected by sys crates.
 ///
-/// - MLIR_SYS_<major>0_PREFIX and TABLEGEN_<major>0_PREFIX point to the MLIR bundle install.
+/// - TABLEGEN_<major>0_PREFIX points to the bundle install.
 /// - LIBCLANG_PATH points to the clang bindgen toolchain libdir.
 pub(crate) fn apply_env_vars(ws: &BundleWorkspace, major: usize) {
-    let mlir_prefix = ws.bundle_install_dir.as_os_str();
+    let bundle_prefix = ws.bundle_install_dir.as_os_str();
 
     unsafe {
-        std::env::set_var(format!("MLIR_SYS_{major}0_PREFIX"), mlir_prefix);
-        std::env::set_var(format!("TABLEGEN_{major}0_PREFIX"), mlir_prefix);
+        std::env::set_var(format!("TABLEGEN_{major}0_PREFIX"), bundle_prefix);
         std::env::set_var("LIBCLANG_PATH", ws.clang_lib_dir.as_os_str());
     }
 }
@@ -726,22 +722,19 @@ fn commit_bindings_update(crates: &[String]) -> anyhow::Result<()> {
             continue;
         }
 
-        match member.name.as_str() {
-            "tracel-mlir-sys" | "tracel-tblgen-rs" => {
-                let bindings_dir = bindings_output_dir(&member);
-                let bindings_dir = bindings_dir.to_string_lossy().to_string();
+        if member.name.as_str() == "tracel-tblgen-rs" {
+            let bindings_dir = bindings_output_dir(&member);
+            let bindings_dir = bindings_dir.to_string_lossy().to_string();
 
-                run_process(
-                    "git",
-                    &["add", "--", &bindings_dir],
-                    None,
-                    None,
-                    "Should stage generated bindings",
-                )?;
+            run_process(
+                "git",
+                &["add", "--", &bindings_dir],
+                None,
+                None,
+                "Should stage generated bindings",
+            )?;
 
-                staged_anything = true;
-            }
-            _ => {}
+            staged_anything = true;
         }
     }
 

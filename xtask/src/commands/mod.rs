@@ -57,13 +57,13 @@ impl BundleWorkspace {
         let llvm_project_dir = workspace_dir.join("llvm-project");
         let llvm_dir = llvm_project_dir.join("llvm");
 
-        // mlir runtime bundle layout
+        // runtime bundle layout
         let pkg_dir_name = format!("tracel-llvm-{}-{}", version, release_number);
-        let mlir_install_dir = workspace_dir.join(&pkg_dir_name);
-        let mlir_bin_dir = mlir_install_dir.join("bin");
-        let mlir_build_dir = workspace_dir.join(".mlir_build");
-        let mlir_include_dir = mlir_install_dir.join("include");
-        let mlir_lib_dir = mlir_install_dir.join("lib");
+        let bundle_install_dir = workspace_dir.join(&pkg_dir_name);
+        let bundle_bin_dir = bundle_install_dir.join("bin");
+        let bundle_build_dir = workspace_dir.join(".llvm_build");
+        let bundle_include_dir = bundle_install_dir.join("include");
+        let bundle_lib_dir = bundle_install_dir.join("lib");
 
         // clang bindgen toolchain layout
         let clang_install_dir = workspace_dir.join(".clang-bindgen");
@@ -80,11 +80,11 @@ impl BundleWorkspace {
             workspace_dir,
             llvm_project_dir,
             llvm_dir,
-            bundle_bin_dir: mlir_bin_dir,
-            bundle_build_dir: mlir_build_dir,
-            bundle_include_dir: mlir_include_dir,
-            bundle_install_dir: mlir_install_dir,
-            bundle_lib_dir: mlir_lib_dir,
+            bundle_bin_dir,
+            bundle_build_dir,
+            bundle_include_dir,
+            bundle_install_dir,
+            bundle_lib_dir,
             clang_build_dir,
             clang_include_dir,
             clang_install_dir,
@@ -124,7 +124,7 @@ impl BundleWorkspace {
         Ok(())
     }
 
-    pub fn build_mlir_project(&self) -> anyhow::Result<()> {
+    pub fn build_llvm_project(&self) -> anyhow::Result<()> {
         require_tools(&["cmake", "ninja"])?;
         self.ensure_workspace_dir()?;
 
@@ -137,17 +137,17 @@ impl BundleWorkspace {
 
         if self.bundle_build_dir.exists() {
             fs::remove_dir_all(&self.bundle_build_dir)
-                .with_context(|| "mlir build directory should be deleted")?;
+                .with_context(|| "bundle build directory should be deleted")?;
         }
         if self.bundle_install_dir.exists() {
             fs::remove_dir_all(&self.bundle_install_dir)
-                .with_context(|| "mlir install directory should be deleted")?;
+                .with_context(|| "bundle install directory should be deleted")?;
         }
 
         let cfg = LlvmCmakeBuild {
             build_dir: self.bundle_build_dir.clone(),
             install_dir: self.bundle_install_dir.clone(),
-            projects: "mlir".to_string(),
+            projects: String::new(),
             extra_cmake_args: vec![
                 "-DLLVM_BUILD_EXAMPLES=OFF".into(),
                 "-DLLVM_BUILD_TESTS=OFF".into(),
@@ -169,11 +169,11 @@ impl BundleWorkspace {
             ninja_targets_before_install: vec!["llvm-config".into()],
         };
 
-        group_info!("BundleWorkspace: cmake configure (MLIR bundle)");
+        group_info!("BundleWorkspace: cmake configure (LLVM bundle)");
         self.cmake_configure(&cfg)?;
         endgroup!();
 
-        group_info!("BundleWorkspace: ninja build+install (MLIR bundle)");
+        group_info!("BundleWorkspace: ninja build+install (LLVM bundle)");
         self.ninja_build_and_install(&cfg)?;
         endgroup!();
 
@@ -254,9 +254,12 @@ impl BundleWorkspace {
                 "-DCMAKE_INSTALL_PREFIX={}",
                 cfg.install_dir.to_string_lossy()
             ),
-            format!("-DLLVM_ENABLE_PROJECTS={}", cfg.projects),
             "-DLLVM_TARGETS_TO_BUILD=host".into(),
         ];
+
+        if !cfg.projects.is_empty() {
+            args.push(format!("-DLLVM_ENABLE_PROJECTS={}", cfg.projects));
+        }
 
         args.extend(cfg.extra_cmake_args.clone());
 

@@ -21,7 +21,7 @@ pub struct BundleCmdArgs {
 
 #[derive(Subcommand)]
 pub enum BundleSubCmd {
-    /// Build the runtime bundle (LLVM+MLIR + CTableGen shim) then package it with checksums.
+    /// Build the runtime bundle (LLVM + CTableGen shim) then package it with checksums.
     Build(BundleBuildArgs),
     /// Delete the bundle workspace directory.
     Clean(BundleCleanArgs),
@@ -80,7 +80,7 @@ fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
         }
     }
     ws.clone_llvm_project_fresh()?;
-    ws.build_mlir_project()?;
+    ws.build_llvm_project()?;
     // Keep only llvm-config in bin directory.
     prune_bin_to_llvm_config(ws)?;
     // Build  CTableGen shim into the bundle lib directory.
@@ -336,20 +336,6 @@ fn cleanup_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
     let _ = fs::remove_dir_all(libdir.join("libscanbuild"));
     let _ = fs::remove_dir_all(libdir.join("libear"));
     let _ = fs::remove_dir_all(libdir.join("objects-Release"));
-
-    // Remove known extras static libs
-    let drop_static = [
-        "libmlir_c_runner_utils",
-        "libmlir_runner_utils",
-        "libmlir_async_runtime",
-        "libmlir_arm_runner_utils",
-        "libmlir_float16_utils",
-        "libmlir_arm_sme_abi_stubs",
-    ];
-    for base in drop_static {
-        let _ = fs::remove_file(libdir.join(format!("{base}.a")));
-        let _ = fs::remove_file(libdir.join(format!("{base}.lib")));
-    }
 
     // Remove libLTO and libRemarks shared variants
     let sh_ext = if cfg!(target_os = "macos") {
