@@ -9,8 +9,6 @@ use clap::{Args, Subcommand};
 use tracel_llvm_bundler::build_support::checksums::{sha256_file_hex, sha256_tree_content_hex};
 use tracel_xtask::prelude::{anyhow::Context as _, *};
 
-use crate::utils::tblgen_shim::{CTableGenShimConfig, build_and_install_ctablegen_shim};
-
 use super::BundleWorkspace;
 
 #[derive(Args)]
@@ -71,8 +69,6 @@ fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
         &ws.llvm_project_dir,
         &ws.bundle_build_dir,
         &ws.bundle_install_dir,
-        &ws.clang_build_dir,
-        &ws.clang_install_dir,
     ] {
         if dir.exists() {
             fs::remove_dir_all(dir)
@@ -83,31 +79,6 @@ fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
     ws.build_llvm_project()?;
     // Keep only llvm-config in bin directory.
     prune_bin_to_llvm_config(ws)?;
-    // Build  CTableGen shim into the bundle lib directory.
-    group_info!("Bundle: build CTableGen shim");
-    let cxx_compiler = detect_cached_compiler(&ws.bundle_build_dir).unwrap_or_else(|| {
-        if cfg!(windows) {
-            which::which("cl.exe").expect("Failed to detect compiler")
-        } else {
-            which::which("c++").expect("Failed to detect compiler")
-        }
-    });
-    let cxx_archiver = detect_cached_archiver(&ws.bundle_build_dir).unwrap_or_else(|| {
-        if cfg!(windows) {
-            which::which("lib.exe").expect("Failed to detect archiver")
-        } else {
-            which::which("ar").expect("Failed to detect archiver")
-        }
-    });
-    let shim_cfg = CTableGenShimConfig {
-        repo_root: git::git_repo_root_or_cwd()?,
-        bundle_install_dir: ws.bundle_install_dir.clone(),
-        build_dir: ws.workspace_dir.join(".tblgen_shim_build"),
-        cxx_compiler,
-        cxx_archiver,
-    };
-    build_and_install_ctablegen_shim(shim_cfg)?;
-    endgroup!();
     // Cleanup extra installed content
     group_info!("Bundle: cleanup");
     cleanup_bundle(ws)?;
@@ -153,34 +124,6 @@ fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
     endgroup!();
 
     Ok(())
-}
-
-// Reuse the compiler used for building LLVM so we can assume if that succeeded the compiler works
-// for ctablegen
-fn detect_cached_compiler(build_dir: &Path) -> Option<PathBuf> {
-    let cache = std::fs::read_to_string(build_dir.join("CMakeCache.txt")).ok()?;
-    for line in cache.lines() {
-        if let Some(val) = line
-            .strip_prefix("CMAKE_CXX_COMPILER:FILEPATH=")
-            .or_else(|| line.strip_prefix("CMAKE_CXX_COMPILER:STRING="))
-        {
-            return Some(PathBuf::from(val.trim()));
-        }
-    }
-    None
-}
-
-fn detect_cached_archiver(build_dir: &Path) -> Option<PathBuf> {
-    let cache = std::fs::read_to_string(build_dir.join("CMakeCache.txt")).ok()?;
-    for line in cache.lines() {
-        if let Some(val) = line
-            .strip_prefix("CMAKE_CXX_COMPILER_AR:FILEPATH=")
-            .or_else(|| line.strip_prefix("CMAKE_CXX_COMPILER_AR:STRING="))
-        {
-            return Some(PathBuf::from(val.trim()));
-        }
-    }
-    None
 }
 
 /// Creates a `.tar.xz` using CLI tools

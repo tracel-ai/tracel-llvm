@@ -4,7 +4,6 @@ name = "xtask"
 version = "0.0.0"
 
 [dependencies]
-bindgen = { version = "0.72.1" }
 tracel-llvm-bundler = { path = "../crates/tracel-llvm-bundler", features = [
     "xtask",
 ] }

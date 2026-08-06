@@ -85,9 +85,6 @@ jobs:
       - name: Build LLVM bundle
         run: xtask bundle build
       # ----------------------------------------------------------------------
-      - name: Build Rust bindings
-        run: xtask -e prod bindings generate
-      # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
         uses: softprops/action-gh-release@v2.4.2
@@ -99,7 +96,6 @@ jobs:
           files: |
             .llvm/linux-${{ matrix.suffix }}.tar.xz
             .llvm/linux-${{ matrix.suffix }}.checksums.json
-            .llvm/*.bindings.rs
 
   llvm-macos:
     needs: create-release
@@ -121,9 +117,6 @@ jobs:
       - name: Build LLVM bundle
         run: xtask bundle build
       # ----------------------------------------------------------------------
-      - name: Build Rust bindings
-        run: xtask -e prod bindings generate
-      # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
         uses: softprops/action-gh-release@v2.4.2
@@ -135,7 +128,6 @@ jobs:
           files: |
             .llvm/macos-AArch64.tar.xz
             .llvm/macos-AArch64.checksums.json
-            .llvm/*.bindings.rs
 
   llvm-windows:
     needs: create-release
@@ -173,13 +165,6 @@ jobs:
           $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
           cmd /v:on /c "`"$vsDevCmd`" -arch=x64 && cd /d `"$env:GITHUB_WORKSPACE`" && where cl && where cmake && where xtask && git rev-parse --show-toplevel && xtask bundle build"
       # ----------------------------------------------------------------------
-      - name: Build Rust bindings
-        shell: pwsh
-        working-directory: ${{ github.workspace }}
-        run: |
-          $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
-          cmd /v:on /c "`"$vsDevCmd`" -arch=x64 && cd /d `"$env:GITHUB_WORKSPACE`" && where cl && where cmake && where xtask && git rev-parse --show-toplevel && xtask -e prod bindings generate"
-      # ----------------------------------------------------------------------
       - name: Upload Release
         # pin to v2.4.2 for now, see: https://github.com/softprops/action-gh-release/issues/709
         uses: softprops/action-gh-release@v2.4.2
@@ -191,7 +176,6 @@ jobs:
           files: |
             .llvm/windows-x64.tar.xz
             .llvm/windows-x64.checksums.json
-            .llvm/*.bindings.rs
 
   publish-release:
     # macos runner is not always available
