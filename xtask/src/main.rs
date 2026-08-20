@@ -7,8 +7,9 @@ extern crate log;
 use std::time::Instant;
 use tracel_xtask::prelude::*;
 
-#[macros::base_commands(Publish)]
+#[derive(clap::Subcommand, strum::Display)]
 enum Command {
+    Publish(PublishCmdArgs),
     /// Generat LLVM bundle.
     Bundle(commands::bundle::BundleCmdArgs),
     #[doc = r"Run checks like formatting, linting etc... This command only reports issues, use the 'fix' command to auto-fix issues."]
@@ -17,6 +18,13 @@ enum Command {
     Fix(base_commands::fix::FixCmdArgs),
     /// Install build prerequisites (cmake, ninja, git, etc.)
     Setup(commands::setup::SetupCmdArgs),
+}
+
+fn dispatch_base_commands(args: XtaskArgs<Command>, env: Environment) -> anyhow::Result<()> {
+    match args.command {
+        Command::Publish(cmd) => base_commands::publish::handle_command(cmd, env, args.context),
+        _ => Err(anyhow::anyhow!("Unknown command")),
+    }
 }
 
 fn main() -> anyhow::Result<()> {
