@@ -168,8 +168,10 @@ impl BundleWorkspace {
                 "-DCMAKE_INSTALL_PREFIX={}",
                 cfg.install_dir.to_string_lossy()
             ),
+            #[cfg(target_os = "macos")]
+            "-DLLVM_TARGETS_TO_BUILD=host".into(),
             #[cfg(not(target_os = "macos"))]
-            "-DLLVM_TARGETS_TO_BUILD=host;AMDGPU".into(),
+            "-DLLVM_TARGETS_TO_BUILD=host;AMDGPU".into()
         ];
 
         args.extend(cfg.extra_cmake_args.clone());
