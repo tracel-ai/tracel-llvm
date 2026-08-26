@@ -120,6 +120,7 @@ impl BundleWorkspace {
             build_dir: self.bundle_build_dir.clone(),
             install_dir: self.bundle_install_dir.clone(),
             extra_cmake_args: vec![
+                "-DLLVM_ENABLE_PROJECTS=lld".into(),
                 "-DLLVM_BUILD_EXAMPLES=OFF".into(),
                 "-DLLVM_BUILD_TESTS=OFF".into(),
                 "-DLLVM_BUILD_TOOLS=OFF".into(),
