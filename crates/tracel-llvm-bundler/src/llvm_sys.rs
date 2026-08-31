@@ -83,6 +83,7 @@ fn compile_target_wrappers(prefix: &OsString) -> ConfigResult<()> {
     cc::Build::new()
         .file(&source)
         .include(get_includedir(Some(prefix))?)
+        .opt_level(3)
         .compile("tracel_llvm_target_wrappers");
 
     Ok(())
