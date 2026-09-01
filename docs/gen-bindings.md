@@ -21,7 +21,7 @@ It will install tools such as `cmake`, `ninja`, `git`, etc., necessary for the b
 
 ## Creating LLVM Toolchain Archive
 
-A custom build of LLVM is used. Pre-built versions are published as a part of a [GitHub release](https://github.com/tracel-ai/tracel-llvm/releases).  If your platform is not yet supported, build it for your platform and create an archive with `cargo xtask bundle build`. The build process will take a while.
+A custom build of LLVM is used. Pre-built versions are published as a part of a [GitHub release](https://github.com/tracel-ai/tracel-llvm/releases). If your platform is not yet supported, build it for your platform and create an archive with `cargo xtask bundle build`. The build process will take a while.
 
 The resulting bundle is placed in `.llvm/{os}-{arch}.tar.xz` (e.g. `.llvm/linux-AArch64.tar.xz`) along with a checksum sidecar file (`.llvm/{os}-{arch}.checksums.json`).
 
@@ -36,7 +36,7 @@ Instead `llvm-sys` is built with two features that make its build script return 
 it looks for `llvm-config`:
 
 ```toml
-llvm-sys = { version = "221", features = ["no-llvm-linking", "disable-alltargets-init"] }
+llvm-sys = { version = "231", features = ["no-llvm-linking", "disable-alltargets-init"] }
 ```
 
 The consumer then calls [`llvm_sys::link`](../crates/tracel-llvm-bundler/src/llvm_sys.rs) from its
@@ -64,6 +64,7 @@ required:
    ```toml
    tracel-llvm-bundler = { path = "../../../tracel-llvm/crates/tracel-llvm-bundler" }
    ```
+
 3. Copy locally built LLVM toolchain archive and checksum sidecar to `~/.cache/tracel/`, and rename them to include the version number so the `cubecl` build can find them; e.g.:
    ```sh
    cp .llvm/linux-AArch64.tar.xz ~/.cache/tracel/tracel-llvm-20.1.4-7-linux-AArch64.tar.xz
@@ -80,10 +81,10 @@ required:
 
 ## Troubleshooting
 
-| Symptom | Cause |
-| --- | --- |
-| `No suitable version of LLVM was found system-wide or pointed to by LLVM_SYS_221_PREFIX` | The two `llvm-sys` features are not enabled. They only apply if some crate in the graph depends on `llvm-sys` with them, so that feature unification carries them to the shared instance. |
-| `undefined reference to LLVM_InitializeNativeTarget` | `disable-alltargets-init` is on but `link()` was never called, so nothing compiled the wrappers. |
-| Undefined C++ symbols (`std::__cxx11::…`, `operator new`) | The C++ standard library did not make it onto the link line; `link()` emits it via `get_system_libcpp()`. |
-| Undefined LLVM symbols despite the archives being listed | Link order. Static archives must follow the objects that reference them, and the wrappers must precede the archives; `link()` emits them in that order. |
-| Builds only on some machines | Likely `disable-alltargets-init` is missing while `no-llvm-linking` is set. `llvm-sys` then still tries to locate `llvm-config`: it silently skips the wrappers when none is found, and compiles a second copy of them against the other toolchain's headers when one is. |
+| Symptom                                                                                  | Cause                                                                                                                                                                                                                                                                     |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `No suitable version of LLVM was found system-wide or pointed to by LLVM_SYS_221_PREFIX` | The two `llvm-sys` features are not enabled. They only apply if some crate in the graph depends on `llvm-sys` with them, so that feature unification carries them to the shared instance.                                                                                 |
+| `undefined reference to LLVM_InitializeNativeTarget`                                     | `disable-alltargets-init` is on but `link()` was never called, so nothing compiled the wrappers.                                                                                                                                                                          |
+| Undefined C++ symbols (`std::__cxx11::…`, `operator new`)                                | The C++ standard library did not make it onto the link line; `link()` emits it via `get_system_libcpp()`.                                                                                                                                                                 |
+| Undefined LLVM symbols despite the archives being listed                                 | Link order. Static archives must follow the objects that reference them, and the wrappers must precede the archives; `link()` emits them in that order.                                                                                                                   |
+| Builds only on some machines                                                             | Likely `disable-alltargets-init` is missing while `no-llvm-linking` is set. `llvm-sys` then still tries to locate `llvm-config`: it silently skips the wrappers when none is found, and compiles a second copy of them against the other toolchain's headers when one is. |
