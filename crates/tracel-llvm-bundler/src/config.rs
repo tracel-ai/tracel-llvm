@@ -253,6 +253,53 @@ pub fn get_cflags(prefix_os: Option<&OsString>) -> ConfigResult<String> {
     Ok(flags)
 }
 
+/// Returns the CXX flags as individual compiler arguments.
+///
+/// Prefer this over [`get_cxxflags`], whose raw string cannot be split on
+/// whitespace: see [`split_flags`].
+pub fn get_cxxflags_args(prefix_os: Option<&OsString>) -> ConfigResult<Vec<OsString>> {
+    let flags = get_cxxflags(prefix_os)?;
+    Ok(split_flags(&flags, &get_includedir(prefix_os)?))
+}
+
+/// Returns the C flags as individual compiler arguments.
+///
+/// Prefer this over [`get_cflags`], whose raw string cannot be split on
+/// whitespace: see [`split_flags`].
+pub fn get_cflags_args(prefix_os: Option<&OsString>) -> ConfigResult<Vec<OsString>> {
+    let flags = get_cflags(prefix_os)?;
+    Ok(split_flags(&flags, &get_includedir(prefix_os)?))
+}
+
+/// Splits a raw `llvm-config` flag string into individual compiler arguments.
+///
+/// The string starts with a `-I` pointing at the include directory of the
+/// bundle, and on macOS that path always contains a space (the bundle lives
+/// under `~/Library/Application Support/tracel`), so splitting on whitespace
+/// would hand the compiler two broken arguments. The include directory is known
+/// independently, so it is passed through as a single `-isystem` argument and
+/// its `-I` entry is removed from the string before the remaining, space-free
+/// flags are split.
+fn split_flags(flags: &str, includedir: &str) -> Vec<OsString> {
+    let mut args = vec![OsString::from("-isystem"), OsString::from(includedir)];
+
+    for flag in flags
+        .replace(&format!("-I{includedir}"), " ")
+        .split_whitespace()
+    {
+        match flag.strip_prefix("-I") {
+            // Some other include directory; `llvm-config` doesn't currently emit any.
+            Some(dir) => {
+                args.push(OsString::from("-isystem"));
+                args.push(OsString::from(dir));
+            }
+            None => args.push(OsString::from(flag)),
+        }
+    }
+
+    args
+}
+
 pub fn get_system_libcpp() -> Option<&'static str> {
     if cfg!(target_env = "msvc") {
         None
@@ -377,4 +424,63 @@ fn llvm_config(prefix_os: Option<&OsString>, argument: &str) -> ConfigResult<Str
 
     let stdout = output.stdout;
     Ok(str::from_utf8(&stdout)?.trim().to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// What `llvm-config --cxxflags` returns for the bundled LLVM.
+    fn cxxflags(includedir: &str) -> String {
+        format!(
+            "-I{includedir} -std=c++17  -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS \
+             -D__STDC_LIMIT_MACROS -fno-exceptions"
+        )
+    }
+
+    /// The macOS include dir, which is always under `Library/Application Support`.
+    const MACOS_INCLUDEDIR: &str =
+        "/Users/someone/Library/Application Support/tracel/tracel-llvm-22.1.4-7/include";
+
+    #[test]
+    fn include_dir_with_a_space_stays_one_argument() {
+        let args = split_flags(&cxxflags(MACOS_INCLUDEDIR), MACOS_INCLUDEDIR);
+
+        let isystem = args.iter().position(|a| a == "-isystem").unwrap();
+        assert_eq!(args[isystem + 1], OsString::from(MACOS_INCLUDEDIR));
+        assert!(
+            !args
+                .iter()
+                .any(|a| a == "Support/tracel/tracel-llvm-22.1.4-7/include"),
+            "the include path was split: {args:?}"
+        );
+    }
+
+    #[test]
+    fn other_flags_are_kept_and_include_flag_is_dropped() {
+        let args = split_flags(&cxxflags(MACOS_INCLUDEDIR), MACOS_INCLUDEDIR);
+
+        assert!(!args.iter().any(|a| a.to_string_lossy().starts_with("-I")));
+        assert_eq!(
+            args[2..],
+            [
+                "-std=c++17",
+                "-D__STDC_CONSTANT_MACROS",
+                "-D__STDC_FORMAT_MACROS",
+                "-D__STDC_LIMIT_MACROS",
+                "-fno-exceptions",
+            ]
+            .map(OsString::from)
+        );
+    }
+
+    #[test]
+    fn space_free_include_dir_works_the_same() {
+        let includedir = "/home/someone/.local/share/tracel/tracel-llvm-22.1.4-7/include";
+        let args = split_flags(&cxxflags(includedir), includedir);
+
+        assert_eq!(args[0], OsString::from("-isystem"));
+        assert_eq!(args[1], OsString::from(includedir));
+        assert!(args.iter().any(|a| a == "-fno-exceptions"));
+    }
 }
