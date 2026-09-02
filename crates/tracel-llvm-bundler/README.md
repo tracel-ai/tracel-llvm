@@ -17,7 +17,7 @@ your `build.rs` runs:
 
 ```toml
 [build-dependencies]
-tracel-llvm-bundler = "22.1.4-7"
+tracel-llvm-bundler = "23.1.0-1"
 ```
 
 Build `llvm-sys` with `no-llvm-linking` and `disable-alltargets-init` so that it does not look for
@@ -25,7 +25,7 @@ Build `llvm-sys` with `no-llvm-linking` and `disable-alltargets-init` so that it
 
 ```toml
 [dependencies]
-llvm-sys = { version = "221", features = ["no-llvm-linking", "disable-alltargets-init"] }
+llvm-sys = { version = "230", features = ["no-llvm-linking", "disable-alltargets-init"] }
 ```
 
 Then emit the link configuration from `build.rs`:

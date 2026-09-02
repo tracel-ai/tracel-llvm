@@ -11,10 +11,7 @@ mod build_support {
 
 use anyhow::{Context, Result, bail};
 use serde::Deserialize;
-use std::{
-    fs::{File, create_dir_all},
-    time::Duration,
-};
+use std::fs::{File, create_dir_all};
 
 type AnyResult<T> = Result<T>;
 
@@ -59,15 +56,13 @@ struct Sidecar {
 
 /// Download (overwriting) to a path.
 fn download_to_path(url: &str, dest: &Path) -> AnyResult<()> {
-    let client = reqwest::blocking::Client::builder()
-        .timeout(Duration::from_secs(60 * 5))
-        .build()?;
-    let mut resp = client.get(url).send()?.error_for_status()?;
+    let req = ureq::get(url).call().unwrap();
+    let mut resp = req.into_body();
     if let Some(parent) = dest.parent() {
         create_dir_all(parent)?;
     }
     let mut f = File::create(dest)?;
-    std::io::copy(&mut resp, &mut f)?;
+    std::io::copy(&mut resp.as_reader(), &mut f)?;
     Ok(())
 }
 
