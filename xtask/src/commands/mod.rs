@@ -168,9 +168,6 @@ impl BundleWorkspace {
                 "-DCMAKE_INSTALL_PREFIX={}",
                 cfg.install_dir.to_string_lossy()
             ),
-            // The GPU backends CubeCL generates for. macOS has neither a HIP nor a
-            // CUDA runtime, so nothing there would ever ask for AMDGPU or NVPTX and
-            // building them would only lengthen the bundle.
             #[cfg(target_os = "macos")]
             "-DLLVM_TARGETS_TO_BUILD=host".into(),
             #[cfg(not(target_os = "macos"))]
