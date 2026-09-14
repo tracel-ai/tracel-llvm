@@ -171,7 +171,7 @@ impl BundleWorkspace {
             #[cfg(target_os = "macos")]
             "-DLLVM_TARGETS_TO_BUILD=host".into(),
             #[cfg(not(target_os = "macos"))]
-            "-DLLVM_TARGETS_TO_BUILD=host;AMDGPU".into()
+            "-DLLVM_TARGETS_TO_BUILD=host;AMDGPU;NVPTX".into()
         ];
 
         args.extend(cfg.extra_cmake_args.clone());
