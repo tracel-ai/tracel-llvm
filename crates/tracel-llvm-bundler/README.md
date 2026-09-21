@@ -17,7 +17,7 @@ your `build.rs` runs:
 
 ```toml
 [build-dependencies]
-tracel-llvm-bundler = "23.1.0-1"
+tracel-llvm-bundler = "23.1.0-3"
 ```
 
 Build `llvm-sys` with `no-llvm-linking` and `disable-alltargets-init` so that it does not look for
