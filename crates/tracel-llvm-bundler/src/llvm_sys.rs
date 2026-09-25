@@ -38,6 +38,10 @@ const TARGET_WRAPPERS: &str = include_str!("../wrappers/target.c");
 /// Must be called from the `build.rs` of the crate that ends up linking LLVM,
 /// with `tracel-llvm-bundler` as a build dependency so that the bundle is
 /// already downloaded by the time this runs.
+///
+/// Native archives are linked whole because their symbols may be referenced by
+/// dependencies of the caller (for example, `pliron-llvm`). Those dependencies
+/// appear after the caller's rlib, and GNU ld does not revisit earlier archives.
 pub fn link() -> ConfigResult<()> {
     let prefix: OsString = llvm_path()?.into_os_string();
 
@@ -52,9 +56,10 @@ pub fn link() -> ConfigResult<()> {
     let _ = set_homebrew_library_path();
 
     // `llvm-config --link-static --libs` already returns the libraries in
-    // dependency order.
+    // dependency order. Keep every member available even when the Rust crate
+    // referencing it comes later on the link line.
     for library in get_libs(Some(&prefix))? {
-        println!("cargo:rustc-link-lib=static={library}");
+        println!("cargo:rustc-link-lib=static:+whole-archive={library}");
     }
 
     for library in get_system_libs(Some(&prefix))? {
@@ -84,6 +89,7 @@ fn compile_target_wrappers(prefix: &OsString) -> ConfigResult<()> {
         .file(&source)
         .include(get_includedir(Some(prefix))?)
         .opt_level(3)
+        .link_lib_modifier("+whole-archive")
         .compile("tracel_llvm_target_wrappers");
 
     Ok(())
