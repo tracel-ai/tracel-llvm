@@ -9,6 +9,9 @@ configuration for it, so that a project can link LLVM statically without a syste
   host platform, cached under the user data directory.
 - **Link configuration**: emits the library search path, the LLVM libraries in dependency order, the
   system libraries and the target initialization wrappers.
+- **perf JIT listener (Linux only)**: the Linux bundles are built with `LLVM_USE_PERF=ON`. Thus
+  `LLVMCreatePerfJITEventListener()` returns a listener that writes a jitdump for
+  `perf inject --jit`. On macOS and on Windows, the function returns null.
 
 ## Usage
 
