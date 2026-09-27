@@ -116,7 +116,7 @@ impl BundleWorkspace {
                 .with_context(|| "bundle install directory should be deleted")?;
         }
 
-        let cfg = LlvmCmakeBuild {
+        let mut cfg = LlvmCmakeBuild {
             build_dir: self.bundle_build_dir.clone(),
             install_dir: self.bundle_install_dir.clone(),
             extra_cmake_args: vec![
@@ -140,6 +140,11 @@ impl BundleWorkspace {
             ],
             ninja_targets_before_install: vec!["llvm-config".into()],
         };
+        // Lets `LLVMCreatePerfJITEventListener` emit a jitdump for `perf inject --jit`.
+        // LLVM's CMake rejects this option on anything but Linux.
+        if cfg!(target_os = "linux") {
+            cfg.extra_cmake_args.push("-DLLVM_USE_PERF=ON".into());
+        }
 
         group_info!("BundleWorkspace: cmake configure (LLVM bundle)");
         self.cmake_configure(&cfg)?;
