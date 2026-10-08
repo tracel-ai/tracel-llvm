@@ -16,6 +16,12 @@ use std::fs::{File, create_dir_all};
 type AnyResult<T> = Result<T>;
 
 fn main() {
+    println!("cargo:rerun-if-env-changed=DOCS_RS");
+    // Documentation builds do not need LLVM and cannot download or cache a bundle.
+    if std::env::var_os("DOCS_RS").is_some() {
+        return;
+    }
+
     // in xtask mode we skip the bundler installation alltogether
     if std::env::var_os("CARGO_FEATURE_XTASK").is_some() {
         println!("cargo:warning=xtask mode enabled, skipping bundle installation.");
