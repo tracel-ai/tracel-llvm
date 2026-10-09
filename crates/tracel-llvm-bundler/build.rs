@@ -17,7 +17,8 @@ type AnyResult<T> = Result<T>;
 
 fn main() {
     println!("cargo:rerun-if-env-changed=DOCS_RS");
-    // Documentation builds do not need LLVM and cannot download or cache a bundle.
+    // docs.rs does not need native LLVM setup.
+    // https://docs.rs/about/builds#detecting-docsrs
     if std::env::var_os("DOCS_RS").is_some() {
         return;
     }
