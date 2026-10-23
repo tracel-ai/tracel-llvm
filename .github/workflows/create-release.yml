@@ -44,14 +44,14 @@ jobs:
         include:
           - arch: "x86-64"
             image_family: "ubuntu-2204-lts"
-            machine_type: "n2-standard-48"
+            machine_type: "c2-standard-16"
             gh_arch: "x64"
             zones: "northamerica-northeast1-b"
             suffix: "x64"
           - arch: "arm64"
             image_family: "ubuntu-2204-lts-arm64"
             # always looks for actual zones where the wanted machine type exists
-            machine_type: "t2a-standard-48"
+            machine_type: "t2a-standard-32"
             zones: "us-central1-b"
             gh_arch: "arm64"
             suffix: "AArch64"
@@ -137,7 +137,7 @@ jobs:
       '@image-project:windows-cloud',
       '@disk-size:100',
       '@keep-alive:false',
-      '@machine-type:n2-standard-48',
+      '@machine-type:c2-standard-16',
       '@os:windows',
       '@zones:northamerica-northeast1-b'
       ]
