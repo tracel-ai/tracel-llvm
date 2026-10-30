@@ -20,19 +20,9 @@ cc.workspace = true
 constcat.workspace = true
 dirs.workspace = true
 liblzma.workspace = true
-sha2.workspace = true
-tar.workspace = true
-walkdir.workspace = true
-
-[build-dependencies]
-anyhow.workspace = true
-bytes.workspace = true
-constcat.workspace = true
-dirs.workspace = true
-liblzma.workspace = true
-ureq.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 tar.workspace = true
+ureq.workspace = true
 walkdir.workspace = true

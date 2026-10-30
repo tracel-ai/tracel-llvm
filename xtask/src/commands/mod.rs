@@ -132,6 +132,7 @@ impl BundleWorkspace {
                 "-DLLVM_ENABLE_RTTI=ON".into(),
                 "-DLLVM_ENABLE_SPHINX=OFF".into(),
                 "-DLLVM_ENABLE_ZLIB=OFF".into(),
+                "-DLLVM_ENABLE_ZSTD=OFF".into(),
                 "-DLLVM_INCLUDE_DOCS=OFF".into(),
                 "-DLLVM_INCLUDE_EXAMPLES=OFF".into(),
                 "-DLLVM_INCLUDE_TESTS=OFF".into(),

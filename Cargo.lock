@@ -544,7 +544,6 @@ name = "tracel-llvm-bundler"
 version = "23.1.0-4"
 dependencies = [
  "anyhow",
- "bytes",
  "cc",
  "constcat",
  "dirs",

@@ -36,8 +36,9 @@ const TARGET_WRAPPERS: &str = include_str!("../wrappers/target.c");
 /// Emits the link configuration for the bundled LLVM.
 ///
 /// Must be called from the `build.rs` of the crate that ends up linking LLVM,
-/// with `tracel-llvm-bundler` as a build dependency so that the bundle is
-/// already downloaded by the time this runs.
+/// with `tracel-llvm-bundler` as a build dependency. It links the bundle of that
+/// build script's target, installing it first if needed (see
+/// [`llvm_path`](crate::config::llvm_path)).
 pub fn link() -> ConfigResult<()> {
     let prefix: OsString = llvm_path()?.into_os_string();
 
