@@ -6,7 +6,10 @@ use std::{
 };
 
 use clap::{Args, Subcommand};
-use tracel_llvm_bundler::build_support::checksums::{sha256_file_hex, sha256_tree_content_hex};
+use tracel_llvm_bundler::{
+    build_support::checksums::{sha256_file_hex, sha256_tree_content_hex},
+    config::record_llvm_config_manifest,
+};
 use tracel_xtask::prelude::{anyhow::Context as _, *};
 
 use super::BundleWorkspace;
@@ -82,6 +85,12 @@ fn build_runtime_bundle(ws: &BundleWorkspace) -> anyhow::Result<()> {
     // Cleanup extra installed content
     group_info!("Bundle: cleanup");
     cleanup_bundle(ws)?;
+    endgroup!();
+
+    // Record what llvm-config answers, for the machines that cross-compile for this platform.
+    group_info!("Bundle: record llvm-config manifest");
+    record_llvm_config_manifest(&ws.bundle_install_dir)
+        .with_context(|| "llvm-config manifest should be recorded")?;
     endgroup!();
 
     // Package and checksums.

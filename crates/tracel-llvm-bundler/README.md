@@ -6,14 +6,16 @@ configuration for it, so that a project can link LLVM statically without a syste
 ## Features
 
 - **Automatic LLVM bundling**: downloads, verifies and decompresses a prebuilt LLVM release for the
-  host platform, cached under the user data directory.
+  platform being built, cached under the user data directory.
+- **Cross-compilation**: the platform is the build script's target, not the machine running it, so
+  building for another OS or architecture links that platform's LLVM.
 - **Link configuration**: emits the library search path, the LLVM libraries in dependency order, the
   system libraries and the target initialization wrappers.
 
 ## Usage
 
-Add it as a build dependency; the bundle is downloaded when the crate itself is compiled, before
-your `build.rs` runs:
+Add it as a build dependency; the bundle is downloaded the first time your `build.rs` asks for it
+(through `llvm_path()` or `llvm_sys::link()`), for that build script's target:
 
 ```toml
 [build-dependencies]
@@ -44,3 +46,14 @@ install prefix returned by `llvm_path()`:
 let prefix = tracel_llvm_bundler::config::llvm_path()?.into_os_string();
 let libdir = tracel_llvm_bundler::config::get_libdir(Some(&prefix))?;
 ```
+
+## Cross-compiling
+
+`llvm-config` is an executable of the platform a bundle was built for, so a machine cross-compiling
+for that platform cannot run it. Each bundle therefore records what `llvm-config` answers in an
+`llvm-config.json` at its root, written when it is packaged, and every query reads it from there.
+A bundle without it, such as one installed by hand, is still queried by running its `llvm-config`.
+
+The C++ code your `build.rs` compiles against LLVM, and the link, still need a toolchain for the
+target: a cross C++ compiler and linker on Linux, and an MSVC toolchain (such as `cargo-xwin`) for
+Windows, whose bundles are built with MSVC.

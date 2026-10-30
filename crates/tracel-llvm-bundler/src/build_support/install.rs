@@ -1,39 +1,15 @@
-include!("src/config.rs");
+use std::{
+    fs::{self, File, create_dir_all},
+    path::{Path, PathBuf},
+};
 
-mod build_support {
-    pub mod archive {
-        include!("src/build_support/archive.rs");
-    }
-    pub mod checksums {
-        include!("src/build_support/checksums.rs");
-    }
-}
-
-use anyhow::{Context, Result, bail};
+use anyhow::{Context as _, bail};
 use serde::Deserialize;
-use std::fs::{File, create_dir_all};
 
-type AnyResult<T> = Result<T>;
-
-fn main() {
-    println!("cargo:rerun-if-env-changed=DOCS_RS");
-    // docs.rs does not need native LLVM setup.
-    // https://docs.rs/about/builds#detecting-docsrs
-    if std::env::var_os("DOCS_RS").is_some() {
-        return;
-    }
-
-    // in xtask mode we skip the bundler installation alltogether
-    if std::env::var_os("CARGO_FEATURE_XTASK").is_some() {
-        println!("cargo:warning=xtask mode enabled, skipping bundle installation.");
-        return;
-    }
-
-    if let Err(error) = bundle_cache() {
-        eprintln!("{error}");
-        std::process::exit(1);
-    }
-}
+use crate::{
+    build_support::{archive::decompress_tar_xz_file_to, checksums},
+    config::Environment,
+};
 
 struct RollbackDir {
     path: PathBuf,
@@ -62,23 +38,22 @@ struct Sidecar {
 }
 
 /// Download (overwriting) to a path.
-fn download_to_path(url: &str, dest: &Path) -> AnyResult<()> {
-    let req = ureq::get(url).call().unwrap();
-    let mut resp = req.into_body();
+fn download_to_path(url: &str, dest: &Path) -> anyhow::Result<()> {
+    let response = ureq::get(url).call()?;
     if let Some(parent) = dest.parent() {
         create_dir_all(parent)?;
     }
     let mut f = File::create(dest)?;
-    std::io::copy(&mut resp.as_reader(), &mut f)?;
+    std::io::copy(&mut response.into_body().as_reader(), &mut f)?;
     Ok(())
 }
 
-pub fn bundle_cache() -> AnyResult<()> {
-    let env = Environment::current();
-    let llvm_path = llvm_path()?;
-
-    let sentinel = env.sentinel_path(&llvm_path);
-    println!("cargo:rerun-if-changed={}", sentinel.display());
+/// Installs the bundle of `environment` at `llvm_path`, unless it is already there.
+///
+/// The download, the archive and the extracted tree are all verified against the
+/// checksums sidecar published beside the archive.
+pub fn install_bundle(environment: &Environment, llvm_path: &Path) -> anyhow::Result<()> {
+    let sentinel = environment.sentinel_path(llvm_path);
 
     // 0) Already installed?
     if sentinel.exists() {
@@ -90,16 +65,16 @@ pub fn bundle_cache() -> AnyResult<()> {
         .parent()
         .ok_or_else(|| anyhow::anyhow!("Invalid llvm_path"))?;
     create_dir_all(parent)?;
-    let rollback = RollbackDir::new(llvm_path.clone());
+    let rollback = RollbackDir::new(llvm_path.to_path_buf());
 
     // 2) Download and parse checksums sidecar
 
     let skip_download = std::env::var_os("TRACEL_LLVM_BUNDLER_SKIP_CHECKSUM_DOWNLOAD").is_some();
 
-    let checksum_path = env.checksum_cache_path()?;
+    let checksum_path = environment.checksum_cache_path()?;
     if !skip_download {
-        download_to_path(&env.checksum_url(), &checksum_path)
-            .with_context(|| format!("downloading {}", env.checksum_url()))?;
+        download_to_path(&environment.checksum_url(), &checksum_path)
+            .with_context(|| format!("downloading {}", environment.checksum_url()))?;
     } else {
         println!(
             "cargo:warning=TRACEL_LLVM_BUNDLER_SKIP_CHECKSUM_DOWNLOAD is set, skipping checksum download."
@@ -115,38 +90,38 @@ pub fn bundle_cache() -> AnyResult<()> {
         serde_json::from_str(&sidecar_text).with_context(|| "parsing checksum sidecar JSON")?;
 
     // 3) Download bundle if required / verify archive checksum
-    let archive_path = env.artifact_cache_path()?;
+    let archive_path = environment.artifact_cache_path()?;
     if archive_path.exists() {
-        let local = build_support::checksums::sha256_file_hex(&archive_path)?;
+        let local = checksums::sha256_file_hex(&archive_path)?;
         if local != sidecar.archive_sha256 {
-            download_to_path(&env.artifact_url(), &archive_path)
-                .with_context(|| format!("re-downloading {}", env.artifact_url()))?;
-            let again = build_support::checksums::sha256_file_hex(&archive_path)?;
+            download_to_path(&environment.artifact_url(), &archive_path)
+                .with_context(|| format!("re-downloading {}", environment.artifact_url()))?;
+            let again = checksums::sha256_file_hex(&archive_path)?;
             if again != sidecar.archive_sha256 {
                 bail!(
                     "Archive checksum mismatch after re-download.\n  expected: {}\n  got:      {}\nURL: {}",
                     sidecar.archive_sha256,
                     again,
-                    env.artifact_url()
+                    environment.artifact_url()
                 );
             }
         }
     } else {
-        download_to_path(&env.artifact_url(), &archive_path)
-            .with_context(|| format!("downloading {}", env.artifact_url()))?;
-        let got = build_support::checksums::sha256_file_hex(&archive_path)?;
+        download_to_path(&environment.artifact_url(), &archive_path)
+            .with_context(|| format!("downloading {}", environment.artifact_url()))?;
+        let got = checksums::sha256_file_hex(&archive_path)?;
         if got != sidecar.archive_sha256 {
             bail!(
                 "Archive checksum mismatch after download.\n  expected: {}\n  got:      {}\nURL: {}",
                 sidecar.archive_sha256,
                 got,
-                env.artifact_url()
+                environment.artifact_url()
             );
         }
     }
 
     // 4) Extract bundle
-    build_support::archive::decompress_tar_xz_file_to(&archive_path, parent)
+    decompress_tar_xz_file_to(&archive_path, parent)
         .with_context(|| "extracting tar.xz bundle should succeed")?;
 
     if !llvm_path.exists() {
@@ -157,7 +132,7 @@ pub fn bundle_cache() -> AnyResult<()> {
     }
 
     // 5) Verify extracted content checksum on final destination folder
-    let content = build_support::checksums::sha256_tree_content_hex(&llvm_path)?;
+    let content = checksums::sha256_tree_content_hex(llvm_path)?;
     if content != sidecar.content_sha256 {
         bail!(
             "Extracted content checksum mismatch.\n  expected: {}\n  got:      {}\n\n\
