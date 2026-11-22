@@ -217,6 +217,79 @@ pub fn get_libnames(prefix_os: Option<&OsString>) -> ConfigResult<Vec<String>> {
     Ok(libs.split_whitespace().filter_map(norm_lib).collect())
 }
 
+/// Returns the shared libraries required by a system LLVM install (bare names).
+///
+/// System LLVM packages are commonly built shared-only, so `--link-static --libs` (used by
+/// `get_libs`) returns nothing useful. This asks for the shared link line instead.
+pub fn get_shared_libs(prefix_os: Option<&OsString>) -> ConfigResult<Vec<String>> {
+    use std::process::Command;
+
+    let prefix = prefix_os
+        .as_ref()
+        .map(|p| Path::new(p).join("bin"))
+        .unwrap_or_default();
+    let binary = if cfg!(target_os = "windows") {
+        "llvm-config.exe"
+    } else {
+        "llvm-config"
+    };
+    let path: PathBuf = if prefix.as_os_str().is_empty() {
+        PathBuf::from(binary)
+    } else {
+        prefix.join(binary)
+    };
+
+    let output = Command::new(&path)
+        .arg("--link-shared")
+        .arg("--libs")
+        .output()
+        .map_err(ConfigError::from)?;
+    if !output.status.success() {
+        return Err(ConfigError::ToolExit {
+            path: path.display().to_string(),
+            status: output.status.code().unwrap_or(-1),
+            stderr: String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+        });
+    }
+    let libs = std::str::from_utf8(&output.stdout)?;
+    Ok(libs.split_whitespace().filter_map(norm_lib).collect())
+}
+
+/// System libraries required when linking LLVM as a shared library (bare names).
+pub fn get_shared_system_libs(prefix_os: Option<&OsString>) -> ConfigResult<Vec<String>> {
+    use std::process::Command;
+
+    let prefix = prefix_os
+        .as_ref()
+        .map(|p| Path::new(p).join("bin"))
+        .unwrap_or_default();
+    let binary = if cfg!(target_os = "windows") {
+        "llvm-config.exe"
+    } else {
+        "llvm-config"
+    };
+    let path: PathBuf = if prefix.as_os_str().is_empty() {
+        PathBuf::from(binary)
+    } else {
+        prefix.join(binary)
+    };
+
+    let output = Command::new(&path)
+        .arg("--link-shared")
+        .arg("--system-libs")
+        .output()
+        .map_err(ConfigError::from)?;
+    if !output.status.success() {
+        return Err(ConfigError::ToolExit {
+            path: path.display().to_string(),
+            status: output.status.code().unwrap_or(-1),
+            stderr: String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+        });
+    }
+    let libs = std::str::from_utf8(&output.stdout)?;
+    Ok(libs.split_whitespace().filter_map(norm_lib).collect())
+}
+
 /// Returns a vector of all system libraries required by LLVM (bare names).
 pub fn get_system_libs(prefix_os: Option<&OsString>) -> ConfigResult<Vec<String>> {
     let libs = llvm_config(prefix_os, "--system-libs")?;
